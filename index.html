@@ -278,6 +278,8 @@ button:disabled { cursor: default; }
 .bk { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; }
 .bk button, .bk label { padding: 9px 16px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 13px; color: var(--mute); cursor: pointer; }
 a.app { text-decoration: none; color: inherit; }
+/* no zoom on double tap; pinching with two fingers still zooms */
+html, body, button, a, input, select, label, summary, textarea { touch-action: manipulation; }
 [hidden] { display: none !important; }
 body { margin: 0; }
 img { max-width: 100%; }

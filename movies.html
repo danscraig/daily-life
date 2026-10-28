@@ -29,6 +29,8 @@
 }
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
+/* no zoom on double tap; pinching with two fingers still zooms */
+html, body, button, a, input, select, label, summary, textarea { touch-action: manipulation; }
 body {
   margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font);
   padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) calc(110px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
