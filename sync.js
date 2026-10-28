@@ -16,7 +16,8 @@ var app = initializeApp({
 var auth = getAuth(app), db = getFirestore(app);
 
 var LS = 'year-after-year-v1', LSA = 'year-after-year-acts-v1', LSN = 'year-after-year-notes-v1', MKEY = 'movies-and-series-v1';
-var WATCH = [LS, LSA, LSN, MKEY], META = 'daily-life-sync-meta';
+var EKEY = 'daily-life-events-v1';
+var WATCH = [LS, LSA, LSN, MKEY, EKEY], META = 'daily-life-sync-meta';
 var rawSet = Storage.prototype.setItem;
 var user = null, applying = false, rev = 0, timer = null, busy = Promise.resolve(), msg = '', msgErr = false;
 
@@ -26,12 +27,13 @@ function setMeta(m) { try { rawSet.call(localStorage, META, JSON.stringify(m)); 
 
 /* local data as one object */
 function readLocal() {
-  var mv = lsGet(MKEY, null);
-  return { store: lsGet(LS, {}), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [] };
+  var mv = lsGet(MKEY, null), ev = lsGet(EKEY, null);
+  return { store: lsGet(LS, {}), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [] };
 }
-function fromCloud(c) {
+function fromCloud(c, local) {
   function p(s, fb) { try { var v = JSON.parse(s); return v == null ? fb : v; } catch (e) { return fb; } }
-  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []) };
+  // a copy saved before the calendar existed has no events: keep the ones on this device
+  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []) };
 }
 /* write to localStorage without triggering a push; returns true when something changed */
 function applyLocal(d) {
@@ -40,6 +42,8 @@ function applyLocal(d) {
   applying = true;
   try {
     put(LS, d.store); put(LSA, d.acts); put(LSN, d.notes);
+    var evOld = lsGet(EKEY, null); evOld = (evOld && Array.isArray(evOld.items)) ? evOld.items : [];
+    if (JSON.stringify(evOld) !== JSON.stringify(d.events)) put(EKEY, { items: d.events });
     var mv = lsGet(MKEY, null); if (!mv || !Array.isArray(mv.items)) mv = { items: [], tmdb: '' };
     var before = JSON.stringify(mv.items); mv.items = d.movies;
     if (JSON.stringify(mv.items) !== before) { rawSet.call(localStorage, MKEY, JSON.stringify(mv)); changed = true; }
@@ -70,15 +74,15 @@ function union(a, b) {
     ['t', 'm', 'a', 'l'].forEach(function (f) { Object.keys(y[f]).forEach(function (d) { if (!(d in x[f])) x[f][d] = y[f][d]; }); });
     store[k] = x;
   });
-  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true) };
+  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true), events: unionList(a.events, b.events, true) };
 }
 
 /* talking to the cloud */
 function ref() { return doc(db, 'users', user.uid); }
 async function push(d) {
   var r0 = rev, at = Date.now();
-  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies) };
-  if (body.store.length + body.acts.length + body.notes.length + body.movies.length > 900000) throw new Error('too big');
+  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies), events: JSON.stringify(d.events) };
+  if (body.store.length + body.acts.length + body.notes.length + body.movies.length + body.events.length > 900000) throw new Error('too big');
   await setDoc(ref(), body);
   setMeta({ uid: user.uid, at: at, dirty: rev !== r0 });
 }
@@ -87,9 +91,9 @@ async function sync(reloadOk) {
   var snap = await getDoc(ref()), cloud = snap.exists() ? snap.data() : null, local = readLocal(), meta = getMeta();
   var merged = local, changed = false;
   if (!cloud) { /* first sync of this account: upload what is here */ }
-  else if (meta.uid !== user.uid) { merged = union(local, fromCloud(cloud)); changed = applyLocal(merged); }
+  else if (meta.uid !== user.uid) { merged = union(local, fromCloud(cloud, local)); changed = applyLocal(merged); }
   else if (cloud.updated > (meta.at || 0)) {
-    merged = meta.dirty ? union(local, fromCloud(cloud)) : fromCloud(cloud);
+    merged = meta.dirty ? union(local, fromCloud(cloud, local)) : fromCloud(cloud, local);
     changed = applyLocal(merged);
     if (!meta.dirty) { setMeta({ uid: user.uid, at: cloud.updated, dirty: false }); }
   }

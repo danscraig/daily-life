@@ -316,6 +316,11 @@ img { max-width: 100%; }
       <span class="atxt"><span class="aname">Notes</span><span class="ameta" id="nmeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </button>
+    <a class="app" href="calendar.html">
+      <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17"></path><path d="M8 3v4M16 3v4"></path></svg></span>
+      <span class="atxt"><span class="aname">Calendar</span><span class="ameta" id="kmeta"></span></span>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
     <a class="app" href="movies.html">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="12.5" rx="3"></rect><path d="M10 8.5v5l4.2-2.5z" fill="currentColor"></path><path d="M8 20.5h8"></path></svg></span>
       <span class="atxt"><span class="aname">Movies, Series &amp; Books</span><span class="ameta" id="wmeta"></span></span>
@@ -810,13 +815,21 @@ img { max-width: 100%; }
   document.getElementById('nback').addEventListener('click', function () { if (nview === 'edit') closeNote(); nflush(); show('home'); });
 
   /* backup: everything in one JSON file, to move the data between this page and the standalone site */
-  var MKEY = 'movies-and-series-v1';
+  var MKEY = 'movies-and-series-v1', EKEY = 'daily-life-events-v1';
+  function occursOn(e, ds) {   // same repeat rules as calendar.html
+    if (ds < e.d || (e.un && ds > e.un) || (e.ex && e.ex.indexOf(ds) !== -1)) return false;
+    if (!e.rp) return ds === e.d;
+    var a = new Date(e.d + 'T00:00:00'), b = new Date(ds + 'T00:00:00');
+    return e.rp === 'd' || (e.rp === 'w' && a.getDay() === b.getDay()) || (e.rp === 'm' && a.getDate() === b.getDate()) || (e.rp === 'y' && a.getMonth() === b.getMonth() && a.getDate() === b.getDate());
+  }
   var onClaude = !!(window.claude && window.claude.use);
   if (onClaude) document.getElementById('bkl').hidden = true;
   async function exportBackup(btn) {
     var data = { v: 1, store: store, acts: acts, notes: notes };
     if (typeof watch !== 'undefined') data.watch = watch;
-    try { var mv = JSON.parse(localStorage.getItem(MKEY)); if (mv && Array.isArray(mv.items)) data.movies = mv; } catch (e) {}    var txt = JSON.stringify(data), name = 'daily-life-backup-' + TY + '-' + pad(TM) + '-' + pad(TD) + '.json';
+    try { var mv = JSON.parse(localStorage.getItem(MKEY)); if (mv && Array.isArray(mv.items)) data.movies = mv; } catch (e) {}
+    try { var ev = JSON.parse(localStorage.getItem(EKEY)); if (ev && Array.isArray(ev.items)) data.events = ev.items; } catch (e) {}
+    var txt = JSON.stringify(data), name = 'daily-life-backup-' + TY + '-' + pad(TM) + '-' + pad(TD) + '.json';
     var dl = null;
     try { if (onClaude) dl = await window.claude.use('downloads'); } catch (e) {}
     try {
@@ -857,7 +870,11 @@ img { max-width: 100%; }
             mv.items.push({ id: w.id || ('w' + Date.now().toString(36)), src: 'manual', ref: '', k: w.k, t: w.t, y: '', img: '', st: '', s: (w.k === 'm' && w.s === 'p') ? 'w' : w.s, u: w.u || Date.now(), seen: {}, eps: [] });
         });
         if (r.movies && r.movies.tmdb && !mv.tmdb) mv.tmdb = r.movies.tmdb;
-        localStorage.setItem(MKEY, JSON.stringify(mv));        location.reload();
+        localStorage.setItem(MKEY, JSON.stringify(mv));
+        var evs = lsGet(EKEY, null); evs = (evs && Array.isArray(evs.items)) ? evs.items : [];
+        (r.events || []).forEach(function (x) { if (x && x.id && !evs.some(function (y) { return y.id === x.id; })) evs.push(x); });
+        localStorage.setItem(EKEY, JSON.stringify({ items: evs }));
+        location.reload();
       } catch (err) { lbl.textContent = 'Not a valid backup'; }
     };
     fr.readAsText(f);
@@ -876,6 +893,9 @@ img { max-width: 100%; }
       document.getElementById(x[1]).textContent = t;
     });
     document.getElementById('nmeta').textContent = loaded && notes.length ? notes.length + (notes.length === 1 ? ' note' : ' notes') : '';
+    var evd = lsGet(EKEY, null), evn = 0, tds = TY + '-' + pad(TM) + '-' + pad(TD);
+    if (evd && Array.isArray(evd.items)) evd.items.forEach(function (e) { if (occursOn(e, tds)) evn++; });
+    document.getElementById('kmeta').textContent = evn ? evn + (evn === 1 ? ' event today' : ' events today') : '';
     var mvd = lsGet(MKEY, null), wp = 0, ww = 0, br = 0;
     if (mvd && Array.isArray(mvd.items)) mvd.items.forEach(function (i) { if (i.k === 'b') { if (i.s === 'p') br++; } else if (i.k === 's' && i.s === 'p') wp++; else if (i.s === 'w') ww++; });
     document.getElementById('wmeta').textContent = [wp ? wp + ' watching' : '', ww ? ww + ' to watch' : '', br ? br + ' reading' : ''].filter(Boolean).join(' · ');
@@ -969,7 +989,7 @@ img { max-width: 100%; }
   document.addEventListener('click', function (e) { if (!p.hidden && !p.contains(e.target)) close(); });
 })();
 </script>
-<script type="module" src="sync.js?v=2"></script>
+<script type="module" src="sync.js?v=3"></script>
 
 </body>
 </html>

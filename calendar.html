@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ECEBEF">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #ECEBEF;
+  --paper: #FFFFFF;
+  --ink: #65406F;
+  --mute: #94829E;
+  --line: #DFDDE4;
+  --accent: #A064B0;
+  --accent-ink: #FFFFFF;
+  --orchid: #EBB6E7;
+  --shadow: rgba(160, 100, 176, .16);
+  --bad: #C0392B;
+  --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+/* no zoom on double tap; pinching with two fingers still zooms */
+html, body, button, a, input, select, label, textarea { touch-action: manipulation; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font);
+  padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) calc(100px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.wrap { max-width: 760px; margin: 0 auto; }
+.top { display: flex; align-items: center; gap: 12px; padding-block: 18px 10px; }
+.top h1 { flex: 1; margin: 0 0 0 6px; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+.ibtn { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); color: var(--ink); text-decoration: none; font-size: 24px; line-height: 1; padding-bottom: 3px; }
+.pill { padding: 10px 16px; border-radius: 999px; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); font-weight: 500; font-size: 14px; color: var(--accent); }
+.nav { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
+.nav .ibtn { width: 40px; height: 40px; font-size: 22px; }
+.seg { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--paper); border-radius: 999px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.seg button { padding: 8px 4px; border-radius: 999px; font-weight: 500; font-size: 13px; color: var(--mute); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* month */
+.mhead, .mgrid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.mhead span { text-align: center; font: 500 11px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); padding: 4px 0 8px; }
+.mgrid { gap: 3px; }
+.mc { min-width: 0; min-height: 76px; padding: 5px 3px 4px; display: flex; flex-direction: column; align-items: stretch; gap: 2px; background: var(--paper); border-radius: 12px; text-align: left; overflow: hidden; }
+.mc.out { background: transparent; opacity: .55; }
+.mc.sel { box-shadow: inset 0 0 0 2px var(--accent); }
+.mc .n { align-self: center; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 500; }
+.mc.today .n { background: var(--accent); color: var(--accent-ink); }
+.chip { display: block; padding: 1px 4px; border-radius: 5px; font-size: 10px; line-height: 1.3; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.more { font-size: 10px; color: var(--mute); text-align: center; line-height: 1.2; }
+.agh { margin: 20px 4px 8px; font: 500 12px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.ag { display: flex; flex-direction: column; gap: 8px; }
+.ev { display: flex; align-items: stretch; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; background: var(--paper); border-radius: 18px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.ev .bar { flex: none; width: 5px; border-radius: 999px; }
+.ev .tx { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ev b { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.ev small { font-size: 12.5px; color: var(--mute); overflow-wrap: anywhere; }
+.empty { color: var(--mute); margin: 8px 4px; font-size: 14px; }
+
+/* week + day time grid */
+.tg { background: var(--paper); border-radius: 22px; box-shadow: 0 10px 26px -18px var(--shadow); overflow: hidden; }
+.tgr { display: grid; grid-template-columns: 38px repeat(var(--cols), minmax(0, 1fr)); }
+.tgh { border-bottom: 1px solid var(--line); }
+.tgh > button, .tgh > div { padding: 8px 0 6px; text-align: center; font: 500 11px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+.tgh b { display: grid; place-items: center; width: 28px; height: 28px; margin: 2px auto 0; border-radius: 50%; font-size: 14px; font-weight: 500; letter-spacing: 0; color: var(--ink); }
+.tgh .today b { background: var(--accent); color: var(--accent-ink); }
+.tgad { border-bottom: 1px solid var(--line); min-height: 8px; }
+.tgad > div { padding: 3px 2px; display: flex; flex-direction: column; gap: 2px; min-width: 0; border-left: 1px solid var(--line); }
+.tgad > div:first-child { border-left: 0; font-size: 9px; color: var(--mute); text-align: right; padding-right: 4px; }
+.tgb { position: relative; }
+.gut > div { height: var(--hr); font-size: 10px; color: var(--mute); text-align: right; padding-right: 5px; transform: translateY(-7px); }
+.gut > div:first-child { visibility: hidden; }
+.col { position: relative; height: calc(var(--hr) * 24); border-left: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% var(--hr); }
+.te { position: absolute; padding: 2px 4px; border-radius: 7px; border: 1px solid var(--paper); color: #fff; font-size: 10.5px; line-height: 1.25; overflow: hidden; text-align: left; }
+.te b { display: block; font-weight: 600; }
+.te span { opacity: .9; }
+/* the event being placed: a block you can drag, with the form docked under the grid */
+.ovl { position: absolute; top: 0; left: 38px; right: 0; height: calc(var(--hr) * 24); pointer-events: none; z-index: 5; }
+.draft { pointer-events: auto; touch-action: none; cursor: grab; z-index: 5; border: 2px solid #fff; box-shadow: 0 10px 24px -8px rgba(101, 64, 111, .6); user-select: none; -webkit-user-select: none; }
+.draft:active { cursor: grabbing; }
+.rz { position: absolute; left: 0; right: 0; bottom: 0; height: 20px; cursor: ns-resize; touch-action: none; }
+.rz::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 26px; height: 4px; margin-left: -13px; border-radius: 4px; background: rgba(255, 255, 255, .85); }
+.modal.dock { background: transparent; align-items: flex-end; padding: 0; pointer-events: none; }
+.modal.dock .sheet { pointer-events: auto; max-width: 760px; max-height: 46vh; border-radius: 26px 26px 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -16px rgba(101, 64, 111, .5); }
+body.editing { padding-bottom: calc(50vh + env(safe-area-inset-bottom, 0px)); }
+body.editing .fab { display: none; }
+.now { position: absolute; left: 0; right: 0; height: 2px; background: #E0506A; pointer-events: none; z-index: 3; }
+.now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #E0506A; }
+
+.fab { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 32px; line-height: 1; display: grid; place-items: center; padding-bottom: 3px; box-shadow: 0 16px 30px -12px var(--shadow), 0 6px 14px -6px rgba(101, 64, 111, .5); }
+
+/* editor */
+.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: rgba(60, 40, 70, .4); padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.sheet { width: 100%; max-width: 520px; max-height: 100%; overflow-y: auto; background: var(--bg); border-radius: 30px; padding: 18px; }
+.sheet h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+.fl { display: block; margin: 14px 4px 6px; font: 500 12px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+.sheet input[type="text"], .sheet input[type="date"], .sheet input[type="time"], .sheet textarea, .sheet select {
+  width: 100%; padding: 13px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); -webkit-appearance: none; appearance: none; min-height: 48px;
+}
+.sheet textarea { border-radius: 22px; resize: vertical; min-height: 84px; }
+.sheet select { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2394829E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 16px center; padding-right: 38px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.two > div { min-width: 0; }
+.tog { display: flex; align-items: center; justify-content: space-between; margin: 14px 4px 0; font-weight: 500; }
+.sw { position: relative; width: 50px; height: 30px; border-radius: 999px; background: var(--line); transition: background .15s; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+.sw[aria-pressed="true"] { background: var(--accent); }
+.sw[aria-pressed="true"]::after { transform: translateX(20px); }
+.cols { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 4px 0; }
+.cols button { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 17px; border: 3px solid transparent; background-clip: padding-box; }
+.cols button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.btn { padding: 12px 20px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 14px; }
+.btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.btn.danger { background: var(--paper); color: var(--bad); border: 1px solid var(--line); margin-left: auto; }
+.hint { font-size: 12.5px; color: var(--mute); margin: 8px 4px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="ibtn" href="./" aria-label="Back to home">‹</a>
+    <h1 id="title"></h1>
+    <button class="pill" id="today">Today</button>
+  </header>
+  <div class="nav">
+    <button class="ibtn" id="prev" aria-label="Previous">‹</button>
+    <div class="seg" id="seg"><button data-v="month" aria-pressed="true">Month</button><button data-v="week" aria-pressed="false">Week</button><button data-v="day" aria-pressed="false">Day</button></div>
+    <button class="ibtn" id="next" aria-label="Next">›</button>
+  </div>
+  <main id="main"></main>
+</div>
+<button class="fab" id="add" aria-label="Add event">+</button>
+<div class="modal" id="em" hidden role="dialog" aria-modal="true" aria-label="Event"><div class="sheet" id="ebody"></div></div>
+
+<script>
+(function () {
+  'use strict';
+  var EKEY = 'daily-life-events-v1';
+  var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var COLORS = ['#A064B0', '#D9709C', '#E08A4F', '#C99A2E', '#5BA06E', '#3E9DA3', '#5C80D0', '#7C7590'];
+  var REPEATS = [['', 'Does not repeat'], ['d', 'Every day'], ['w', 'Every week'], ['m', 'Every month'], ['y', 'Every year']];
+  var HR = 46;   // pixels per hour in the week and day views
+  var items = [], view = 'month', cur = new Date(), sel = null, edit = null;
+  try { var v = localStorage.getItem('daily-life-cal-view'); if (v === 'week' || v === 'day' || v === 'month') view = v; } catch (e) {}
+
+  var main = document.getElementById('main'), titleEl = document.getElementById('title');
+  var em = document.getElementById('em'), ebody = document.getElementById('ebody');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parse(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(d, n) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function mins(t) { var p = t.split(':'); return (+p[0]) * 60 + (+p[1]); }
+  function hhmm(m) { m = Math.max(0, Math.min(1439, m)); return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
+  function weekStart(d) { return addDays(d, -d.getDay()); }   // weeks start on Sunday
+  var todayS = ymd(new Date());
+
+  function load() { try { var r = JSON.parse(localStorage.getItem(EKEY)); items = (r && Array.isArray(r.items)) ? r.items : []; } catch (e) { items = []; } }
+  function save() { try { localStorage.setItem(EKEY, JSON.stringify({ items: items })); } catch (e) {} }
+  function byId(id) { for (var i = 0; i < items.length; i++) if (items[i].id === id) return items[i]; return null; }
+
+  /* does this event fall on that day (YYYY-MM-DD)? */
+  function occurs(e, ds) {
+    if (ds < e.d) return false;
+    if (e.un && ds > e.un) return false;
+    if (e.ex && e.ex.indexOf(ds) !== -1) return false;
+    if (!e.rp) return ds === e.d;
+    var a = parse(e.d), b = parse(ds);
+    if (e.rp === 'd') return true;
+    if (e.rp === 'w') return a.getDay() === b.getDay();
+    if (e.rp === 'm') return a.getDate() === b.getDate();
+    if (e.rp === 'y') return a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    return false;
+  }
+  function eventsOn(ds) {
+    return items.filter(function (e) { return occurs(e, ds); }).sort(function (a, b) {
+      if (!!a.ad !== !!b.ad) return a.ad ? -1 : 1;
+      return (a.st || '').localeCompare(b.st || '') || (a.t || '').localeCompare(b.t || '');
+    });
+  }
+  function timeText(e) { return e.ad ? 'All day' : e.st + (e.en ? ' – ' + e.en : ''); }
+
+  /* header */
+  function setTitle() {
+    var t;
+    if (view === 'month') t = MN[cur.getMonth()] + ' ' + cur.getFullYear();
+    else if (view === 'day') t = WD[cur.getDay()].slice(0, 3) + ', ' + cur.getDate() + ' ' + MN[cur.getMonth()].slice(0, 3) + ' ' + cur.getFullYear();
+    else {
+      var a = weekStart(cur), b = addDays(a, 6);
+      t = a.getDate() + (a.getMonth() === b.getMonth() ? '' : ' ' + MN[a.getMonth()].slice(0, 3)) + ' – ' + b.getDate() + ' ' + MN[b.getMonth()].slice(0, 3) + ' ' + b.getFullYear();
+    }
+    titleEl.textContent = t;
+    document.title = t + ' · Calendar';
+    document.querySelectorAll('#seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
+  }
+
+  /* month view */
+  function monthHTML() {
+    var first = new Date(cur.getFullYear(), cur.getMonth(), 1), start = weekStart(first), h = '<div class="mhead">';
+    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(function (w) { h += '<span>' + w + '</span>'; });
+    h += '</div><div class="mgrid">';
+    var last = new Date(cur.getFullYear(), cur.getMonth() + 1, 0), weeks = Math.ceil(((last - start) / 864e5 + 1) / 7);
+    for (var i = 0; i < weeks * 7; i++) {
+      var d = addDays(start, i), ds = ymd(d), ev = eventsOn(ds);
+      h += '<button class="mc' + (d.getMonth() !== cur.getMonth() ? ' out' : '') + (ds === todayS ? ' today' : '') + (ds === sel ? ' sel' : '') + '" data-d="' + ds + '"><span class="n">' + d.getDate() + '</span>';
+      ev.slice(0, 3).forEach(function (e) { h += '<span class="chip" style="background:' + esc(e.c || COLORS[0]) + '">' + esc(e.t || '(No title)') + '</span>'; });
+      if (ev.length > 3) h += '<span class="more">+' + (ev.length - 3) + '</span>';
+      h += '</button>';
+    }
+    h += '</div>';
+    var sd = parse(sel || todayS), list = eventsOn(ymd(sd));
+    h += '<div class="agh">' + WD[sd.getDay()] + ', ' + sd.getDate() + ' ' + MN[sd.getMonth()] + '</div><div class="ag">';
+    if (!list.length) h += '<p class="empty">Nothing planned.</p>';
+    list.forEach(function (e) { h += evCard(e, ymd(sd)); });
+    return h + '</div>';
+  }
+  function evCard(e, ds) {
+    return '<button class="ev" data-id="' + e.id + '" data-d="' + ds + '"><span class="bar" style="background:' + esc(e.c || COLORS[0]) + '"></span><span class="tx"><b>' + esc(e.t || '(No title)') + '</b><small>' + timeText(e) + (e.rp ? ' · ↻' : '') + (e.loc ? ' · ' + esc(e.loc) : '') + '</small></span></button>';
+  }
+
+  /* week and day views: a time grid */
+  function layout(list) {
+    // side by side columns for events that overlap in time
+    var evs = list.map(function (e) { var s = mins(e.st), en = e.en ? mins(e.en) : s + 60; if (en <= s) en = s + 30; return { e: e, s: s, en: en, lane: 0, n: 1 }; }).sort(function (a, b) { return a.s - b.s || b.en - a.en; });
+    var cluster = [], cend = -1, lanes = [];
+    function close() { cluster.forEach(function (x) { x.n = lanes.length; }); cluster = []; lanes = []; cend = -1; }
+    evs.forEach(function (x) {
+      if (cluster.length && x.s >= cend) close();
+      var k = 0; while (k < lanes.length && lanes[k] > x.s) k++;
+      lanes[k] = x.en; x.lane = k; cluster.push(x); cend = Math.max(cend, x.en);
+    });
+    close();
+    return evs;
+  }
+  var shown = [];   // the days on screen in the week or day view
+  function editingId() { return edit && edit.dock ? edit.e.id : null; }   // that event is drawn as the draggable block instead
+  function draftHTML() {
+    var e = edit.e, i = shown.findIndex(function (d) { return ymd(d) === e.d; });
+    if (i < 0 || e.ad || !e.st) return '';
+    var s = mins(e.st), en = e.en ? mins(e.en) : s + 60, n = shown.length;
+    return '<div class="te draft" style="' + draftPos(i, n, s, en) + ';background:' + esc(e.c || COLORS[0]) + '"><b>' + esc(e.t || '(No title)') + '</b><span>' + e.st + '–' + (e.en || hhmm(s + 60)) + '</span><i class="rz"></i></div>';
+  }
+  function draftPos(i, n, s, en) { return 'top:' + (s / 60 * HR) + 'px;height:' + Math.max(22, (en - s) / 60 * HR) + 'px;left:calc(' + (i * 100 / n) + '% + 1px);width:calc(' + (100 / n) + '% - 2px)'; }
+  function gridHTML(days) {
+    shown = days;
+    var n = days.length, h = '<div class="tg" style="--cols:' + n + ';--hr:' + HR + 'px">';
+    h += '<div class="tgr tgh"><div></div>';
+    days.forEach(function (d) {
+      var ds = ymd(d);
+      h += '<button class="' + (ds === todayS ? 'today' : '') + '" data-open="' + ds + '">' + WD[d.getDay()].slice(0, 3) + '<b>' + d.getDate() + '</b></button>';
+    });
+    h += '</div>';
+    var skip = editingId();
+    var ad = days.map(function (d) { return eventsOn(ymd(d)).filter(function (e) { return e.ad && e.id !== skip; }).map(function (e) { return [e, ymd(d)]; }); });
+    if (ad.some(function (x) { return x.length; })) {
+      h += '<div class="tgr tgad"><div>all day</div>';
+      ad.forEach(function (list) { h += '<div>'; list.forEach(function (x) { h += '<button class="chip" data-id="' + x[0].id + '" data-d="' + x[1] + '" style="background:' + esc(x[0].c || COLORS[0]) + ';text-align:left">' + esc(x[0].t || '(No title)') + '</button>'; }); h += '</div>'; });
+      h += '</div>';
+    }
+    h += '<div class="tgr tgb" id="tgb"><div class="gut">';
+    for (var i = 0; i < 24; i++) h += '<div>' + pad(i) + ':00</div>';
+    h += '</div>';
+    var nowM = new Date().getHours() * 60 + new Date().getMinutes();
+    days.forEach(function (d) {
+      var ds = ymd(d), timed = eventsOn(ds).filter(function (e) { return !e.ad && e.st && e.id !== skip; });
+      h += '<div class="col" data-col="' + ds + '">';
+      layout(timed).forEach(function (x) {
+        var w = 100 / x.n;
+        h += '<button class="te" data-id="' + x.e.id + '" data-d="' + ds + '" style="top:' + (x.s / 60 * HR) + 'px;height:' + Math.max(18, (x.en - x.s) / 60 * HR - 1) + 'px;left:calc(' + (x.lane * w) + '% + 1px);width:calc(' + w + '% - 2px);background:' + esc(x.e.c || COLORS[0]) + '"><b>' + esc(x.e.t || '(No title)') + '</b>' + (x.en - x.s >= 45 ? '<span>' + x.e.st + (x.e.en ? '–' + x.e.en : '') + '</span>' : '') + '</button>';
+      });
+      if (ds === todayS) h += '<div class="now" style="top:' + (nowM / 60 * HR) + 'px"></div>';
+      h += '</div>';
+    });
+    if (edit && edit.dock) h += '<div class="ovl">' + draftHTML() + '</div>';
+    return h + '</div></div>';
+  }
+  function weekHTML() { var a = weekStart(cur), d = []; for (var i = 0; i < 7; i++) d.push(addDays(a, i)); return gridHTML(d); }
+  function dayHTML() { return gridHTML([cur]); }
+
+  function render(keep) {   // keep: leave the scroll position alone
+    setTitle();
+    main.innerHTML = view === 'month' ? monthHTML() : view === 'week' ? weekHTML() : dayHTML();
+    if (view !== 'month' && !keep) {
+      // show the morning (or the current time when today is on screen)
+      var sh = Math.max(0, (view === 'day' ? ymd(cur) === todayS : ymd(weekStart(cur)) === ymd(weekStart(new Date()))) ? new Date().getHours() - 1 : 7);
+      var tg = document.getElementById('tgb'); if (tg) window.scrollTo(0, tg.getBoundingClientRect().top + window.scrollY + sh * HR - 110);
+    }
+  }
+  function go(n) {
+    var step = view === 'month' ? 0 : n * (view === 'week' ? 7 : 1);
+    if (view === 'month') cur = new Date(cur.getFullYear(), cur.getMonth() + n, 1);
+    else cur = addDays(cur, step);
+    if (edit && edit.dock && edit.isNew) { edit.e.d = ymd(addDays(parse(edit.e.d), step)); syncForm(); }   // the new event follows you to the next week or day
+    sel = null; render(!!(edit && edit.dock));
+  }
+
+  /* editor */
+  function newEvent(ds, startMin) {
+    var s = startMin == null ? Math.min(new Date().getHours() + 1, 22) * 60 : startMin;
+    return { id: '', t: '', d: ds, ad: false, st: hhmm(s), en: hhmm(Math.min(s + 60, 1439)), c: COLORS[0], loc: '', n: '', rp: '', un: '', ex: [] };
+  }
+  function openEditor(e, occ) {
+    edit = { e: JSON.parse(JSON.stringify(e)), occ: occ || e.d, isNew: !e.id };
+    // in the week and day views the form docks at the bottom and the event is a block you drag on the grid
+    edit.dock = view !== 'month' && (edit.isNew || !edit.e.rp) && !!edit.e.st && !edit.e.ad;
+    if (edit.e.st && !edit.e.en) edit.e.en = hhmm(Math.min(1439, mins(edit.e.st) + 60));
+    em.className = 'modal' + (edit.dock ? ' dock' : '');
+    document.body.classList.toggle('editing', edit.dock);
+    drawEditor();
+    em.hidden = false;
+    if (edit.dock) {
+      ensureVisible(); render(true);
+      var dr = main.querySelector('.draft'); if (dr) window.scrollTo(0, Math.max(0, dr.getBoundingClientRect().top + window.scrollY - 150));
+    }
+    else if (edit.isNew) setTimeout(function () { var t = document.getElementById('et'); if (t) t.focus(); }, 50);
+  }
+  function ensureVisible() {   // make sure the week or day on screen contains the event being edited
+    if (!edit || !edit.dock) return;
+    var inside = view === 'day' ? ymd(cur) === edit.e.d : (edit.e.d >= ymd(weekStart(cur)) && edit.e.d <= ymd(addDays(weekStart(cur), 6)));
+    if (!inside) cur = parse(edit.e.d);
+  }
+  function syncForm() {   // push the block's date and times into the form fields
+    if (!edit) return;
+    [['ed', 'd'], ['es', 'st'], ['ee', 'en']].forEach(function (p) { var el = document.getElementById(p[0]); if (el) el.value = edit.e[p[1]]; });
+  }
+  function placeDraft() {   // move the block on screen without redrawing (keeps the drag going)
+    var dr = main.querySelector('.draft'); if (!dr) return;
+    var e = edit.e, i = shown.findIndex(function (d) { return ymd(d) === e.d; });
+    if (i < 0) return;
+    var s = mins(e.st), en = mins(e.en);
+    dr.setAttribute('style', draftPos(i, shown.length, s, en) + ';background:' + (e.c || COLORS[0]));
+    dr.querySelector('span').textContent = e.st + '–' + e.en;
+  }
+  function drawEditor() {
+    var e = edit.e;
+    var h = '<h2>' + (edit.isNew ? 'New event' : 'Event') + '</h2>' +
+      '<label class="fl" for="et">Title</label><input type="text" id="et" maxlength="120" autocomplete="off" value="' + esc(e.t) + '" placeholder="Add title">' +
+      '<div class="tog"><span>All day</span><button class="sw" id="ead" aria-pressed="' + !!e.ad + '" aria-label="All day"></button></div>' +
+      '<label class="fl" for="ed">' + (e.rp && !edit.isNew ? 'Starts' : 'Date') + '</label><input type="date" id="ed" value="' + esc(e.d) + '">' +
+      '<div class="two" id="etimes"' + (e.ad ? ' hidden' : '') + '><div><label class="fl" for="es">Start</label><input type="time" id="es" value="' + esc(e.st) + '"></div><div><label class="fl" for="ee">End</label><input type="time" id="ee" value="' + esc(e.en) + '"></div></div>' +
+      '<label class="fl" for="er">Repeat</label><select id="er">' + REPEATS.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === (e.rp || '') ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>' +
+      '<div id="euw"' + (e.rp ? '' : ' hidden') + '><label class="fl" for="eu">Repeat until (optional)</label><input type="date" id="eu" value="' + esc(e.un || '') + '">' +
+      (edit.isNew ? '' : '<p class="hint">Changes apply to every repeat.</p>') + '</div>' +
+      '<span class="fl">Colour</span><div class="cols" id="ec">' + COLORS.map(function (c) { return '<button style="background:' + c + '" data-c="' + c + '" aria-pressed="' + (c === e.c) + '" aria-label="Colour">' + (c === e.c ? '✓' : '') + '</button>'; }).join('') + '</div>' +
+      '<label class="fl" for="el">Location</label><input type="text" id="el" maxlength="120" autocomplete="off" value="' + esc(e.loc) + '">' +
+      '<label class="fl" for="en">Notes</label><textarea id="en" maxlength="2000">' + esc(e.n) + '</textarea>';
+    if (edit.askDel) {
+      h += '<p class="hint" style="margin-top:18px;color:var(--ink);font-size:14px">Delete this repeating event?</p><div class="row"><button class="btn danger" style="margin-left:0" data-a="del-one">Only ' + esc(edit.occ) + '</button><button class="btn danger" style="margin-left:0" data-a="del-all">All events</button><button class="btn ghost" data-a="del-no">Cancel</button></div>';
+    } else {
+      h += '<div class="row"><button class="btn" data-a="save">Save</button><button class="btn ghost" data-a="cancel">Cancel</button>' + (edit.isNew ? '' : '<button class="btn danger" data-a="del">Delete</button>') + '</div>';
+    }
+    ebody.innerHTML = h;
+  }
+  function readForm() {
+    var e = edit.e;
+    e.t = document.getElementById('et').value.trim(); e.d = document.getElementById('ed').value || e.d;
+    e.st = document.getElementById('es').value || e.st; e.en = document.getElementById('ee').value || e.en;
+    e.rp = document.getElementById('er').value; e.un = e.rp ? document.getElementById('eu').value : '';
+    e.loc = document.getElementById('el').value.trim(); e.n = document.getElementById('en').value.trim();
+  }
+  function closeEditor() {
+    var docked = edit && edit.dock;
+    em.hidden = true; edit = null; em.className = 'modal'; document.body.classList.remove('editing');
+    if (docked) render(true);
+  }
+  function saveEdit() {
+    readForm();
+    var e = edit.e;
+    if (!e.d) return;
+    if (!e.ad && e.st && e.en && mins(e.en) <= mins(e.st)) e.en = hhmm(mins(e.st) + 60 > 1439 ? 1439 : mins(e.st) + 60);
+    if (e.un && e.un < e.d) e.un = '';
+    e.u = Date.now();
+    if (edit.isNew) { e.id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); items.push(e); }
+    else { for (var i = 0; i < items.length; i++) if (items[i].id === e.id) items[i] = e; }
+    save(); sel = e.d; closeEditor(); render(true);
+  }
+  function removeEvent(id, onlyDate) {
+    var e = byId(id); if (!e) return;
+    if (onlyDate) { e.ex = (e.ex || []).concat(onlyDate); e.u = Date.now(); }
+    else items = items.filter(function (x) { return x.id !== id; });
+    save(); closeEditor(); render(true);
+  }
+
+  em.addEventListener('click', function (ev) {
+    if (ev.target === em) { closeEditor(); return; }
+    var b = ev.target.closest('button'); if (!b || !edit) return;
+    if (b.id === 'ead') { readForm(); edit.e.ad = !edit.e.ad; drawEditor(); if (edit.dock) render(true); return; }
+    if (b.dataset.c) { readForm(); edit.e.c = b.dataset.c; drawEditor(); if (edit.dock) placeDraft(); return; }
+    var a = b.dataset.a;
+    if (a === 'save') saveEdit();
+    else if (a === 'cancel') closeEditor();
+    else if (a === 'del') { if (edit.e.rp) { readForm(); edit.askDel = true; drawEditor(); } else removeEvent(edit.e.id); }
+    else if (a === 'del-one') removeEvent(edit.e.id, edit.occ);
+    else if (a === 'del-all') removeEvent(edit.e.id);
+    else if (a === 'del-no') { edit.askDel = false; drawEditor(); }
+  });
+  em.addEventListener('change', function (ev) {
+    var id = ev.target.id;
+    if (id === 'er') document.getElementById('euw').hidden = !ev.target.value;
+    if (edit && edit.dock && (id === 'ed' || id === 'es' || id === 'ee')) {   // typed a new date or time: the block follows
+      readForm();
+      var e = edit.e;
+      if (e.en && mins(e.en) <= mins(e.st)) e.en = hhmm(Math.min(1439, mins(e.st) + 30));
+      syncForm(); ensureVisible(); render(true);
+    }
+  });
+  em.addEventListener('input', function (ev) {
+    if (ev.target.id === 'et' && edit && edit.dock) { edit.e.t = ev.target.value; var b = main.querySelector('.draft b'); if (b) b.textContent = ev.target.value.trim() || '(No title)'; }
+  });
+
+  /* clicks on the page */
+  main.addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-id]');
+    if (t) { var e = byId(t.dataset.id); if (e) openEditor(e, t.dataset.d); return; }
+    var o = ev.target.closest('[data-open]');
+    if (o) { if (edit) closeEditor(); cur = parse(o.dataset.open); view = 'day'; try { localStorage.setItem('daily-life-cal-view', view); } catch (x) {} render(); return; }
+    var c = ev.target.closest('.mc');
+    if (c) { sel = c.dataset.d; var d = parse(sel); if (d.getMonth() !== cur.getMonth()) cur = new Date(d.getFullYear(), d.getMonth(), 1); render(); return; }
+    var col = ev.target.closest('.col');
+    if (col) {
+      var y = ev.clientY - col.getBoundingClientRect().top, s = Math.max(0, Math.min(22, Math.floor(y / HR))) * 60;
+      if (edit && edit.dock) {   // already placing an event: tapping a free slot moves the block there
+        var dur = Math.max(15, mins(edit.e.en) - mins(edit.e.st));
+        edit.e.d = col.dataset.col; edit.e.st = hhmm(s); edit.e.en = hhmm(Math.min(1439, s + dur));
+        syncForm(); render(true);
+      } else openEditor(newEvent(col.dataset.col, s));
+    }
+  });
+
+  /* drag the block: the body moves it (day and time), the handle at the bottom changes the end */
+  var drag = null;
+  main.addEventListener('pointerdown', function (ev) {
+    var dr = ev.target.closest('.draft'); if (!dr || !edit || !edit.dock) return;
+    drag = { mode: ev.target.closest('.rz') ? 'rz' : 'mv', y0: ev.clientY, s0: mins(edit.e.st), en0: mins(edit.e.en || hhmm(mins(edit.e.st) + 60)), id: ev.pointerId, el: dr };
+    try { dr.setPointerCapture(ev.pointerId); } catch (x) {}
+    ev.preventDefault();
+  });
+  main.addEventListener('pointermove', function (ev) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    var dm = Math.round((ev.clientY - drag.y0) / HR * 4) * 15, e = edit.e;   // snaps to 15 minutes
+    if (drag.mode === 'mv') {
+      var dur = drag.en0 - drag.s0, s = Math.max(0, Math.min(1439 - dur, drag.s0 + dm)), r = drag.el.parentNode.getBoundingClientRect();
+      var i = Math.max(0, Math.min(shown.length - 1, Math.floor((ev.clientX - r.left) / (r.width / shown.length))));
+      e.st = hhmm(s); e.en = hhmm(s + dur); e.d = ymd(shown[i]);
+    } else e.en = hhmm(Math.max(drag.s0 + 15, Math.min(1439, drag.en0 + dm)));
+    placeDraft(); syncForm();
+  });
+  function endDrag(ev) { if (drag && ev.pointerId === drag.id) drag = null; }
+  main.addEventListener('pointerup', endDrag);
+  main.addEventListener('pointercancel', endDrag);
+  document.getElementById('add').addEventListener('click', function () {
+    var ds = ymd(cur);
+    if (view === 'month') ds = sel || todayS;
+    else if (view === 'week' && todayS >= ymd(weekStart(cur)) && todayS <= ymd(addDays(weekStart(cur), 6))) ds = todayS;
+    openEditor(newEvent(ds));
+  });
+  document.getElementById('prev').addEventListener('click', function () { go(-1); });
+  document.getElementById('next').addEventListener('click', function () { go(1); });
+  document.getElementById('today').addEventListener('click', function () { cur = new Date(); sel = todayS; render(); });
+  document.getElementById('seg').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    if (edit) closeEditor();
+    view = b.dataset.v; try { localStorage.setItem('daily-life-cal-view', view); } catch (e) {}
+    if (view === 'day' && sel) cur = parse(sel);
+    render();
+  });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !em.hidden) closeEditor(); });
+
+  /* swipe left or right to move to the next or previous month, week or day */
+  (function () {
+    var sx = 0, sy = 0, st = 0, ok = false;
+    document.addEventListener('touchstart', function (e) { ok = em.hidden && e.touches.length === 1; if (ok) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); } }, { passive: true });
+    document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) ok = false; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (!ok) return; ok = false;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 1.8 && Date.now() - st < 700) go(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+
+  load(); sel = todayS; render();
+})();
+</script>
+<script type="module" src="sync.js?v=3"></script>
+</body>
+</html>
