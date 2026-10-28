@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ECEBEF">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Movies &amp; Series</title>
+<title>Movies, Series &amp; Books</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
@@ -122,13 +122,23 @@ select:disabled { opacity: .5; }
 .toast { position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; z-index: 50; }
 .toast[hidden] { display: none; }
 label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14px; }
+.stars { color: var(--accent); letter-spacing: 2px; font-size: 14px; }
+.pct { font: 400 12px var(--font); color: var(--mute); }
+.pct b { color: var(--ink); font-weight: 600; font-size: 12px; }
+.box { background: var(--paper); border-radius: 20px; padding: 14px 16px; margin: 12px 0; }
+.box .lbl { display: flex; justify-content: space-between; font-weight: 500; margin-bottom: 8px; }
+.box .lbl b { color: var(--accent); font-weight: 600; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.rate { display: flex; gap: 4px; }
+.rate button { font-size: 30px; line-height: 1; padding: 2px; color: var(--line); }
+.rate button.on { color: var(--accent); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <a class="ibtn" href="./" aria-label="Back to home" style="text-decoration:none;font-size:24px;line-height:1;padding-bottom:3px">‹</a>
-    <h1 style="flex:1;margin-left:6px">Movies &amp; Series</h1>
+    <h1 style="flex:1;margin-left:6px;font-size:22px;line-height:1.15">Movies, Series &amp; Books</h1>
     <button class="ibtn" id="gear" aria-label="Settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
   </header>
   <main id="main"></main>
@@ -157,6 +167,9 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   var genres = { m: null, s: null }, gmap = { m: {}, s: {} };
   var TABS = [['p', 'Watching'], ['d', 'Watched'], ['w', 'Want to watch']];
   var MTABS = [['d', 'Watched'], ['w', 'Want to watch']];
+  var BTABS = [['p', 'Reading'], ['d', 'Read'], ['w', 'Want to read']];   // books
+  var BGENRES = ['Fantasy', 'Science fiction', 'Romance', 'Mystery', 'Thriller', 'Horror', 'Historical fiction', 'Young adult', 'Children', 'Classics', 'Graphic novels', 'Poetry', 'Biography', 'History', 'Self-help', 'Psychology', 'Philosophy', 'Business', 'Cooking', 'Travel', 'Religion', 'Art'];
+  var OLPAGE = 24, THIS_YEAR = now.getFullYear();
   var lk = 's';   // kind shown in My lists: 's' series or 'm' movies
   var ORDERS = [['pop', 'Most popular'], ['top', 'Top rated'], ['new', 'Newest'], ['old', 'Oldest']];
 
@@ -180,7 +193,7 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
     for (var i = 0; i < db.items.length; i++) {
       var x = db.items[i];
       if (x.src === r.src && x.ref === r.ref) return x;
-      if (x.k === r.k && String(x.t).toLowerCase() === t && (x.y || '') === (r.y || '')) return x;
+      if (x.k === r.k && String(x.t).toLowerCase() === t && (r.k === 'b' ? String(x.a || '').toLowerCase() === String(r.a || '').toLowerCase() : (x.y || '') === (r.y || ''))) return x;
     }
     return null;
   }
@@ -248,6 +261,40 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
     return Promise.resolve();
   }
 
+  /* books: Open Library needs no key */
+  function kindName(it) { return it.k === 's' ? 'Series' : it.k === 'b' ? 'Book' : 'Movie'; }
+  function cardMeta(it) { return kindName(it) + (it.k === 'b' && it.a ? ' · ' + esc(it.a) : '') + (it.y ? ' · ' + esc(it.y) : ''); }
+  function kindMeta(it) { return cardMeta(it) + (it.k === 'b' && it.pages ? ' · ' + it.pages + ' pages' : '') + (it.k === 's' && it.st ? ' · ' + esc(it.st) : ''); }
+  function listLabel(it) { var l = it.k === 'b' ? BTABS : it.k === 'm' ? MTABS : TABS; return l.filter(function (t) { return t[0] === it.s; })[0][1]; }
+  function stars(n) { var s = ''; for (var i = 1; i <= 5; i++) s += i <= n ? '★' : '☆'; return s; }
+  function bStatus(it, s) {
+    it.s = s;
+    if (s === 'd') it.pct = 100; else if (s === 'w') { it.pct = 0; it.r = 0; } else if (s === 'p' && (it.pct === 100 || !it.pct)) it.pct = 0;
+  }
+  function bPct(it, v) { it.pct = Math.max(0, Math.min(100, v)); if (it.pct === 100) it.s = 'd'; it.u = Date.now(); }
+  function olMap(d) {
+    var y = d.first_publish_year;
+    return {
+      src: 'ol', ref: d.key || '', k: 'b', t: d.title || '', a: (d.author_name || []).slice(0, 2).join(', '),
+      y: y && y > 1000 && y <= THIS_YEAR ? String(y) : '', pages: d.number_of_pages_median || 0,
+      img: d.cover_i ? 'https://covers.openlibrary.org/b/id/' + d.cover_i + '-M.jpg' : '', g: (d.subject || []).slice(0, 4), st: ''
+    };
+  }
+  function olUrl(page) {
+    var text = sq.trim(), parts = [], sort = '';
+    if (text) parts.push(text);
+    if (fg) parts.push('subject:"' + fg.toLowerCase() + '"');
+    if (fy) parts.push('first_publish_year:' + fy);
+    if (!text) {
+      parts.push('language:eng');
+      if (fo === 'new') parts.push('first_publish_year:[1000 TO ' + THIS_YEAR + '] edition_count:[3 TO *]');
+      else if (fo === 'old') parts.push('first_publish_year:[1000 TO *] edition_count:[8 TO *]');
+      else parts.push('edition_count:[' + (fg || fy ? 3 : 20) + ' TO *]');
+    }
+    if (fo === 'top') sort = 'rating'; else if (fo === 'new') sort = 'new'; else if (fo === 'old') sort = 'old'; else if (!text) sort = 'readinglog';
+    return 'https://openlibrary.org/search.json?q=' + encodeURIComponent(parts.join(' ')) + '&fields=key,title,author_name,first_publish_year,cover_i,number_of_pages_median,subject&limit=' + OLPAGE + '&page=' + page + (sort ? '&sort=' + sort : '');
+  }
+
   /* search tab: data */
   function mapT(k, x) {
     return {
@@ -288,7 +335,7 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
     });
   }
   function loadGenres(k) {
-    if (genres[k] || !db.tmdb) return Promise.resolve();
+    if (k === 'b' || genres[k] || !db.tmdb) return Promise.resolve();
     return getJSON(T('/genre/' + (k === 'm' ? 'movie' : 'tv') + '/list')).then(function (j) {
       genres[k] = j.genres || []; genres[k].forEach(function (g) { gmap[k][g.id] = g.name; });
     }, function () {});
@@ -299,7 +346,11 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
     if (!append) { sres = []; spage = 0; spages = 0; }
     renderSres();
     var job;
-    if (db.tmdb) {
+    if (sk === 'b') {
+      job = getJSON(olUrl(page)).then(function (j) {
+        return { items: (j.docs || []).map(olMap).filter(function (r) { return r.t; }), pages: Math.min(Math.ceil((j.numFound || 0) / OLPAGE), 20) };
+      });
+    } else if (db.tmdb) {
       var path = text ? (sk === 'm' ? '/search/movie' : '/search/tv') : (sk === 'm' ? '/discover/movie' : '/discover/tv');
       var p = text ? { query: text, page: page, include_adult: 'false' } : discoverParams(page);
       if (text && fy) p[sk === 'm' ? 'year' : 'first_air_date_year'] = fy;
@@ -323,16 +374,16 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
       renderSres();
     }, function () {
       if (seq !== sseq) return;
-      sbusy = false; smsg = 'Could not reach the service. Check your connection and your TMDB key.'; renderSres();
+      sbusy = false; smsg = sk === 'b' ? 'Could not reach Open Library. Check your connection.' : 'Could not reach the service. Check your connection and your TMDB key.'; renderSres();
     });
   }
 
   /* views */
   function pst(it, cls) {
-    return '<span class="pst' + (cls ? ' ' + cls : '') + '">' + (it.img ? '<img src="' + esc(it.img) + '" alt="" loading="lazy" onerror="this.remove()">' : (it.k === 's' ? 'TV' : 'Film')) + '</span>';
+    return '<span class="pst' + (cls ? ' ' + cls : '') + '">' + (it.img ? '<img src="' + esc(it.img) + '" alt="" loading="lazy" onerror="this.remove()">' : (it.k === 's' ? 'TV' : it.k === 'b' ? 'Book' : 'Film')) + '</span>';
   }
   function cardHTML(it) {
-    var meta = (it.k === 's' ? 'Series' : 'Movie') + (it.y ? ' · ' + esc(it.y) : '');
+    var meta = cardMeta(it);
     var extra = '', quick = '';
     if (it.k === 's') {
       var a = aired(it), n = seenN(it), nx = nextEp(it);
@@ -341,12 +392,18 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
       if (a.length) extra += progHTML(si) + (nx ? '' : '<em>Up to date</em>');
       if (nx && it.s !== 'd') quick = '<span class="qwrap"><button class="quick" data-next="' + it.id + '">Watched ' + epLabel(nx).replace(' · ', '') + '</button></span>';
     }
+    if (it.k === 'b') {
+      if (it.s === 'p') {
+        extra = '<span class="bar"><span style="width:' + (it.pct || 0) + '%"></span></span><span class="pct"><b>' + (it.pct || 0) + '%</b> read</span>';
+        quick = '<span class="qwrap"><button class="quick" data-plus="' + it.id + '">+10%</button></span>';
+      } else if (it.s === 'd' && it.r) extra = '<span class="stars">' + stars(it.r) + '</span>';
+    }
     return '<div class="card"><button class="open" data-open="' + it.id + '">' + pst(it) + '<span class="ct"><b>' + esc(it.t) + '</b><i>' + meta + '</i>' + extra + '</span></button>' + quick + '</div>';
   }
   function listsHTML() {
-    var tabs = lk === 'm' ? MTABS : TABS;   // movies have no "Watching"
+    var tabs = lk === 'm' ? MTABS : lk === 'b' ? BTABS : TABS;   // movies have no "Watching"; books read instead of watch
     if (!tabs.some(function (t) { return t[0] === tab; })) tab = tabs[0][0];
-    var h = '<div class="kinds" role="group" aria-label="Type"><button data-lk="s" aria-pressed="' + (lk === 's') + '">Series</button><button data-lk="m" aria-pressed="' + (lk === 'm') + '">Movies</button></div>' +
+    var h = '<div class="kinds" role="group" aria-label="Type"><button data-lk="s" aria-pressed="' + (lk === 's') + '">Series</button><button data-lk="m" aria-pressed="' + (lk === 'm') + '">Movies</button><button data-lk="b" aria-pressed="' + (lk === 'b') + '">Books</button></div>' +
       '<div class="seg3" role="group" aria-label="Lists" style="margin-top:6px;grid-template-columns:repeat(' + tabs.length + ',1fr)">' + tabs.map(function (t) {
         var n = db.items.filter(function (i) { return i.k === lk && i.s === t[0]; }).length;
         return '<button data-tab="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' <span>' + n + '</span></button>';
@@ -358,26 +415,27 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   }
   function yearOpts() {
     var o = '<option value="">Any year</option>';
-    for (var y = now.getFullYear() + 1; y >= 1950; y--) o += '<option value="' + y + '"' + (String(y) === fy ? ' selected' : '') + '>' + y + '</option>';
+    for (var y = now.getFullYear() + (sk === 'b' ? 0 : 1); y >= (sk === 'b' ? 1800 : 1950); y--) o += '<option value="' + y + '"' + (String(y) === fy ? ' selected' : '') + '>' + y + '</option>';
     return o;
   }
   function genreOpts() {
     var o = '<option value="">All genres</option>';
-    (genres[sk] || []).forEach(function (g) { o += '<option value="' + g.id + '"' + (String(g.id) === fg ? ' selected' : '') + '>' + esc(g.name) + '</option>'; });
+    if (sk === 'b') BGENRES.forEach(function (g) { o += '<option value="' + esc(g) + '"' + (g === fg ? ' selected' : '') + '>' + esc(g) + '</option>'; });
+    else (genres[sk] || []).forEach(function (g) { o += '<option value="' + g.id + '"' + (String(g.id) === fg ? ' selected' : '') + '>' + esc(g.name) + '</option>'; });
     return o;
   }
   function searchHTML() {
-    return '<div class="kinds" role="group" aria-label="Type"><button data-sk="s" aria-pressed="' + (sk === 's') + '">Series</button><button data-sk="m" aria-pressed="' + (sk === 'm') + '">Movies</button></div>' +
-      '<form id="sf" role="search"><input type="search" id="q" placeholder="Search by name" autocomplete="off" aria-label="Search" value="' + esc(sq) + '"></form>' +
+    return '<div class="kinds" role="group" aria-label="Type"><button data-sk="s" aria-pressed="' + (sk === 's') + '">Series</button><button data-sk="m" aria-pressed="' + (sk === 'm') + '">Movies</button><button data-sk="b" aria-pressed="' + (sk === 'b') + '">Books</button></div>' +
+      '<form id="sf" role="search"><input type="search" id="q" placeholder="' + (sk === 'b' ? 'Search by title or author' : 'Search by name') + '" autocomplete="off" aria-label="Search" value="' + esc(sq) + '"></form>' +
       '<div class="filters">' +
       '<label>Year<select id="fy">' + yearOpts() + '</select></label>' +
-      '<label>Genre<select id="fg"' + (db.tmdb ? '' : ' disabled') + '>' + genreOpts() + '</select></label>' +
-      '<label>Order by<select id="fo"' + (db.tmdb && !sq.trim() ? '' : ' disabled') + '>' + ORDERS.map(function (o) { return '<option value="' + o[0] + '"' + (fo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
+      '<label>Genre<select id="fg"' + (db.tmdb || sk === 'b' ? '' : ' disabled') + '>' + genreOpts() + '</select></label>' +
+      '<label>Order by<select id="fo"' + (sk === 'b' || (db.tmdb && !sq.trim()) ? '' : ' disabled') + '>' + ORDERS.map(function (o) { return '<option value="' + o[0] + '"' + (fo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>' +
       '</div><div id="sres"></div>';
   }
   function tileHTML(r, i) {
     var have = haveItem(r);
-    return '<button class="tile" data-pv="' + i + '"><span class="tp">' + (r.img ? '<img src="' + esc(r.img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '<span>' + (r.img ? '' : esc(r.t)) + '</span>' + (have ? '<span class="tick">✓</span>' : '') + '</span><b>' + esc(r.t) + '</b><i>' + esc(r.y) + '</i></button>';
+    return '<button class="tile" data-pv="' + i + '"><span class="tp">' + (r.img ? '<img src="' + esc(r.img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '<span>' + (r.img ? '' : esc(r.t)) + '</span>' + (have ? '<span class="tick">✓</span>' : '') + '</span><b>' + esc(r.t) + '</b><i>' + esc(r.k === 'b' ? (r.a || r.y) : r.y) + '</i></button>';
   }
   function renderSres() {
     var el = document.getElementById('sres'); if (!el) return;
@@ -386,8 +444,8 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
     if (sbusy) h += '<p class="empty">Loading…</p>';
     else if (smsg && !sres.length) h += '<p class="empty">' + esc(smsg) + '</p>';
     if (!sbusy && sres.length && spage < spages) h += '<button class="btn ghost more" data-more="1">Show more</button>';
-    if (!sbusy && sq.trim()) h += '<div class="row"><button class="btn ghost" data-manual="m">Add “' + esc(sq.trim()) + '” as a movie</button><button class="btn ghost" data-manual="s">as a series</button></div>';
-    if (!db.tmdb && sq.trim() && !sbusy) h += '<p class="note">Without a TMDB key, movies come without covers. Add your key in Settings for covers, genres and browsing.</p>';
+    if (!sbusy && sq.trim()) h += '<div class="row"><button class="btn ghost" data-manual="m">Add “' + esc(sq.trim()) + '” as a movie</button><button class="btn ghost" data-manual="s">as a series</button><button class="btn ghost" data-manual="b">as a book</button></div>';
+    if (!db.tmdb && sk === 'm' && sq.trim() && !sbusy) h += '<p class="note">Without a TMDB key, movies come without covers. Add your key in Settings for covers, genres and browsing.</p>';
     el.innerHTML = h;
   }
   function renderNav() {
@@ -411,11 +469,11 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   function renderDetail() {
     var it = byId(curId); if (!it) { dm.hidden = true; return; }
     var h = '<div class="dtop"><button class="btn ghost" data-act="close">Close</button></div>';
-    h += '<div class="dhead">' + pst(it) + '<div><h2>' + esc(it.t) + '</h2><span class="meta">' + (it.k === 's' ? 'Series' : 'Movie') + (it.y ? ' · ' + esc(it.y) : '') + (it.st ? ' · ' + esc(it.st) : '') + '</span></div></div>';
+    h += '<div class="dhead">' + pst(it) + '<div><h2>' + esc(it.t) + '</h2><span class="meta">' + kindMeta(it) + '</span></div></div>';
     if (it.k === 's' && it.eps && it.eps.length) {
       h += '<p class="note" style="margin:0 2px 8px">List: <b>' + TABS.filter(function (t) { return t[0] === it.s; })[0][1] + '</b>. It follows the episodes you mark as watched.</p>';
     } else {
-      var st = it.k === 'm' ? MTABS : TABS;
+      var st = it.k === 'm' ? MTABS : it.k === 'b' ? BTABS : TABS;
       h += '<div class="seg3" role="group" aria-label="Status" style="margin-top:0;grid-template-columns:repeat(' + st.length + ',1fr)">' + st.map(function (t) {
         return '<button data-status="' + t[0] + '" aria-pressed="' + (it.s === t[0]) + '">' + t[1] + '</button>';
       }).join('') + '</div>';
@@ -441,6 +499,8 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
         });
       }
     }
+    if (it.k === 'b' && it.s === 'p') h += '<div class="box"><div class="lbl"><span>Progress</span><b id="pv">' + (it.pct || 0) + '%</b></div><input type="range" id="pr" min="0" max="100" step="1" value="' + (it.pct || 0) + '" aria-label="Progress in percent"></div>';
+    if (it.k === 'b' && it.s === 'd') h += '<div class="box"><div class="lbl"><span>Your rating</span></div><div class="rate" role="group" aria-label="Rating">' + [1, 2, 3, 4, 5].map(function (n) { return '<button data-star="' + n + '" class="' + (it.r >= n ? 'on' : '') + '" aria-label="' + n + ' stars">★</button>'; }).join('') + '</div></div>';
     h += '<div class="row"><button class="btn ghost danger" data-act="del">' + (delAsk ? 'Remove? Tap again' : 'Remove') + '</button></div>';
     dbody.innerHTML = h;
   }
@@ -448,14 +508,14 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   /* preview popup (from the search grid) */
   function renderPreview() {
     var r = pvR; if (!r) { pm.hidden = true; return; }
-    var have = haveItem(r), gn = (r.g || []).map(function (id) { return gmap[r.k][id]; }).filter(Boolean).join(', ');
+    var have = haveItem(r), gn = r.k === 'b' ? (r.g || []).join(', ') : (r.g || []).map(function (id) { return gmap[r.k][id]; }).filter(Boolean).join(', ');
     var h = '<div class="dtop"><button class="btn ghost" data-act="pclose">Close</button></div>' +
-      '<div class="dhead">' + pst(r) + '<div><h2>' + esc(r.t) + '</h2><span class="meta">' + (r.k === 's' ? 'Series' : 'Movie') + (r.y ? ' · ' + esc(r.y) : '') + '</span>' + (gn ? '<p class="note" style="margin:6px 0 0">' + esc(gn) + '</p>' : '') + '</div></div>';
+      '<div class="dhead">' + pst(r) + '<div><h2>' + esc(r.t) + '</h2><span class="meta">' + kindMeta(r) + '</span>' + (gn ? '<p class="note" style="margin:6px 0 0">' + esc(gn) + '</p>' : '') + '</div></div>';
     if (r.ov) h += '<p class="ov">' + esc(r.ov) + '</p>';
     if (have) {
-      h += '<p class="note">In your list: ' + TABS.filter(function (t) { return t[0] === have.s; })[0][1] + '</p><div class="row"><button class="btn" data-act="popen" data-id="' + have.id + '">Open</button></div>';
+      h += '<p class="note">In your list: ' + listLabel(have) + '</p><div class="row"><button class="btn" data-act="popen" data-id="' + have.id + '">Open</button></div>';
     } else {
-      h += '<p class="sub">Add to</p><div class="row">' + (r.k === 's' ? [['w', 'Add to my lists']] : MTABS).map(function (t) {
+      h += '<p class="sub">Add to</p><div class="row">' + (r.k === 's' ? [['w', 'Add to my lists']] : r.k === 'b' ? [['w', 'Want to read'], ['p', 'Reading'], ['d', 'Read']] : MTABS).map(function (t) {
         return '<button class="btn' + (t[0] === 'w' ? '' : ' ghost') + '" data-addto="' + t[0] + '">' + t[1] + '</button>';
       }).join('') + '</div>';
     }
@@ -465,7 +525,8 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   /* actions */
   function addItem(r, status) {
     if (haveItem(r)) return null;
-    var it = { id: uid(), src: r.src, ref: r.ref, k: r.k, t: r.t, y: r.y, img: (r.img || '').replace('/w342/', '/w185/'), st: r.st || '', s: status, u: Date.now(), seen: {}, eps: [] };
+    var it = { id: uid(), src: r.src, ref: r.ref, k: r.k, t: r.t, y: r.y, img: (r.img || '').replace('/w342/', '/w185/'), st: r.st || '', s: status, u: Date.now(), seen: {}, eps: [], a: r.a || '', pages: r.pages || 0, pct: 0, r: 0 };
+    if (it.k === 'b') bStatus(it, status);
     db.items.push(it); save(); toast('Added');
     lk = it.k; tab = it.s;   // My lists opens on the kind and list of what was just added
     if (isShow(it)) fetchEps(it).then(function () { if (view === 'lists') render(); }, function () { toast('Could not load episodes. Open it again later.'); });
@@ -473,7 +534,7 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   }
   function addManual(k) {
     var t = sq.trim(); if (!t) return;
-    db.items.push({ id: uid(), src: 'manual', ref: '', k: k, t: t, y: '', img: '', st: '', s: 'w', u: Date.now(), seen: {}, eps: [] });
+    db.items.push({ id: uid(), src: 'manual', ref: '', k: k, t: t, y: '', img: '', st: '', s: 'w', u: Date.now(), seen: {}, eps: [], a: '', pages: 0, pct: 0, r: 0 });
     lk = k; tab = 'w';
     save(); toast('Added'); renderSres();
   }
@@ -488,7 +549,7 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
     var it = byId(id), nx = it && nextEp(it); if (!nx) return;
     it.seen[ek(nx)] = Date.now(); afterMark(it); save(); render();
   }
-  function setView(v) { view = v; if (v === 'search' && !sres.length && !sbusy) { render(); if (db.tmdb || sq.trim()) fetchBrowse(false); else { smsg = 'Add your free TMDB key in Settings to browse movies and series and use the filters. You can still search by name.'; renderSres(); } } else render(); window.scrollTo(0, 0); }
+  function setView(v) { view = v; if (v === 'search' && !sres.length && !sbusy) { render(); if (db.tmdb || sq.trim() || sk === 'b') fetchBrowse(false); else { smsg = 'Add your free TMDB key in Settings to browse movies and series and use the filters. You can still search by name.'; renderSres(); } } else render(); window.scrollTo(0, 0); }
 
   nav.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b && b.dataset.view) setView(b.dataset.view); });
   main.addEventListener('click', function (e) {
@@ -497,6 +558,7 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
     else if (b.dataset.lk) { lk = b.dataset.lk; tab = lk === 'm' ? 'd' : 'p'; render(); }
     else if (b.dataset.open) openDetail(b.dataset.open);
     else if (b.dataset.next) markNext(b.dataset.next);
+    else if (b.dataset.plus) { var bk = byId(b.dataset.plus); if (bk) { bPct(bk, (bk.pct || 0) + 10); save(); render(); } }
     else if (b.dataset.sk) { if (sk !== b.dataset.sk) { sk = b.dataset.sk; fg = ''; render(); fetchBrowse(false); } }
     else if (b.dataset.pv != null) { pvR = sres[+b.dataset.pv]; renderPreview(); pm.hidden = false; loadGenres(pvR.k).then(function () { if (!pm.hidden) renderPreview(); }); }
     else if (b.dataset.more) fetchBrowse(true);
@@ -511,9 +573,9 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   main.addEventListener('input', function (e) {
     if (e.target.id !== 'q') return;
     sq = e.target.value; clearTimeout(qTimer);
-    var o = document.getElementById('fo'); if (o) o.disabled = !(db.tmdb && !sq.trim());
+    var o = document.getElementById('fo'); if (o) o.disabled = !(sk === 'b' || (db.tmdb && !sq.trim()));
     qTimer = setTimeout(function () {
-      if (!sq.trim() && !db.tmdb) { sres = []; smsg = 'Add your free TMDB key in Settings to browse movies and series and use the filters. You can still search by name.'; renderSres(); }
+      if (!sq.trim() && !db.tmdb && sk !== 'b') { sres = []; smsg = 'Add your free TMDB key in Settings to browse movies and series and use the filters. You can still search by name.'; renderSres(); }
       else fetchBrowse(false);
     }, 450);
   });
@@ -535,7 +597,8 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
       if (!delAsk) { delAsk = true; renderDetail(); }
       else { db.items = db.items.filter(function (x) { return x !== it; }); save(); dm.hidden = true; render(); }
     }
-    else if (b.dataset.status) { it.s = b.dataset.status; it.u = Date.now(); save(); render(); }
+    else if (b.dataset.status) { if (it.k === 'b') bStatus(it, b.dataset.status); else it.s = b.dataset.status; it.u = Date.now(); save(); render(); }
+    else if (b.dataset.star) { var n = +b.dataset.star; it.r = it.r === n ? 0 : n; it.u = Date.now(); save(); render(); }
     else if (b.dataset.next) markNext(it.id);
     else if (b.dataset.ep) {
       var k = b.dataset.ep; if (it.seen[k]) delete it.seen[k]; else it.seen[k] = Date.now();
@@ -548,6 +611,13 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
       afterMark(it); save(); render();
     }
   });
+  // the book progress slider: the number follows the finger, the book is saved when you let go
+  dm.addEventListener('input', function (e) { if (e.target.id === 'pr') { var v = document.getElementById('pv'); if (v) v.textContent = e.target.value + '%'; } });
+  dm.addEventListener('change', function (e) {
+    if (e.target.id !== 'pr') return;
+    var it = byId(curId); if (!it) return;
+    bPct(it, +e.target.value); save(); render();
+  });
   dm.addEventListener('toggle', function (e) { var d = e.target; if (d.dataset && d.dataset.sk) openS[d.dataset.sk] = d.open; }, true);
 
   /* settings */
@@ -558,7 +628,7 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
       '<div class="row"><button class="btn" data-act="savekey">Save key</button></div>' +
       '<p class="sub">Your data</p><div class="row"><button class="btn ghost" data-act="export">Export backup</button><label class="btn ghost" for="imp" style="cursor:pointer">Import backup</label><input type="file" id="imp" accept="application/json,.json" hidden></div>' +
       '<p class="note">Everything is saved only in this browser. Export a backup now and then.</p>' +
-      '<p class="note">Series data and covers: TVmaze (CC BY-SA). Movie and series browsing, covers and genres: This product uses the TMDB API but is not endorsed or certified by TMDB.</p>';
+      '<p class="note">Series data and covers: TVmaze (CC BY-SA). Book data and covers: Open Library. Movie and series browsing, covers and genres: This product uses the TMDB API but is not endorsed or certified by TMDB.</p>';
   }
   document.getElementById('gear').addEventListener('click', function () { renderSettings(); sm.hidden = false; });
   sm.addEventListener('click', function (e) {
@@ -596,6 +666,10 @@ label.fl { display: block; margin: 14px 4px 6px; font-weight: 500; font-size: 14
   });
 
   load();
+  try {
+    var ob = JSON.parse(localStorage.getItem('books-v1'));
+    if (ob && Array.isArray(ob.items)) { ob.items.forEach(function (x) { if (x && x.id && !byId(x.id)) { x.k = 'b'; x.seen = {}; x.eps = []; db.items.push(x); } }); save(); localStorage.removeItem('books-v1'); }
+  } catch (e) {}
   var moved = false;
   db.items.forEach(function (i) { if (i.k === 'm' && i.s === 'p') { i.s = 'w'; moved = true; } });   // movies have no "Watching"
   if (moved) save();
