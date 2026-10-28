@@ -289,7 +289,9 @@ img { max-width: 100%; }
 <body>
 
 <div id="home" class="wrap">
-  <header class="hello">
+  <header class="hello" style="position:relative">
+    <button id="acct" class="acct" aria-label="Account and cloud sync" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M4.8 20c.8-3.8 3.6-5.8 7.2-5.8s6.4 2 7.2 5.8"></path></svg><i class="acdot" hidden></i></button>
+    <div id="syncbox" class="acpanel" hidden></div>
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
   </header>
@@ -316,7 +318,6 @@ img { max-width: 100%; }
     </a>
   </nav>
   <div class="bk"><button id="bkx">Export backup</button><label for="bki" id="bkl">Import backup</label><input type="file" id="bki" accept="application/json,.json" hidden></div>
-  <div id="syncbox"></div>
 </div>
 
 <div id="app-journal" hidden>

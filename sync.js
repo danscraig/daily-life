@@ -174,18 +174,25 @@ function draw() {
 }
 if (box) {
   var css = document.createElement('style');
-  css.textContent = '.sy{margin:14px 0 0;padding:16px;border-radius:22px;background:var(--paper);border:1px solid var(--line)}' +
+  css.textContent = '.acct{position:absolute;top:0;right:0;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--paper);color:var(--ink);box-shadow:0 8px 20px -12px var(--shadow);cursor:pointer}' +
+    '.acdot{position:absolute;right:4px;bottom:4px;width:11px;height:11px;border-radius:50%;background:var(--accent);border:2px solid var(--paper)}' +
+    '.acpanel{position:absolute;top:52px;right:0;z-index:20;width:min(320px,calc(100vw - 32px))}.acpanel .sy{margin:0;box-shadow:0 18px 40px -18px var(--shadow)}' +
+    '.sy{margin:14px 0 0;padding:16px;border-radius:22px;background:var(--paper);border:1px solid var(--line)}' +
     '.sy-h{font-weight:600;font-size:15px;margin-bottom:6px}.sy-who{font-size:13px;color:var(--mute);margin-bottom:4px;word-break:break-all}' +
     '.sy input{display:block;width:100%;margin:8px 0 0;padding:11px 16px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 14px var(--font-text)}' +
     '.sy-msg{min-height:18px;margin:8px 2px 0;font-size:12.5px;color:var(--mute)}.sy-msg.err{color:#B3445A}' +
     '.sy-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.sy-row button{padding:9px 16px;border-radius:999px;background:var(--accent);border:0;color:var(--accent-ink);font:500 13px var(--font-text);cursor:pointer}' +
     '.sy-row button+button{background:var(--paper);border:1px solid var(--line);color:var(--mute)}';
   document.head.appendChild(css);
+  var btn = document.getElementById('acct');
+  btn.addEventListener('click', function (e) { e.stopPropagation(); box.hidden = !box.hidden; btn.setAttribute('aria-expanded', String(!box.hidden)); });
+  document.addEventListener('click', function (e) { if (!box.hidden && !box.contains(e.target)) { box.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
   draw();
 }
 
 onAuthStateChanged(auth, function (u) {
   var was = user; user = u;
   if (box && (!!was !== !!u || (was && u && was.uid !== u.uid))) draw();
+  var dt = document.querySelector('.acdot'); if (dt) dt.hidden = !u;
   if (u) run(true); else say('');
 });
