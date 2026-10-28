@@ -893,6 +893,23 @@ img { max-width: 100%; }
   var _render = render;
   render = function () { _render(); homeInfo(); if (!NE.hidden && nview === 'list') renderNotes(); };
 
+  /* swipe left or right on the Day tab to change the day (left = next day, right = previous day) */
+  (function () {
+    var sx = 0, sy = 0, st = 0, ok = false;
+    document.addEventListener('touchstart', function (e) {
+      var t = e.target;
+      ok = !jEl.hidden && view === 'day' && am.hidden && sm.hidden && e.touches.length === 1 && !(t.closest && t.closest('textarea, input, select'));
+      if (ok) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) ok = false; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (!ok) return;
+      ok = false;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - st < 700) shift(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+
   /* boot */
   render();
   (async function () {

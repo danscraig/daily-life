@@ -670,6 +670,27 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     if (!sm.hidden) sm.hidden = true; else if (!pm.hidden) pm.hidden = true; else if (!dm.hidden) { dm.hidden = true; render(); }
   });
 
+  /* swipe left or right on My lists to move between the lists of the current kind (left = next list, right = previous) */
+  (function () {
+    var sx = 0, sy = 0, st = 0, ok = false;
+    document.addEventListener('touchstart', function (e) {
+      var t = e.target;
+      ok = view === 'lists' && dm.hidden && pm.hidden && sm.hidden && e.touches.length === 1 && !(t.closest && t.closest('textarea, input, select'));
+      if (ok) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) ok = false; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (!ok) return;
+      ok = false;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (!(Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - st < 700)) return;
+      var tabs = lk === 'm' ? MTABS : lk === 'b' ? BTABS : TABS, i = -1, n;
+      tabs.forEach(function (x, k) { if (x[0] === tab) i = k; });
+      n = i + (dx < 0 ? 1 : -1);
+      if (i >= 0 && n >= 0 && n < tabs.length) { tab = tabs[n][0]; render(); }
+    }, { passive: true });
+  })();
+
   load();
   try {
     var ob = JSON.parse(localStorage.getItem('books-v1'));
