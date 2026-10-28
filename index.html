@@ -316,6 +316,7 @@ img { max-width: 100%; }
     </a>
   </nav>
   <div class="bk"><button id="bkx">Export backup</button><label for="bki" id="bkl">Import backup</label><input type="file" id="bki" accept="application/json,.json" hidden></div>
+  <div id="syncbox"></div>
 </div>
 
 <div id="app-journal" hidden>
@@ -954,6 +955,7 @@ img { max-width: 100%; }
   })();
 })();
 </script>
+<script type="module" src="sync.js"></script>
 
 </body>
 </html>

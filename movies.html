@@ -705,5 +705,6 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   db.items.filter(function (i) { return isShow(i) && (i.s === 'p' || i.st !== 'Ended') && (!i.ef || Date.now() - i.ef > 864e5); }).slice(0, 10).forEach(function (i) { fetchEps(i).then(function () { if (view === 'lists') render(); }, function () {}); });
 })();
 </script>
+<script type="module" src="sync.js"></script>
 </body>
 </html>
