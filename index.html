@@ -278,6 +278,11 @@ button:disabled { cursor: default; }
 .bk { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; }
 .bk button, .bk label { padding: 9px 16px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 13px; color: var(--mute); cursor: pointer; }
 a.app { text-decoration: none; color: inherit; }
+/* account button, top right of the home page; the sign-in card opens under it */
+.hello { --acy: max(26px, 7vh); }
+.acct { position: absolute; top: var(--acy); right: 0; z-index: 21; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--paper); color: var(--ink); box-shadow: 0 8px 20px -12px var(--shadow); cursor: pointer; }
+.acdot { position: absolute; right: 3px; bottom: 3px; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); border: 2px solid var(--paper); }
+.acpanel { position: absolute; top: calc(var(--acy) + 52px); right: 0; z-index: 20; width: min(320px, calc(100vw - 32px)); }
 /* no zoom on double tap; pinching with two fingers still zooms */
 html, body, button, a, input, select, label, summary, textarea { touch-action: manipulation; }
 [hidden] { display: none !important; }
@@ -956,7 +961,15 @@ img { max-width: 100%; }
   })();
 })();
 </script>
-<script type="module" src="sync.js"></script>
+<script>
+(function () {
+  var b = document.getElementById('acct'), p = document.getElementById('syncbox');
+  function close() { p.hidden = true; b.setAttribute('aria-expanded', 'false'); }
+  b.addEventListener('click', function (e) { e.stopPropagation(); p.hidden = !p.hidden; b.setAttribute('aria-expanded', String(!p.hidden)); });
+  document.addEventListener('click', function (e) { if (!p.hidden && !p.contains(e.target)) close(); });
+})();
+</script>
+<script type="module" src="sync.js?v=2"></script>
 
 </body>
 </html>
