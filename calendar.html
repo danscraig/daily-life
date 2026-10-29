@@ -83,12 +83,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .tgb { position: relative; }
 .gut > div { height: var(--hr); font-size: 10px; color: var(--mute); text-align: right; padding-right: 5px; transform: translateY(-7px); }
 .gut > div:first-child { visibility: hidden; }
-.col { position: relative; height: calc(var(--hr) * 24); border-left: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% var(--hr); }
+.col { position: relative; height: calc(var(--hr) * var(--hrs)); border-left: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% var(--hr); }
 .te { position: absolute; padding: 2px 4px; border-radius: 7px; border: 1px solid var(--paper); color: #fff; font-size: 10.5px; line-height: 1.25; overflow: hidden; text-align: left; }
 .te b { display: block; font-weight: 600; }
 .te span { opacity: .9; }
 /* the event being placed: a block you can drag, with the form docked under the grid */
-.ovl { position: absolute; top: 0; left: 38px; right: 0; height: calc(var(--hr) * 24); pointer-events: none; z-index: 5; }
+.ovl { position: absolute; top: 0; left: 38px; right: 0; height: calc(var(--hr) * var(--hrs)); pointer-events: none; z-index: 5; }
 .draft { pointer-events: auto; touch-action: none; cursor: grab; z-index: 5; border: 2px solid #fff; box-shadow: 0 10px 24px -8px rgba(101, 64, 111, .6); user-select: none; -webkit-user-select: none; }
 .draft:active { cursor: grabbing; }
 .rz { position: absolute; left: 0; right: 0; bottom: 0; height: 20px; cursor: ns-resize; touch-action: none; }
@@ -153,8 +153,9 @@ body.editing .fab { display: none; }
   var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var COLORS = ['#A064B0', '#D9709C', '#E08A4F', '#C99A2E', '#5BA06E', '#3E9DA3', '#5C80D0', '#7C7590'];
-  var REPEATS = [['', 'Does not repeat'], ['d', 'Every day'], ['w', 'Every week'], ['m', 'Every month'], ['y', 'Every year']];
+  var REPEATS = [['', 'Does not repeat'], ['d', 'Every day'], ['wd', 'Every weekday (Mon–Fri)'], ['w', 'Every week'], ['m', 'Every month on this day'], ['6m', 'Every 6 months on this day'], ['y', 'Every year on this day']];
   var HR = 46;   // pixels per hour in the week and day views
+  var START = 300;   // the grid starts at 05:00 (minutes after midnight)
   var items = [], view = 'month', cur = new Date(), sel = null, edit = null;
   try { var v = localStorage.getItem('daily-life-cal-view'); if (v === 'week' || v === 'day' || v === 'month') view = v; } catch (e) {}
 
@@ -182,10 +183,15 @@ body.editing .fab { display: none; }
     if (e.ex && e.ex.indexOf(ds) !== -1) return false;
     if (!e.rp) return ds === e.d;
     var a = parse(e.d), b = parse(ds);
+    // "this day" in a shorter month (the 31st, 29 Feb) falls on the last day of that month
+    var sameDay = b.getDate() === Math.min(a.getDate(), new Date(b.getFullYear(), b.getMonth() + 1, 0).getDate());
+    var gap = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth();
     if (e.rp === 'd') return true;
+    if (e.rp === 'wd') return b.getDay() >= 1 && b.getDay() <= 5;
     if (e.rp === 'w') return a.getDay() === b.getDay();
-    if (e.rp === 'm') return a.getDate() === b.getDate();
-    if (e.rp === 'y') return a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    if (e.rp === 'm') return sameDay;
+    if (e.rp === '6m') return sameDay && gap % 6 === 0;
+    if (e.rp === 'y') return sameDay && gap % 12 === 0;
     return false;
   }
   function eventsOn(ds) {
@@ -256,10 +262,10 @@ body.editing .fab { display: none; }
     var s = mins(e.st), en = e.en ? mins(e.en) : s + 60, n = shown.length;
     return '<div class="te draft" style="' + draftPos(i, n, s, en) + ';background:' + esc(e.c || COLORS[0]) + '"><b>' + esc(e.t || '(No title)') + '</b><span>' + e.st + '–' + (e.en || hhmm(s + 60)) + '</span><i class="rz"></i></div>';
   }
-  function draftPos(i, n, s, en) { return 'top:' + (s / 60 * HR) + 'px;height:' + Math.max(22, (en - s) / 60 * HR) + 'px;left:calc(' + (i * 100 / n) + '% + 1px);width:calc(' + (100 / n) + '% - 2px)'; }
+  function draftPos(i, n, s, en) { s = Math.max(s, START); return 'top:' + ((s - START) / 60 * HR) + 'px;height:' + Math.max(22, (en - s) / 60 * HR) + 'px;left:calc(' + (i * 100 / n) + '% + 1px);width:calc(' + (100 / n) + '% - 2px)'; }
   function gridHTML(days) {
     shown = days;
-    var n = days.length, h = '<div class="tg" style="--cols:' + n + ';--hr:' + HR + 'px">';
+    var n = days.length, h = '<div class="tg" style="--cols:' + n + ';--hr:' + HR + 'px;--hrs:' + (24 - START / 60) + '">';
     h += '<div class="tgr tgh"><div></div>';
     days.forEach(function (d) {
       var ds = ymd(d);
@@ -274,17 +280,18 @@ body.editing .fab { display: none; }
       h += '</div>';
     }
     h += '<div class="tgr tgb" id="tgb"><div class="gut">';
-    for (var i = 0; i < 24; i++) h += '<div>' + pad(i) + ':00</div>';
+    for (var i = START / 60; i < 24; i++) h += '<div>' + pad(i) + ':00</div>';
     h += '</div>';
     var nowM = new Date().getHours() * 60 + new Date().getMinutes();
     days.forEach(function (d) {
       var ds = ymd(d), timed = eventsOn(ds).filter(function (e) { return !e.ad && e.st && e.id !== skip; });
       h += '<div class="col" data-col="' + ds + '">';
       layout(timed).forEach(function (x) {
-        var w = 100 / x.n;
-        h += '<button class="te" data-id="' + x.e.id + '" data-d="' + ds + '" style="top:' + (x.s / 60 * HR) + 'px;height:' + Math.max(18, (x.en - x.s) / 60 * HR - 1) + 'px;left:calc(' + (x.lane * w) + '% + 1px);width:calc(' + w + '% - 2px);background:' + esc(x.e.c || COLORS[0]) + '"><b>' + esc(x.e.t || '(No title)') + '</b>' + (x.en - x.s >= 45 ? '<span>' + x.e.st + (x.e.en ? '–' + x.e.en : '') + '</span>' : '') + '</button>';
+        if (x.en <= START) return;   // ends before the grid starts
+        var w = 100 / x.n, s0 = Math.max(x.s, START);
+        h += '<button class="te" data-id="' + x.e.id + '" data-d="' + ds + '" style="top:' + ((s0 - START) / 60 * HR) + 'px;height:' + Math.max(18, (x.en - s0) / 60 * HR - 1) + 'px;left:calc(' + (x.lane * w) + '% + 1px);width:calc(' + w + '% - 2px);background:' + esc(x.e.c || COLORS[0]) + '"><b>' + esc(x.e.t || '(No title)') + '</b>' + (x.en - x.s >= 45 ? '<span>' + x.e.st + (x.e.en ? '–' + x.e.en : '') + '</span>' : '') + '</button>';
       });
-      if (ds === todayS) h += '<div class="now" style="top:' + (nowM / 60 * HR) + 'px"></div>';
+      if (ds === todayS && nowM >= START) h += '<div class="now" style="top:' + ((nowM - START) / 60 * HR) + 'px"></div>';
       h += '</div>';
     });
     if (edit && edit.dock) h += '<div class="ovl">' + draftHTML() + '</div>';
@@ -293,14 +300,10 @@ body.editing .fab { display: none; }
   function weekHTML() { var a = weekStart(cur), d = []; for (var i = 0; i < 7; i++) d.push(addDays(a, i)); return gridHTML(d); }
   function dayHTML() { return gridHTML([cur]); }
 
-  function render(keep) {   // keep: leave the scroll position alone
+  function render(keep) {   // keep: leave the scroll position alone; otherwise the page goes back to the top
     setTitle();
     main.innerHTML = view === 'month' ? monthHTML() : view === 'week' ? weekHTML() : dayHTML();
-    if (view !== 'month' && !keep) {
-      // show the morning (or the current time when today is on screen)
-      var sh = Math.max(0, (view === 'day' ? ymd(cur) === todayS : ymd(weekStart(cur)) === ymd(weekStart(new Date()))) ? new Date().getHours() - 1 : 7);
-      var tg = document.getElementById('tgb'); if (tg) window.scrollTo(0, tg.getBoundingClientRect().top + window.scrollY + sh * HR - 110);
-    }
+    if (!keep) window.scrollTo(0, 0);
   }
   function go(n) {
     var step = view === 'month' ? 0 : n * (view === 'week' ? 7 : 1);
@@ -312,7 +315,7 @@ body.editing .fab { display: none; }
 
   /* editor */
   function newEvent(ds, startMin) {
-    var s = startMin == null ? Math.min(new Date().getHours() + 1, 22) * 60 : startMin;
+    var s = startMin == null ? Math.max(START, Math.min(new Date().getHours() + 1, 22) * 60) : startMin;
     return { id: '', t: '', d: ds, ad: false, st: hhmm(s), en: hhmm(Math.min(s + 60, 1439)), c: COLORS[0], loc: '', n: '', rp: '', un: '', ex: [] };
   }
   function openEditor(e, occ) {
@@ -434,7 +437,7 @@ body.editing .fab { display: none; }
     if (c) { sel = c.dataset.d; var d = parse(sel); if (d.getMonth() !== cur.getMonth()) cur = new Date(d.getFullYear(), d.getMonth(), 1); render(); return; }
     var col = ev.target.closest('.col');
     if (col) {
-      var y = ev.clientY - col.getBoundingClientRect().top, s = Math.max(0, Math.min(22, Math.floor(y / HR))) * 60;
+      var y = ev.clientY - col.getBoundingClientRect().top, s = START + Math.max(0, Math.min(22 - START / 60, Math.floor(y / HR))) * 60;
       if (edit && edit.dock) {   // already placing an event: tapping a free slot moves the block there
         var dur = Math.max(15, mins(edit.e.en) - mins(edit.e.st));
         edit.e.d = col.dataset.col; edit.e.st = hhmm(s); edit.e.en = hhmm(Math.min(1439, s + dur));
@@ -455,7 +458,7 @@ body.editing .fab { display: none; }
     if (!drag || ev.pointerId !== drag.id) return;
     var dm = Math.round((ev.clientY - drag.y0) / HR * 4) * 15, e = edit.e;   // snaps to 15 minutes
     if (drag.mode === 'mv') {
-      var dur = drag.en0 - drag.s0, s = Math.max(0, Math.min(1439 - dur, drag.s0 + dm)), r = drag.el.parentNode.getBoundingClientRect();
+      var dur = drag.en0 - drag.s0, s = Math.max(START, Math.min(1439 - dur, drag.s0 + dm)), r = drag.el.parentNode.getBoundingClientRect();
       var i = Math.max(0, Math.min(shown.length - 1, Math.floor((ev.clientX - r.left) / (r.width / shown.length))));
       e.st = hhmm(s); e.en = hhmm(s + dur); e.d = ymd(shown[i]);
     } else e.en = hhmm(Math.max(drag.s0 + 15, Math.min(1439, drag.en0 + dm)));

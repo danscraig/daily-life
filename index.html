@@ -820,7 +820,8 @@ img { max-width: 100%; }
     if (ds < e.d || (e.un && ds > e.un) || (e.ex && e.ex.indexOf(ds) !== -1)) return false;
     if (!e.rp) return ds === e.d;
     var a = new Date(e.d + 'T00:00:00'), b = new Date(ds + 'T00:00:00');
-    return e.rp === 'd' || (e.rp === 'w' && a.getDay() === b.getDay()) || (e.rp === 'm' && a.getDate() === b.getDate()) || (e.rp === 'y' && a.getMonth() === b.getMonth() && a.getDate() === b.getDate());
+    var sameDay = b.getDate() === Math.min(a.getDate(), new Date(b.getFullYear(), b.getMonth() + 1, 0).getDate()), gap = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth();
+    return e.rp === 'd' || (e.rp === 'wd' && b.getDay() >= 1 && b.getDay() <= 5) || (e.rp === 'w' && a.getDay() === b.getDay()) || (e.rp === 'm' && sameDay) || (e.rp === '6m' && sameDay && gap % 6 === 0) || (e.rp === 'y' && sameDay && gap % 12 === 0);
   }
   var onClaude = !!(window.claude && window.claude.use);
   if (onClaude) document.getElementById('bkl').hidden = true;
