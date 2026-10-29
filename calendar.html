@@ -33,13 +33,15 @@ html, body { min-height: 100%; }
 html, body, button, a, input, select, label, textarea { touch-action: manipulation; }
 body {
   margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font);
-  padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) calc(100px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(100px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   -webkit-text-size-adjust: 100%;
 }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .wrap { max-width: 760px; margin: 0 auto; }
+/* the title, the arrows and the Month / Week / Day switch stay at the top while you scroll */
+.stick { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; padding: env(safe-area-inset-top, 0px) 16px 0; }
 .top { display: flex; align-items: center; gap: 12px; padding-block: 18px 10px; }
 .top h1 { flex: 1; margin: 0 0 0 6px; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
 .ibtn { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); color: var(--ink); text-decoration: none; font-size: 24px; line-height: 1; padding-bottom: 3px; }
@@ -71,9 +73,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .empty { color: var(--mute); margin: 8px 4px; font-size: 14px; }
 
 /* week + day time grid */
-.tg { background: var(--paper); border-radius: 22px; box-shadow: 0 10px 26px -18px var(--shadow); overflow: hidden; }
+.tg { background: var(--paper); border-radius: 22px; box-shadow: 0 10px 26px -18px var(--shadow); overflow: clip; }
 .tgr { display: grid; grid-template-columns: 38px repeat(var(--cols), minmax(0, 1fr)); }
-.tgh { border-bottom: 1px solid var(--line); }
+.tgh { border-bottom: 1px solid var(--line); position: sticky; top: var(--sh, 0px); z-index: 6; background: var(--paper); border-radius: 22px 22px 0 0; }
 .tgh > button, .tgh > div { padding: 8px 0 6px; text-align: center; font: 500 11px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
 .tgh b { display: grid; place-items: center; width: 28px; height: 28px; margin: 2px auto 0; border-radius: 50%; font-size: 14px; font-weight: 500; letter-spacing: 0; color: var(--ink); }
 .tgh .today b { background: var(--accent); color: var(--accent-ink); }
@@ -131,6 +133,7 @@ body.editing .fab { display: none; }
 </head>
 <body>
 <div class="wrap">
+  <div class="stick" id="stick">
   <header class="top">
     <a class="ibtn" href="./" aria-label="Back to home">‹</a>
     <h1 id="title"></h1>
@@ -140,6 +143,7 @@ body.editing .fab { display: none; }
     <button class="ibtn" id="prev" aria-label="Previous">‹</button>
     <div class="seg" id="seg"><button data-v="month" aria-pressed="true">Month</button><button data-v="week" aria-pressed="false">Week</button><button data-v="day" aria-pressed="false">Day</button></div>
     <button class="ibtn" id="next" aria-label="Next">›</button>
+  </div>
   </div>
   <main id="main"></main>
 </div>
@@ -329,7 +333,7 @@ body.editing .fab { display: none; }
     em.hidden = false;
     if (edit.dock) {
       ensureVisible(); render(true);
-      var dr = main.querySelector('.draft'); if (dr) window.scrollTo(0, Math.max(0, dr.getBoundingClientRect().top + window.scrollY - 150));
+      var dr = main.querySelector('.draft'); if (dr) window.scrollTo(0, Math.max(0, dr.getBoundingClientRect().top + window.scrollY - (document.getElementById('stick').offsetHeight + 110)));
     }
     else if (edit.isNew) setTimeout(function () { var t = document.getElementById('et'); if (t) t.focus(); }, 50);
   }
@@ -497,7 +501,13 @@ body.editing .fab { display: none; }
     }, { passive: true });
   })();
 
-  load(); sel = todayS; render();
+  /* the day names of the week and day views stick right under the fixed top */
+  var stick = document.getElementById('stick');
+  function setSh() { document.documentElement.style.setProperty('--sh', stick.offsetHeight + 'px'); }
+  window.addEventListener('resize', setSh);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(setSh);
+
+  load(); sel = todayS; render(); setSh();
 })();
 </script>
 <script type="module" src="sync.js?v=3"></script>
