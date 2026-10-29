@@ -48,6 +48,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .pill { padding: 10px 16px; border-radius: 999px; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); font-weight: 500; font-size: 14px; color: var(--accent); }
 .nav { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
 .nav .ibtn { width: 40px; height: 40px; font-size: 22px; }
+.vsel { flex: 1; min-width: 0; height: 40px; padding: 0 40px 0 20px; border: 0; border-radius: 999px; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2394829E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 18px center; box-shadow: 0 10px 26px -18px var(--shadow); color: var(--accent); font: 500 15px var(--font); -webkit-appearance: none; appearance: none; text-align: center; text-align-last: center; }
 .seg { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--paper); border-radius: 999px; box-shadow: 0 10px 26px -18px var(--shadow); }
 .seg button { padding: 8px 4px; border-radius: 999px; font-weight: 500; font-size: 13px; color: var(--mute); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
@@ -158,7 +159,7 @@ body.editing .fab { display: none; }
   </header>
   <div class="nav">
     <button class="ibtn" id="prev" aria-label="Previous">‹</button>
-    <div class="seg" id="seg"><button data-v="month" aria-pressed="true">Month</button><button data-v="week" aria-pressed="false">Week</button><button data-v="day" aria-pressed="false">Day</button></div>
+    <select class="vsel" id="seg" aria-label="View"><option value="month">Month</option><option value="week">Week</option><option value="day">Day</option></select>
     <button class="ibtn" id="next" aria-label="Next">›</button>
   </div>
   </div>
@@ -235,7 +236,7 @@ body.editing .fab { display: none; }
     }
     titleEl.textContent = t;
     document.title = t + ' · Calendar';
-    document.querySelectorAll('#seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
+    document.getElementById('seg').value = view;
   }
 
   /* month view */
@@ -693,10 +694,9 @@ body.editing .fab { display: none; }
   document.getElementById('prev').addEventListener('click', function () { go(-1); });
   document.getElementById('next').addEventListener('click', function () { go(1); });
   document.getElementById('today').addEventListener('click', function () { cur = new Date(); sel = todayS; render(); });
-  document.getElementById('seg').addEventListener('click', function (ev) {
-    var b = ev.target.closest('button'); if (!b) return;
+  document.getElementById('seg').addEventListener('change', function (ev) {
     if (edit) closeEditor();
-    view = b.dataset.v; try { localStorage.setItem('daily-life-cal-view', view); } catch (e) {}
+    view = ev.target.value; try { localStorage.setItem('daily-life-cal-view', view); } catch (e) {}
     if (view === 'day' && sel) cur = parse(sel);
     render();
   });
@@ -723,6 +723,6 @@ body.editing .fab { display: none; }
   load(); sel = todayS; render(); setSh();
 })();
 </script>
-<script type="module" src="sync.js?v=3"></script>
+<script type="module" src="sync.js?v=4"></script>
 </body>
 </html>

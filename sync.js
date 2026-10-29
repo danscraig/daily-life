@@ -5,6 +5,9 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/fireba
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
+// local test copies must never touch the real cloud data
+if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) throw new Error('Cloud sync is off on localhost');
+
 var app = initializeApp({
   apiKey: 'AIzaSyA-1VegurJPDacGJzLNj3V04DuEi_R2V_8',
   authDomain: 'daily-daniels.firebaseapp.com',
