@@ -28,18 +28,19 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-html, body { min-height: 100%; }
+html, body { min-height: 100%; overscroll-behavior-y: none; }   /* no pull-down refresh or bounce at the top */
 /* no zoom on double tap; pinching with two fingers still zooms */
 html, body, button, a, input, select, label, summary, textarea { touch-action: manipulation; }
 body {
   margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font);
-  padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) calc(110px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(110px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   -webkit-text-size-adjust: 100%;
 }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .wrap { max-width: 640px; margin: 0 auto; }
-.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 18px 10px; }
+/* the title bar stays at the top while you scroll */
+.top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
 .top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
 .ibtn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); color: var(--ink); }
 input[type="search"], input[type="text"] { width: 100%; padding: 14px 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }

@@ -28,7 +28,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-html, body { min-height: 100%; }
+html, body { min-height: 100%; overscroll-behavior-y: none; }   /* no pull-down refresh or bounce at the top */
 /* no zoom on double tap; pinching with two fingers still zooms */
 html, body, button, a, input, select, label, textarea { touch-action: manipulation; }
 body {

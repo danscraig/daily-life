@@ -35,7 +35,7 @@
 }
 /* one light look on purpose: no dark theme */
 * { box-sizing: border-box; }
-html, body { min-height: 100%; }
+html, body { min-height: 100%; overscroll-behavior-y: none; }   /* no pull-down refresh or bounce at the top */
 body {
   background: var(--bg); color: var(--ink);
   font: 16px/1.5 var(--font-display);
