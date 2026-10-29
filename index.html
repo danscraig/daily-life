@@ -276,7 +276,9 @@ button:disabled { cursor: default; }
 .ntitle::placeholder { color: var(--mute); opacity: .7; }
 .nbody { min-height: 50vh; }
 
-.bk { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; }
+.bk { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.acct.setb { right: 54px; }
+.setpanel { background: var(--paper); border-radius: 22px; padding: 14px; box-shadow: 0 16px 36px -16px var(--shadow); }
 .bk button, .bk label { padding: 9px 16px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 13px; color: var(--mute); cursor: pointer; }
 a.app { text-decoration: none; color: inherit; }
 /* account button, top right of the home page; the sign-in card opens under it */
@@ -297,7 +299,9 @@ img { max-width: 100%; }
 <div id="home" class="wrap">
   <header class="hello" style="position:relative">
     <button id="acct" class="acct" aria-label="Account and cloud sync" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M4.8 20c.8-3.8 3.6-5.8 7.2-5.8s6.4 2 7.2 5.8"></path></svg><i class="acdot" hidden></i></button>
+    <button id="setb" class="acct setb" aria-label="Settings" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
     <div id="syncbox" class="acpanel" hidden></div>
+    <div id="setbox" class="acpanel setpanel" hidden><div class="bk"><button id="bkx">Export backup</button><label for="bki" id="bkl">Import backup</label><input type="file" id="bki" accept="application/json,.json" hidden></div></div>
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
   </header>
@@ -312,11 +316,6 @@ img { max-width: 100%; }
       <span class="atxt"><span class="aname">Journal</span><span class="ameta" id="jmeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </button>
-    <button class="app" data-app="notes">
-      <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h7M9 17h5"></path></svg></span>
-      <span class="atxt"><span class="aname">Notes</span><span class="ameta" id="nmeta"></span></span>
-      <span class="go" aria-hidden="true">›</span>
-    </button>
     <a class="app" href="calendar.html">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"></rect><path d="M3.5 10h17"></path><path d="M8 3v4M16 3v4"></path></svg></span>
       <span class="atxt"><span class="aname">Calendar</span><span class="ameta" id="kmeta"></span></span>
@@ -327,8 +326,12 @@ img { max-width: 100%; }
       <span class="atxt"><span class="aname">Movies, Series &amp; Books</span><span class="ameta" id="wmeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </a>
+    <button class="app" data-app="notes">
+      <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h7M9 17h5"></path></svg></span>
+      <span class="atxt"><span class="aname">Notes</span><span class="ameta" id="nmeta"></span></span>
+      <span class="go" aria-hidden="true">›</span>
+    </button>
   </nav>
-  <div class="bk"><button id="bkx">Export backup</button><label for="bki" id="bkl">Import backup</label><input type="file" id="bki" accept="application/json,.json" hidden></div>
 </div>
 
 <div id="app-journal" hidden>
@@ -819,7 +822,7 @@ img { max-width: 100%; }
   var MKEY = 'movies-and-series-v1', EKEY = 'daily-life-events-v1';
   function occursOn(e, ds) {   // same repeat rules as calendar.html
     if (ds < e.d || (e.un && ds > e.un) || (e.ex && e.ex.indexOf(ds) !== -1)) return false;
-    if (!e.rp) return ds === e.d;
+    if (!e.rp) return e.un ? true : ds === e.d;   // no repeat: one day, or every day from e.d to e.un
     var a = new Date(e.d + 'T00:00:00'), b = new Date(ds + 'T00:00:00');
     var sameDay = b.getDate() === Math.min(a.getDate(), new Date(b.getFullYear(), b.getMonth() + 1, 0).getDate()), gap = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth();
     return e.rp === 'd' || (e.rp === 'wd' && b.getDay() >= 1 && b.getDay() <= 5) || (e.rp === 'w' && a.getDay() === b.getDay()) || (e.rp === 'm' && sameDay) || (e.rp === '6m' && sameDay && gap % 6 === 0) || (e.rp === 'y' && sameDay && gap % 12 === 0);
@@ -907,7 +910,7 @@ img { max-width: 100%; }
     app = a; ovTab.hidden = a === 'diary';
     tabsIn.style.gridTemplateColumns = 'repeat(' + (a === 'diary' ? 2 : 3) + ', 1fr)';
     document.getElementById('appname').textContent = a === 'diary' ? 'Journal' : 'Daily Check-in';
-    view = 'day'; query = '';
+    view = 'day'; query = ''; sel = { m: TM, d: TD }; calM = TM;   // every time an app is opened it starts on today
   }
   function show(s) {
     if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') flush();
@@ -986,10 +989,12 @@ img { max-width: 100%; }
 </script>
 <script>
 (function () {
-  var b = document.getElementById('acct'), p = document.getElementById('syncbox');
-  function close() { p.hidden = true; b.setAttribute('aria-expanded', 'false'); }
-  b.addEventListener('click', function (e) { e.stopPropagation(); p.hidden = !p.hidden; b.setAttribute('aria-expanded', String(!p.hidden)); });
-  document.addEventListener('click', function (e) { if (!p.hidden && !p.contains(e.target)) close(); });
+  var pairs = [[document.getElementById('acct'), document.getElementById('syncbox')], [document.getElementById('setb'), document.getElementById('setbox')]];
+  function closeAll(except) { pairs.forEach(function (x) { if (x[1] !== except) { x[1].hidden = true; x[0].setAttribute('aria-expanded', 'false'); } }); }
+  pairs.forEach(function (x) {
+    x[0].addEventListener('click', function (e) { e.stopPropagation(); closeAll(x[1]); x[1].hidden = !x[1].hidden; x[0].setAttribute('aria-expanded', String(!x[1].hidden)); });
+  });
+  document.addEventListener('click', function (e) { pairs.forEach(function (x) { if (!x[1].hidden && !x[1].contains(e.target)) closeAll(); }); });
 })();
 </script>
 <script type="module" src="sync.js?v=3"></script>

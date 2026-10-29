@@ -86,7 +86,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .gut > div { height: var(--hr); font-size: 10px; color: var(--mute); text-align: right; padding-right: 5px; transform: translateY(-7px); }
 .gut > div:first-child { visibility: hidden; }
 .col { position: relative; height: calc(var(--hr) * var(--hrs)); border-left: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% var(--hr); }
-.te { position: absolute; padding: 2px 4px; border-radius: 7px; border: 1px solid var(--paper); color: #fff; font-size: 10.5px; line-height: 1.25; overflow: hidden; text-align: left; }
+.te { position: absolute; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 2px 4px; border-radius: 7px; border: 1px solid var(--paper); color: #fff; font-size: 10.5px; line-height: 1.25; overflow: hidden; text-align: left; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.te.lift { z-index: 9; opacity: .92; box-shadow: 0 12px 26px -8px rgba(101, 64, 111, .65); border: 2px solid #fff; }
 .te b { display: block; font-weight: 600; }
 .te span { opacity: .9; }
 /* the event being placed: a block you can drag, with the form docked under the grid */
@@ -160,7 +161,7 @@ body.editing .fab { display: none; }
   var REPEATS = [['', 'Does not repeat'], ['d', 'Every day'], ['wd', 'Every weekday (Mon–Fri)'], ['w', 'Every week'], ['m', 'Every month on this day'], ['6m', 'Every 6 months on this day'], ['y', 'Every year on this day']];
   var HR = 46;   // pixels per hour in the week and day views
   var START = 300;   // the grid starts at 05:00 (minutes after midnight)
-  var items = [], view = 'month', cur = new Date(), sel = null, edit = null;
+  var items = [], view = 'month', cur = new Date(), sel = null, edit = null, pend = null;
   try { var v = localStorage.getItem('daily-life-cal-view'); if (v === 'week' || v === 'day' || v === 'month') view = v; } catch (e) {}
 
   var main = document.getElementById('main'), titleEl = document.getElementById('title');
@@ -185,7 +186,7 @@ body.editing .fab { display: none; }
     if (ds < e.d) return false;
     if (e.un && ds > e.un) return false;
     if (e.ex && e.ex.indexOf(ds) !== -1) return false;
-    if (!e.rp) return ds === e.d;
+    if (!e.rp) return e.un ? true : ds === e.d;   // no repeat: one day, or every day from e.d to e.un
     var a = parse(e.d), b = parse(ds);
     // "this day" in a shorter month (the 31st, 29 Feb) falls on the last day of that month
     var sameDay = b.getDate() === Math.min(a.getDate(), new Date(b.getFullYear(), b.getMonth() + 1, 0).getDate());
@@ -293,7 +294,7 @@ body.editing .fab { display: none; }
       layout(timed).forEach(function (x) {
         if (x.en <= START) return;   // ends before the grid starts
         var w = 100 / x.n, s0 = Math.max(x.s, START);
-        h += '<button class="te" data-id="' + x.e.id + '" data-d="' + ds + '" style="top:' + ((s0 - START) / 60 * HR) + 'px;height:' + Math.max(18, (x.en - s0) / 60 * HR - 1) + 'px;left:calc(' + (x.lane * w) + '% + 1px);width:calc(' + w + '% - 2px);background:' + esc(x.e.c || COLORS[0]) + '"><b>' + esc(x.e.t || '(No title)') + '</b>' + (x.en - x.s >= 45 ? '<span>' + x.e.st + (x.e.en ? '–' + x.e.en : '') + '</span>' : '') + '</button>';
+        h += '<button class="te" data-id="' + x.e.id + '" data-d="' + ds + '" style="top:' + ((s0 - START) / 60 * HR) + 'px;height:' + Math.max(18, (x.en - s0) / 60 * HR - 1) + 'px;left:calc(' + (x.lane * w) + '% + 1px);width:calc(' + w + '% - 2px);background:' + esc(x.e.c || COLORS[0]) + '"><b>' + esc(x.e.t || '(No title)') + '</b>' + (x.en - x.s >= 40 ? '<span>' + x.e.st + (x.e.en ? '–' + x.e.en : '') + '</span>' : '') + '</button>';
       });
       if (ds === todayS && nowM >= START) h += '<div class="now" style="top:' + ((nowM - START) / 60 * HR) + 'px"></div>';
       h += '</div>';
@@ -323,7 +324,8 @@ body.editing .fab { display: none; }
     return { id: '', t: '', d: ds, ad: false, st: hhmm(s), en: hhmm(Math.min(s + 60, 1439)), c: COLORS[0], loc: '', n: '', rp: '', un: '', ex: [] };
   }
   function openEditor(e, occ) {
-    edit = { e: JSON.parse(JSON.stringify(e)), occ: occ || e.d, isNew: !e.id };
+    edit = { e: JSON.parse(JSON.stringify(e)), occ: occ || e.d, isNew: !e.id, orig: JSON.parse(JSON.stringify(e)) };
+    if (e.id && e.rp) edit.e.d = edit.occ;   // a repeating event is edited from the day you tapped
     // in the week and day views the form docks at the bottom and the event is a block you drag on the grid
     edit.dock = view !== 'month' && (edit.isNew || !edit.e.rp) && !!edit.e.st && !edit.e.ad;
     if (edit.e.st && !edit.e.en) edit.e.en = hhmm(Math.min(1439, mins(edit.e.st) + 60));
@@ -359,28 +361,33 @@ body.editing .fab { display: none; }
     var h = '<h2>' + (edit.isNew ? 'New event' : 'Event') + '</h2>' +
       '<label class="fl" for="et">Title</label><input type="text" id="et" maxlength="120" autocomplete="off" value="' + esc(e.t) + '" placeholder="Add title">' +
       '<div class="tog"><span>All day</span><button class="sw" id="ead" aria-pressed="' + !!e.ad + '" aria-label="All day"></button></div>' +
-      '<label class="fl" for="ed">' + (e.rp && !edit.isNew ? 'Starts' : 'Date') + '</label><input type="date" id="ed" value="' + esc(e.d) + '">' +
+      '<label class="fl" for="ed">Date</label><input type="date" id="ed" value="' + esc(e.d) + '">' +
       '<div class="two" id="etimes"' + (e.ad ? ' hidden' : '') + '><div><label class="fl" for="es">Start</label><input type="time" id="es" value="' + esc(e.st) + '"></div><div><label class="fl" for="ee">End</label><input type="time" id="ee" value="' + esc(e.en) + '"></div></div>' +
       '<label class="fl" for="er">Repeat</label><select id="er">' + REPEATS.map(function (r) { return '<option value="' + r[0] + '"' + (r[0] === (e.rp || '') ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>' +
-      '<div id="euw"' + (e.rp ? '' : ' hidden') + '><label class="fl" for="eu">Repeat until (optional)</label><input type="date" id="eu" value="' + esc(e.un || '') + '">' +
-      (edit.isNew ? '' : '<p class="hint">Changes apply to every repeat.</p>') + '</div>' +
+      '<div id="euw"><label class="fl" for="eu" id="eul">' + (e.rp ? 'Repeat until (optional)' : 'To date (optional)') + '</label><input type="date" id="eu" value="' + esc(e.un || '') + '"></div>' +
       '<span class="fl">Colour</span><div class="cols" id="ec">' + COLORS.map(function (c) { return '<button style="background:' + c + '" data-c="' + c + '" aria-pressed="' + (c === e.c) + '" aria-label="Colour">' + (c === e.c ? '✓' : '') + '</button>'; }).join('') + '</div>' +
       '<label class="fl" for="el">Location</label><input type="text" id="el" maxlength="120" autocomplete="off" value="' + esc(e.loc) + '">' +
       '<label class="fl" for="en">Notes</label><textarea id="en" maxlength="2000">' + esc(e.n) + '</textarea>';
-    if (edit.askDel) {
-      h += '<p class="hint" style="margin-top:18px;color:var(--ink);font-size:14px">Delete this repeating event?</p><div class="row"><button class="btn danger" style="margin-left:0" data-a="del-one">Only ' + esc(edit.occ) + '</button><button class="btn danger" style="margin-left:0" data-a="del-all">All events</button><button class="btn ghost" data-a="del-no">Cancel</button></div>';
+    if (edit.askSave) {
+      h += scopeHTML('Save changes to this repeating event?', 'sv');
+    } else if (edit.askDel) {
+      h +='<p class="hint" style="margin-top:18px;color:var(--ink);font-size:14px">Delete this repeating event?</p><div class="row"><button class="btn danger" style="margin-left:0" data-a="del-one">Only ' + esc(edit.occ) + '</button><button class="btn danger" style="margin-left:0" data-a="del-all">All events</button><button class="btn ghost" data-a="del-no">Cancel</button></div>';
     } else {
       h += '<div class="row"><button class="btn" data-a="save">Save</button><button class="btn ghost" data-a="cancel">Cancel</button>' + (edit.isNew ? '' : '<button class="btn danger" data-a="del">Delete</button>') + '</div>';
     }
     ebody.innerHTML = h;
   }
+  function scopeHTML(q, pre) {   // "which events?" question for a repeating event, like Google Calendar
+    return '<p class="hint" style="margin-top:18px;color:var(--ink);font-size:14px">' + q + '</p><div class="row" style="flex-direction:column;align-items:stretch"><button class="btn" data-a="' + pre + '-one">This event</button><button class="btn" data-a="' + pre + '-fol">This and following events</button><button class="btn" data-a="' + pre + '-all">All events</button><button class="btn ghost" data-a="' + pre + '-no">Cancel</button></div>';
+  }
   function readForm() {
     var e = edit.e;
     e.t = document.getElementById('et').value.trim(); e.d = document.getElementById('ed').value || e.d;
     e.st = document.getElementById('es').value || e.st; e.en = document.getElementById('ee').value || e.en;
-    e.rp = document.getElementById('er').value; e.un = e.rp ? document.getElementById('eu').value : '';
+    e.rp = document.getElementById('er').value; e.un = document.getElementById('eu').value;
     e.loc = document.getElementById('el').value.trim(); e.n = document.getElementById('en').value.trim();
   }
+  function closePend() { pend = null; em.hidden = true; render(true); }
   function closeEditor() {
     var docked = edit && edit.dock;
     em.hidden = true; edit = null; em.className = 'modal'; document.body.classList.remove('editing');
@@ -392,10 +399,33 @@ body.editing .fab { display: none; }
     if (!e.d) return;
     if (!e.ad && e.st && e.en && mins(e.en) <= mins(e.st)) e.en = hhmm(mins(e.st) + 60 > 1439 ? 1439 : mins(e.st) + 60);
     if (e.un && e.un < e.d) e.un = '';
+    if (!edit.isNew && edit.orig.rp) { edit.askSave = true; drawEditor(); return; }   // repeating: ask which events change
     e.u = Date.now();
-    if (edit.isNew) { e.id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); items.push(e); }
+    if (edit.isNew) { e.id = newId(); items.push(e); }
     else { for (var i = 0; i < items.length; i++) if (items[i].id === e.id) items[i] = e; }
     save(); sel = e.d; closeEditor(); render(true);
+  }
+  function newId() { return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  /* change a repeating event: scope is 'one' (only that day), 'fol' (that day and the following ones) or 'all'.
+     ne is the edited copy; ne.d is the new date of the occurrence that was on `occ`. */
+  function applyScope(orig, occ, ne, scope) {
+    var delta = Math.round((parse(ne.d) - parse(occ)) / 864e5), now = Date.now();
+    function fresh(x) { x.id = newId(); x.ex = []; x.u = now; items.push(x); }
+    if (scope === 'fol' && occ <= orig.d) scope = 'all';
+    if (scope === 'one') {
+      orig.ex = (orig.ex || []).concat(occ); orig.u = now;
+      ne.rp = ''; ne.un = ''; fresh(ne);
+    } else if (scope === 'fol') {
+      orig.un = ymd(addDays(parse(occ), -1)); orig.u = now;
+      fresh(ne);
+    } else {
+      var od = orig.d, ou = orig.un, ox = orig.ex || [];
+      ne.id = orig.id; ne.d = ymd(addDays(parse(od), delta)); ne.u = now;
+      ne.ex = ox.map(function (x) { return ymd(addDays(parse(x), delta)); });
+      if (ne.un && ne.un === ou) ne.un = ymd(addDays(parse(ou), delta));
+      for (var i = 0; i < items.length; i++) if (items[i].id === orig.id) items[i] = ne;
+    }
+    save();
   }
   function removeEvent(id, onlyDate) {
     var e = byId(id); if (!e) return;
@@ -405,8 +435,19 @@ body.editing .fab { display: none; }
   }
 
   em.addEventListener('click', function (ev) {
+    if (pend) {   // the "which events?" question after dragging a repeating event
+      var pb = ev.target.closest('button'), pa = pb && pb.dataset.a;
+      if (ev.target === em || pa === 'mv-no') { closePend(); return; }
+      if (pa && pa.indexOf('mv-') === 0) { var p = pend; applyScope(p.orig, p.occ, p.ne, pa.slice(3)); sel = p.ne.d; closePend(); }
+      return;
+    }
     if (ev.target === em) { closeEditor(); return; }
     var b = ev.target.closest('button'); if (!b || !edit) return;
+    if (b.dataset.a && b.dataset.a.indexOf('sv-') === 0) {
+      if (b.dataset.a === 'sv-no') { edit.askSave = false; drawEditor(); return; }
+      var o = byId(edit.orig.id); if (!o) return;
+      applyScope(o, edit.occ, edit.e, b.dataset.a.slice(3)); sel = edit.e.d; closeEditor(); render(true); return;
+    }
     if (b.id === 'ead') { readForm(); edit.e.ad = !edit.e.ad; drawEditor(); if (edit.dock) render(true); return; }
     if (b.dataset.c) { readForm(); edit.e.c = b.dataset.c; drawEditor(); if (edit.dock) placeDraft(); return; }
     var a = b.dataset.a;
@@ -419,7 +460,7 @@ body.editing .fab { display: none; }
   });
   em.addEventListener('change', function (ev) {
     var id = ev.target.id;
-    if (id === 'er') document.getElementById('euw').hidden = !ev.target.value;
+    if (id === 'er') document.getElementById('eul').textContent = ev.target.value ? 'Repeat until (optional)' : 'To date (optional)';
     if (edit && edit.dock && (id === 'ed' || id === 'es' || id === 'ee')) {   // typed a new date or time: the block follows
       readForm();
       var e = edit.e;
@@ -433,6 +474,7 @@ body.editing .fab { display: none; }
 
   /* clicks on the page */
   main.addEventListener('click', function (ev) {
+    if (Date.now() - noClick < 450) return;   // the click that ends a drag
     var t = ev.target.closest('[data-id]');
     if (t) { var e = byId(t.dataset.id); if (e) openEditor(e, t.dataset.d); return; }
     var o = ev.target.closest('[data-open]');
@@ -468,6 +510,74 @@ body.editing .fab { display: none; }
     } else e.en = hhmm(Math.max(drag.s0 + 15, Math.min(1439, drag.en0 + dm)));
     placeDraft(); syncForm();
   });
+  /* drag an event that is already in the calendar to another time or day (week and day views):
+     touch = press and hold, then drag; mouse = just drag. Repeating events then ask which events change. */
+  var mdrag = null, noClick = 0;
+  function mdUpdate() {
+    var m = mdrag; if (!m || !m.active) return;
+    var dm = Math.round((m.cy + window.scrollY - m.y0) / HR * 4) * 15, dur = m.en0 - m.s0;
+    m.s = Math.max(Math.min(START, m.s0), Math.min(1439 - dur, m.s0 + dm));
+    var c0 = main.querySelector('.col'), r = c0.getBoundingClientRect();
+    m.idx = Math.max(0, Math.min(shown.length - 1, Math.floor((m.cx - r.left) / r.width)));
+    m.el.style.transform = 'translate(' + ((m.idx - m.idx0) * r.width) + 'px,' + ((m.s - m.s0) / 60 * HR) + 'px)';
+  }
+  function mdStop() { if (mdrag) { clearTimeout(mdrag.timer); clearInterval(mdrag.scroller); } mdrag = null; }
+  function mdActivate() {
+    var m = mdrag; if (!m || m.active) return;
+    m.active = true; m.el.classList.add('lift');
+    try { m.el.setPointerCapture(m.id); } catch (x) {}
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (x) {}
+    m.scroller = setInterval(function () {   // near the top or bottom edge of the screen: scroll along
+      var top = document.getElementById('stick').offsetHeight + 40;
+      if (m.cy > window.innerHeight - 70) { window.scrollBy(0, 14); mdUpdate(); }
+      else if (m.cy < top) { window.scrollBy(0, -14); mdUpdate(); }
+    }, 30);
+    mdUpdate();
+  }
+  main.addEventListener('pointerdown', function (ev) {
+    var te = ev.target.closest('.te'); if (!te || te.classList.contains('draft') || edit || pend || !te.dataset.id) return;
+    var e = byId(te.dataset.id); if (!e || !e.st) return;
+    var s0 = mins(e.st), en0 = e.en ? mins(e.en) : s0 + 60; if (en0 <= s0) en0 = s0 + 30;
+    mdrag = { el: te, id: ev.pointerId, touch: ev.pointerType !== 'mouse', active: false, e: e, occ: te.dataset.d, s0: s0, en0: en0, s: s0,
+      idx0: shown.findIndex(function (d) { return ymd(d) === te.dataset.d; }), cx: ev.clientX, cy: ev.clientY, x0: ev.clientX, y0: ev.clientY + window.scrollY, c0y: ev.clientY };
+    mdrag.idx = mdrag.idx0;
+    if (mdrag.idx0 < 0) { mdrag = null; return; }
+    if (mdrag.touch) mdrag.timer = setTimeout(mdActivate, 380);
+  });
+  main.addEventListener('pointermove', function (ev) {
+    var m = mdrag; if (!m || ev.pointerId !== m.id) return;
+    m.cx = ev.clientX; m.cy = ev.clientY;
+    if (!m.active) {
+      var moved = Math.abs(ev.clientX - m.x0) + Math.abs(ev.clientY - m.c0y);
+      if (m.touch && moved > 10) mdStop();   // the finger scrolls the page instead
+      else if (!m.touch && moved > 5) mdActivate();
+      return;
+    }
+    mdUpdate();
+  });
+  document.addEventListener('touchmove', function (ev) { if (mdrag && mdrag.active) ev.preventDefault(); }, { passive: false });
+  main.addEventListener('contextmenu', function (ev) { if (ev.target.closest('.te')) ev.preventDefault(); });
+  function mdEnd(ev, cancelled) {
+    var m = mdrag; if (!m || ev.pointerId !== m.id) return;
+    var was = m.active; mdStop();
+    if (!was) return;
+    noClick = Date.now();
+    if (cancelled || (m.s === m.s0 && m.idx === m.idx0)) { render(true); return; }
+    var e = m.e, dur = m.en0 - m.s0, nd = shown[m.idx], ne = JSON.parse(JSON.stringify(e));
+    ne.st = hhmm(m.s); ne.en = hhmm(m.s + dur);
+    if (e.rp) {   // repeating: ne.d is the new date of the occurrence that was dragged
+      ne.d = ymd(nd); pend = { orig: e, occ: m.occ, ne: ne };
+      ebody.innerHTML = '<h2>Move repeating event</h2>' + scopeHTML('Which events should move?', 'mv');
+      em.className = 'modal'; em.hidden = false; render(true); return;
+    }
+    var delta = Math.round((nd - parse(m.occ)) / 864e5);
+    ne.d = ymd(addDays(parse(e.d), delta)); if (e.un) ne.un = ymd(addDays(parse(e.un), delta));
+    ne.u = Date.now();
+    for (var i = 0; i < items.length; i++) if (items[i].id === e.id) items[i] = ne;
+    save(); sel = ne.d; render(true);
+  }
+  main.addEventListener('pointerup', function (ev) { mdEnd(ev, false); });
+  main.addEventListener('pointercancel', function (ev) { mdEnd(ev, true); });
   function endDrag(ev) { if (drag && ev.pointerId === drag.id) drag = null; }
   main.addEventListener('pointerup', endDrag);
   main.addEventListener('pointercancel', endDrag);
@@ -487,7 +597,7 @@ body.editing .fab { display: none; }
     if (view === 'day' && sel) cur = parse(sel);
     render();
   });
-  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !em.hidden) closeEditor(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !em.hidden) { if (pend) closePend(); else closeEditor(); } });
 
   /* swipe left or right to move to the next or previous month, week or day */
   (function () {
