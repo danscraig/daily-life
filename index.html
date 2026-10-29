@@ -57,7 +57,8 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .note { font-size: 13px; color: var(--mute); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; }
 
 /* day navigator */
-.nav { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; gap: 4px; margin-block: 8px 20px; }
+/* the day (with the arrows) stays under the title bar while you scroll the Journal or the Check-in */
+.nav { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; gap: 4px; margin-block: 0 14px; padding-block: 8px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--barh, 72px)); z-index: 4; background: var(--bg); }
 .nav .step { height: 48px; border-radius: 12px; font-size: 22px; color: var(--mute); }
 .nav .step:hover { background: var(--paper); color: var(--ink); }
 .nav .center { text-align: center; padding: 4px 8px; border-radius: 12px; }
@@ -912,6 +913,7 @@ img { max-width: 100%; }
     if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') flush();
     if (s === 'diary' || s === 'check') setApp(s);
     homeEl.hidden = s !== 'home'; jEl.hidden = s !== 'diary' && s !== 'check'; NE.hidden = s !== 'notes';
+    if (!jEl.hidden) document.documentElement.style.setProperty('--barh', jEl.querySelector('.bar').offsetHeight + 'px');   // where the day sticks
     if (s === 'notes') { nview = 'list'; ncur = null; ndel = false; renderNotes(); }
     else if (s === 'home') homeInfo(); else render();
     window.scrollTo(0, 0);
