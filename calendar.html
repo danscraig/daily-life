@@ -57,11 +57,25 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .mhead span { text-align: center; font: 500 11px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); padding: 4px 0 8px; }
 .mgrid { gap: 3px; }
 .mc { min-width: 0; min-height: 76px; padding: 5px 3px 4px; display: flex; flex-direction: column; align-items: stretch; gap: 2px; background: var(--paper); border-radius: 12px; text-align: left; overflow: hidden; }
-.mc.out { background: transparent; opacity: .55; }
+.mc.out { background: transparent; }
+.mc.out .n { opacity: .55; }
+.mc.out .chip:not(.seg) { opacity: .6; }   /* no opacity on the bar pieces: stacked, they would show seams */
 .mc.sel { box-shadow: inset 0 0 0 2px var(--accent); }
 .mc .n { align-self: center; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 500; }
 .mc.today .n { background: var(--accent); color: var(--accent-ink); }
 .chip { display: block; padding: 1px 4px; border-radius: 5px; font-size: 10px; line-height: 1.3; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* one continuous bar across the days of a multi-day event */
+.chip.seg { border-radius: 0; border: 0; text-align: left; font: inherit; font-size: 10px; line-height: 1.3; padding: 1px 4px; overflow: visible; }
+.chip.seg i { display: block; font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; position: relative; z-index: 1; }
+.chip.seg.s { border-radius: 5px 0 0 5px; }
+.chip.seg.e { border-radius: 0 5px 5px 0; }
+.chip.seg.s.e { border-radius: 5px; }
+.mc .chip.seg.rb { margin-right: -6px; }
+.mc .chip.seg.lb { margin-left: -6px; }
+.tgad .chip.seg.rb { margin-right: -3px; }
+.tgad .chip.seg.lb { margin-left: -3px; }
+.mc { overflow: visible; justify-content: flex-start; }
+.mc .chip { flex: none; }
 .more { font-size: 10px; color: var(--mute); text-align: center; line-height: 1.2; }
 .agh { margin: 20px 4px 8px; font: 500 12px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
 .ag { display: flex; flex-direction: column; gap: 8px; }
@@ -129,6 +143,8 @@ body.editing .fab { display: none; }
 .btn { padding: 12px 20px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 14px; }
 .btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
 .btn.danger { background: var(--paper); color: var(--bad); border: 1px solid var(--line); margin-left: auto; }
+.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(101, 64, 111, .6); max-width: calc(100vw - 110px); }
+.undo button { padding: 7px 16px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; font-size: 14px; }
 .hint { font-size: 12.5px; color: var(--mute); margin: 8px 4px 0; }
 </style>
 </head>
@@ -149,6 +165,7 @@ body.editing .fab { display: none; }
   <main id="main"></main>
 </div>
 <button class="fab" id="add" aria-label="Add event">+</button>
+<div class="undo" id="undo" hidden role="status"><span></span><button>Undo</button></div>
 <div class="modal" id="em" hidden role="dialog" aria-modal="true" aria-label="Event"><div class="sheet" id="ebody"></div></div>
 
 <script>
@@ -227,11 +244,15 @@ body.editing .fab { display: none; }
     ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(function (w) { h += '<span>' + w + '</span>'; });
     h += '</div><div class="mgrid">';
     var last = new Date(cur.getFullYear(), cur.getMonth() + 1, 0), weeks = Math.ceil(((last - start) / 864e5 + 1) / 7);
+    var lanes = [];
     for (var i = 0; i < weeks * 7; i++) {
-      var d = addDays(start, i), ds = ymd(d), ev = eventsOn(ds);
+      var d = addDays(start, i), ds = ymd(d), ev = eventsOn(ds).filter(function (e) { return !isMulti(e); });
+      if (i % 7 === 0) { var wk = []; for (var j = 0; j < 7; j++) wk.push(addDays(start, i + j)); lanes = laneSegs(wk, false); }
       h += '<button class="mc' + (d.getMonth() !== cur.getMonth() ? ' out' : '') + (ds === todayS ? ' today' : '') + (ds === sel ? ' sel' : '') + '" data-d="' + ds + '"><span class="n">' + d.getDate() + '</span>';
-      ev.slice(0, 3).forEach(function (e) { h += '<span class="chip" style="background:' + esc(e.c || COLORS[0]) + '">' + esc(e.t || '(No title)') + '</span>'; });
-      if (ev.length > 3) h += '<span class="more">+' + (ev.length - 3) + '</span>';
+      h += laneCells(lanes, i % 7, ds, 3, 3, true);
+      var room = Math.max(1, 3 - lanes.length);
+      ev.slice(0, room).forEach(function (e) { h += '<span class="chip" style="background:' + esc(e.c || COLORS[0]) + '">' + esc(e.t || '(No title)') + '</span>'; });
+      if (ev.length > room) h += '<span class="more">+' + (ev.length - room) + '</span>';
       h += '</button>';
     }
     h += '</div>';
@@ -240,6 +261,31 @@ body.editing .fab { display: none; }
     if (!list.length) h += '<p class="empty">Nothing planned.</p>';
     list.forEach(function (e) { h += evCard(e, ymd(sd)); });
     return h + '</div>';
+  }
+  /* an event from one day to another day (no repeat) is drawn as one continuous bar, like Google Calendar */
+  function isMulti(e) { return !e.rp && e.un && e.un > e.d; }
+  function laneSegs(days, onlyAllDay, skip) {   // rows of bars for the multi-day events that touch these consecutive days
+    var a = ymd(days[0]), b = ymd(days[days.length - 1]), lanes = [];
+    var list = items.filter(function (e) { return isMulti(e) && e.d <= b && e.un >= a && (!onlyAllDay || e.ad) && e.id !== skip; })
+      .sort(function (x, y) { return x.d.localeCompare(y.d) || y.un.localeCompare(x.un); });
+    list.forEach(function (e) {
+      var s = Math.max(0, Math.round((parse(e.d) - days[0]) / 864e5)), en = Math.min(days.length - 1, Math.round((parse(e.un) - days[0]) / 864e5)), k = 0;
+      while (k < lanes.length && lanes[k][lanes[k].length - 1].en >= s) k++;
+      (lanes[k] = lanes[k] || []).push({ e: e, s: s, en: en });
+    });
+    return lanes;
+  }
+  function laneCells(lanes, i, ds, rb, lb, month) {   // the bar pieces (or empty spacers) for day number i of the row
+    var h = '';
+    lanes.forEach(function (lane) {
+      var sg = null; lane.forEach(function (x) { if (x.s <= i && i <= x.en) sg = x; });
+      if (!sg) { h += '<span class="chip" style="visibility:hidden">&nbsp;</span>'; return; }
+      var e = sg.e, first = i === sg.s, n = sg.en - i + 1;
+      var cls = 'chip seg' + (ds === e.d ? ' s' : '') + (ds === e.un ? ' e' : '') + (i < sg.en ? ' rb' : '') + (i > sg.s ? ' lb' : '') + (first ? ' fi' : '');
+      var inner = first ? '<i style="width:' + (n > 1 ? 'calc(' + n + '*100% + ' + ((n - 1) * 3 - (month ? 6 : 0)) + 'px)' : '100%') + '">' + esc(e.t || '(No title)') + '</i>' : '&nbsp;';
+      h += (month ? '<span' : '<button') + ' class="' + cls + '"' + (month ? '' : ' data-id="' + e.id + '" data-d="' + ds + '"') + ' style="background:' + esc(e.c || COLORS[0]) + '">' + inner + (month ? '</span>' : '</button>');
+    });
+    return h;
   }
   function evCard(e, ds) {
     return '<button class="ev" data-id="' + e.id + '" data-d="' + ds + '"><span class="bar" style="background:' + esc(e.c || COLORS[0]) + '"></span><span class="tx"><b>' + esc(e.t || '(No title)') + '</b><small>' + timeText(e) + (e.rp ? ' · ↻' : '') + (e.loc ? ' · ' + esc(e.loc) : '') + '</small></span></button>';
@@ -278,10 +324,11 @@ body.editing .fab { display: none; }
     });
     h += '</div>';
     var skip = editingId();
-    var ad = days.map(function (d) { return eventsOn(ymd(d)).filter(function (e) { return e.ad && e.id !== skip; }).map(function (e) { return [e, ymd(d)]; }); });
-    if (ad.some(function (x) { return x.length; })) {
+    var ad = days.map(function (d) { return eventsOn(ymd(d)).filter(function (e) { return e.ad && !isMulti(e) && e.id !== skip; }).map(function (e) { return [e, ymd(d)]; }); });
+    var alanes = laneSegs(days, true, skip);
+    if (alanes.length || ad.some(function (x) { return x.length; })) {
       h += '<div class="tgr tgad"><div>all day</div>';
-      ad.forEach(function (list) { h += '<div>'; list.forEach(function (x) { h += '<button class="chip" data-id="' + x[0].id + '" data-d="' + x[1] + '" style="background:' + esc(x[0].c || COLORS[0]) + ';text-align:left">' + esc(x[0].t || '(No title)') + '</button>'; }); h += '</div>'; });
+      ad.forEach(function (list, di) { h += '<div>' + laneCells(alanes, di, ymd(days[di]), 2, 3, false); list.forEach(function (x) { h += '<button class="chip" data-id="' + x[0].id + '" data-d="' + x[1] + '" style="background:' + esc(x[0].c || COLORS[0]) + ';text-align:left">' + esc(x[0].t || '(No title)') + '</button>'; }); h += '</div>'; });
       h += '</div>';
     }
     h += '<div class="tgr tgb" id="tgb"><div class="gut">';
@@ -289,12 +336,21 @@ body.editing .fab { display: none; }
     h += '</div>';
     var nowM = new Date().getHours() * 60 + new Date().getMinutes();
     days.forEach(function (d) {
-      var ds = ymd(d), timed = eventsOn(ds).filter(function (e) { return !e.ad && e.st && e.id !== skip; });
+      var ds = ymd(d), timed = eventsOn(ds).filter(function (e) { return !e.ad && e.st && e.id !== skip; }).map(function (e) {
+        if (!isMulti(e)) return e;
+        // from the start time on the first day to the end time on the last day, full days in between
+        var c = JSON.parse(JSON.stringify(e)), f = ds === e.d, l = ds === e.un;
+        c.lab = f ? e.st + ' →' : l ? '→ ' + (e.en || '') : '';
+        c.cl = !f; c.cr = !l;
+        c.st = f ? e.st : '00:00'; c.en = l ? (e.en || '23:59') : '24:00';
+        if (!f && l && mins(c.en) <= 0) c.en = '00:30';
+        return c;
+      });
       h += '<div class="col" data-col="' + ds + '">';
       layout(timed).forEach(function (x) {
         if (x.en <= START) return;   // ends before the grid starts
         var w = 100 / x.n, s0 = Math.max(x.s, START);
-        h += '<button class="te" data-id="' + x.e.id + '" data-d="' + ds + '" style="top:' + ((s0 - START) / 60 * HR) + 'px;height:' + Math.max(18, (x.en - s0) / 60 * HR - 1) + 'px;left:calc(' + (x.lane * w) + '% + 1px);width:calc(' + w + '% - 2px);background:' + esc(x.e.c || COLORS[0]) + '"><b>' + esc(x.e.t || '(No title)') + '</b>' + (x.en - x.s >= 40 ? '<span>' + x.e.st + (x.e.en ? '–' + x.e.en : '') + '</span>' : '') + '</button>';
+        h += '<button class="te" data-id="' + x.e.id + '" data-d="' + ds + '" style="top:' + ((s0 - START) / 60 * HR) + 'px;height:' + Math.max(18, (x.en - s0) / 60 * HR - 1) + 'px;left:calc(' + (x.lane * w) + '% + ' + (x.e.cl ? -1 : 1) + 'px);width:calc(' + w + '% - ' + ((x.e.cl ? -1 : 1) + (x.e.cr ? 0 : 1)) + 'px);' + (x.e.cl ? 'border-left-width:0;border-top-left-radius:0;border-bottom-left-radius:0;' : '') + (x.e.cr ? 'border-right-width:0;border-top-right-radius:0;border-bottom-right-radius:0;' : '') + 'background:' + esc(x.e.c || COLORS[0]) + '"><b>' + esc(x.e.t || '(No title)') + '</b>' + (x.en - x.s >= 40 && x.e.lab !== '' ? '<span>' + (x.e.lab || x.e.st + (x.e.en ? '–' + x.e.en : '')) + '</span>' : '') + '</button>';
       });
       if (ds === todayS && nowM >= START) h += '<div class="now" style="top:' + ((nowM - START) / 60 * HR) + 'px"></div>';
       h += '</div>';
@@ -371,7 +427,7 @@ body.editing .fab { display: none; }
     if (edit.askSave) {
       h += scopeHTML('Save changes to this repeating event?', 'sv');
     } else if (edit.askDel) {
-      h +='<p class="hint" style="margin-top:18px;color:var(--ink);font-size:14px">Delete this repeating event?</p><div class="row"><button class="btn danger" style="margin-left:0" data-a="del-one">Only ' + esc(edit.occ) + '</button><button class="btn danger" style="margin-left:0" data-a="del-all">All events</button><button class="btn ghost" data-a="del-no">Cancel</button></div>';
+      h += scopeHTML('Delete which events?', 'del');
     } else {
       h += '<div class="row"><button class="btn" data-a="save">Save</button><button class="btn ghost" data-a="cancel">Cancel</button>' + (edit.isNew ? '' : '<button class="btn danger" data-a="del">Delete</button>') + '</div>';
     }
@@ -387,6 +443,23 @@ body.editing .fab { display: none; }
     e.rp = document.getElementById('er').value; e.un = document.getElementById('eu').value;
     e.loc = document.getElementById('el').value.trim(); e.n = document.getElementById('en').value.trim();
   }
+  /* tapping an event first shows a small card; the form opens only after "Edit" */
+  var peek = null;
+  function dateText(ds) { var d = parse(ds); return WD[d.getDay()].slice(0, 3) + ', ' + d.getDate() + ' ' + MN[d.getMonth()].slice(0, 3) + ' ' + d.getFullYear(); }
+  function drawPeek() {
+    var e = peek.e, h = '<h2 style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:12px;height:12px;border-radius:50%;margin-top:8px;background:' + esc(e.c || COLORS[0]) + '"></span><span style="min-width:0;overflow-wrap:anywhere">' + esc(e.t || '(No title)') + '</span></h2>';
+    var day = isMulti(e) ? dateText(e.d) + ' – ' + dateText(e.un) : dateText(e.rp ? peek.occ : e.d);
+    h += '<p class="hint" style="font-size:15px;color:var(--ink);margin:10px 4px 0">' + esc(day) + '</p>';
+    h += '<p class="hint" style="font-size:15px;color:var(--ink);margin:2px 4px 0">' + esc(timeText(e)) + '</p>';
+    if (e.rp) h += '<p class="hint" style="margin:2px 4px 0">↻ ' + esc((REPEATS.filter(function (r) { return r[0] === e.rp; })[0] || ['', ''])[1]) + '</p>';
+    if (e.loc) h += '<p class="hint" style="margin:8px 4px 0">' + esc(e.loc) + '</p>';
+    if (e.n) h += '<p class="hint" style="margin:8px 4px 0;white-space:pre-wrap;overflow-wrap:anywhere">' + esc(e.n) + '</p>';
+    if (peek.askDel) h += scopeHTML('Delete which events?', 'pk');
+    else h += '<div class="row"><button class="btn" data-a="pk-edit">Edit</button><button class="btn ghost" data-a="pk-close">Close</button><button class="btn danger" data-a="pk-del">Delete</button></div>';
+    ebody.innerHTML = h;
+  }
+  function openPeek(e, occ) { peek = { e: e, occ: occ || e.d, askDel: false }; em.className = 'modal'; drawPeek(); em.hidden = false; }
+  function closePeek() { peek = null; em.hidden = true; }
   function closePend() { pend = null; em.hidden = true; render(true); }
   function closeEditor() {
     var docked = edit && edit.dock;
@@ -427,14 +500,43 @@ body.editing .fab { display: none; }
     }
     save();
   }
-  function removeEvent(id, onlyDate) {
+  function removeEvent(id, onlyDate, fromDate) {   // onlyDate: that day only; fromDate: that day and the following ones; neither: all
     var e = byId(id); if (!e) return;
+    var before = JSON.parse(JSON.stringify(e));
+    if (fromDate && fromDate <= e.d) fromDate = null;   // nothing before it: the whole series goes
     if (onlyDate) { e.ex = (e.ex || []).concat(onlyDate); e.u = Date.now(); }
+    else if (fromDate) { e.un = ymd(addDays(parse(fromDate), -1)); e.u = Date.now(); }
     else items = items.filter(function (x) { return x.id !== id; });
-    save(); closeEditor(); render(true);
+    save(); closeEditor(); render(true); showUndo(before);
+  }
+  /* "Undo" for 10 seconds after a delete: puts the event back the way it was */
+  var undoTimer = null;
+  function hideUndo() { clearTimeout(undoTimer); var t = document.getElementById('undo'); if (t) t.hidden = true; }
+  function showUndo(before) {
+    var t = document.getElementById('undo'); hideUndo();
+    t.querySelector('span').textContent = 'Event deleted';
+    t.hidden = false;
+    t.querySelector('button').onclick = function () {
+      var at = -1; for (var i = 0; i < items.length; i++) if (items[i].id === before.id) at = i;
+      before.u = Date.now();
+      if (at >= 0) items[at] = before; else items.push(before);
+      save(); hideUndo(); render(true);
+    };
+    undoTimer = setTimeout(hideUndo, 10000);
   }
 
   em.addEventListener('click', function (ev) {
+    if (peek) {
+      var kb = ev.target.closest('button'), ka = kb && kb.dataset.a, p = peek;
+      if (ev.target === em || ka === 'pk-close') { closePeek(); return; }
+      if (ka === 'pk-edit') { closePeek(); openEditor(p.e, p.occ); }
+      else if (ka === 'pk-del') { if (p.e.rp) { p.askDel = true; drawPeek(); } else { closePeek(); removeEvent(p.e.id); } }
+      else if (ka === 'pk-no') { p.askDel = false; drawPeek(); }
+      else if (ka === 'pk-one') { closePeek(); removeEvent(p.e.id, p.occ); }
+      else if (ka === 'pk-fol') { closePeek(); removeEvent(p.e.id, null, p.occ); }
+      else if (ka === 'pk-all') { closePeek(); removeEvent(p.e.id); }
+      return;
+    }
     if (pend) {   // the "which events?" question after dragging a repeating event
       var pb = ev.target.closest('button'), pa = pb && pb.dataset.a;
       if (ev.target === em || pa === 'mv-no') { closePend(); return; }
@@ -453,8 +555,9 @@ body.editing .fab { display: none; }
     var a = b.dataset.a;
     if (a === 'save') saveEdit();
     else if (a === 'cancel') closeEditor();
-    else if (a === 'del') { if (edit.e.rp) { readForm(); edit.askDel = true; drawEditor(); } else removeEvent(edit.e.id); }
+    else if (a === 'del') { if (edit.orig.rp) { readForm(); edit.askDel = true; drawEditor(); } else removeEvent(edit.e.id); }
     else if (a === 'del-one') removeEvent(edit.e.id, edit.occ);
+    else if (a === 'del-fol') removeEvent(edit.e.id, null, edit.occ);
     else if (a === 'del-all') removeEvent(edit.e.id);
     else if (a === 'del-no') { edit.askDel = false; drawEditor(); }
   });
@@ -476,7 +579,7 @@ body.editing .fab { display: none; }
   main.addEventListener('click', function (ev) {
     if (Date.now() - noClick < 450) return;   // the click that ends a drag
     var t = ev.target.closest('[data-id]');
-    if (t) { var e = byId(t.dataset.id); if (e) openEditor(e, t.dataset.d); return; }
+    if (t) { var e = byId(t.dataset.id); if (e) { if (edit) openEditor(e, t.dataset.d); else openPeek(e, t.dataset.d); } return; }
     var o = ev.target.closest('[data-open]');
     if (o) { if (edit) closeEditor(); cur = parse(o.dataset.open); view = 'day'; try { localStorage.setItem('daily-life-cal-view', view); } catch (x) {} render(); return; }
     var c = ev.target.closest('.mc');
@@ -536,7 +639,7 @@ body.editing .fab { display: none; }
   }
   main.addEventListener('pointerdown', function (ev) {
     var te = ev.target.closest('.te'); if (!te || te.classList.contains('draft') || edit || pend || !te.dataset.id) return;
-    var e = byId(te.dataset.id); if (!e || !e.st) return;
+    var e = byId(te.dataset.id); if (!e || !e.st || isMulti(e)) return;   // multi-day events are changed in the form
     var s0 = mins(e.st), en0 = e.en ? mins(e.en) : s0 + 60; if (en0 <= s0) en0 = s0 + 30;
     mdrag = { el: te, id: ev.pointerId, touch: ev.pointerType !== 'mouse', active: false, e: e, occ: te.dataset.d, s0: s0, en0: en0, s: s0,
       idx0: shown.findIndex(function (d) { return ymd(d) === te.dataset.d; }), cx: ev.clientX, cy: ev.clientY, x0: ev.clientX, y0: ev.clientY + window.scrollY, c0y: ev.clientY };
@@ -597,7 +700,7 @@ body.editing .fab { display: none; }
     if (view === 'day' && sel) cur = parse(sel);
     render();
   });
-  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !em.hidden) { if (pend) closePend(); else closeEditor(); } });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !em.hidden) { if (peek) closePeek(); else if (pend) closePend(); else closeEditor(); } });
 
   /* swipe left or right to move to the next or previous month, week or day */
   (function () {
