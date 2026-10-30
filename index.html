@@ -288,6 +288,11 @@ button:disabled { cursor: default; }
 .nfab { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); right: max(20px, calc((100vw - 640px) / 2 + 20px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 14px 28px -10px var(--shadow); }
 .nfab:disabled { opacity: .5; }
 .nlist { padding-bottom: 90px; }
+.nmenu { position: fixed; bottom: calc(max(22px, env(safe-area-inset-bottom)) + 70px); right: max(20px, calc((100vw - 640px) / 2 + 20px)); z-index: 20; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: var(--paper); border-radius: 22px; box-shadow: 0 14px 28px -10px var(--shadow); }
+.nmenu[hidden] { display: none; }
+.nmenu button { padding: 12px 20px; border-radius: 16px; font: 500 16px var(--font-display); color: var(--ink); text-align: left; }
+.nmenu button:active { background: var(--orchid); }
+.ncard.npage b { display: flex; align-items: center; gap: 8px; }
 .nsheet { background: #fff; border-radius: 26px; padding: 14px 20px 20px; box-shadow: 0 10px 26px -16px var(--shadow); min-height: 60vh; }
 .nsheet .ntitle { border-bottom: 1px solid var(--line); margin-bottom: 8px; padding: 8px 0 12px; }
 .nrich { position: relative; }
@@ -798,8 +803,12 @@ img { max-width: 100%; }
   function nlistHTML() {
     var q = nq.trim().toLowerCase();
     var items = notes.slice().sort(function (a, b) { return b.u - a.u; }).filter(function (n) { return !n.k && (q || (n.g || '') === ngp) && (!q || (n.t + ' ' + n.b).toLowerCase().indexOf(q) !== -1); });
-    if (!items.length) return '<p class="empty">' + (q ? 'No notes match.' : 'No notes yet.') + '</p>';
-    return items.map(function (n) {
+    var pgs = q ? [] : notes.filter(function (x) { return x.k === 'page' && (x.g || '') === ngp; }).sort(function (a, b) { return b.u - a.u; });
+    if (!items.length && !pgs.length) return '<p class="empty">' + (q ? 'No notes match.' : ngp ? 'Empty.' : 'No notes yet.') + '</p>';
+    return pgs.map(function (p) {
+      var c = notes.filter(function (x) { return (x.g || '') === p.id; }).length;
+      return '<button class="ncard npage" data-n="pg" data-id="' + p.id + '"><b><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' + esc(p.t || 'Untitled page') + '</b><i>' + c + (c === 1 ? ' item' : ' items') + '</i></button>';
+    }).join('') + items.map(function (n) {
       var dt = new Date(n.u);
       var fl = firstLine(n.b);
       return '<button class="ncard" data-n="open" data-id="' + n.id + '"><b>' + esc(n.t || 'Untitled') + '</b>' + (fl ? '<span>' + esc(fl) + '</span>' : '') + '<i>' + dt.getDate() + ' ' + MN[dt.getMonth()].slice(0, 3) + ' ' + dt.getFullYear() + '</i></button>';
@@ -828,17 +837,11 @@ img { max-width: 100%; }
     }
     return n.h;
   }
-  function pageItems() { return notes.filter(function (x) { return x.k === 'page'; }).sort(function (a, b) { return a.u - b.u; }); }
-  function pagesBarHTML() {
-    var h = '<button data-n="pg" data-id=""' + (ngp === '' ? ' class="on"' : '') + '>Notes</button>';
-    pageItems().forEach(function (p) { h += '<button data-n="pg" data-id="' + p.id + '"' + (ngp === p.id ? ' class="on"' : '') + '>' + esc(p.t || 'Page') + '</button>'; });
-    h += '<button data-n="pgadd" aria-label="Add page">+</button>';
-    if (ngp !== '') h += '<button data-n="pged">' + (nped ? 'Done' : 'Edit') + '</button>';
-    return h;
-  }
-  function pageEditHTML() {
-    var p = noteById(ngp); if (!p || !nped) return '';
-    return '<div class="npe"><input id="npn" placeholder="Page name" autocomplete="off" value="' + esc(p.t) + '"><button class="nrm' + (ndelp ? ' yes' : '') + '" data-n="pgdel">' + (ndelp ? 'Delete?' : 'Delete page') + '</button></div>';
+  function pageHeadHTML() {   // inside a page: back to the parent, rename, delete
+    var p = noteById(ngp); if (!p) { ngp = ''; return ''; }
+    var par = noteById(p.g || '');
+    return '<div class="ned"><button data-n="up">‹ ' + esc(par ? par.t || 'Untitled page' : 'Notes') + '</button><button class="nrm' + (ndelp ? ' yes' : '') + '" data-n="pgdel">' + (ndelp ? 'Delete?' : 'Delete') + '</button></div>' +
+      '<input class="ntitle" id="npn" placeholder="Page name" autocomplete="off" value="' + esc(p.t) + '">';
   }
   var SW = ['#65406F', '#A064B0', '#D9534F', '#E8923A', '#3E9D6A', '#3E7FD9'];
   function toolbarHTML() {
@@ -858,7 +861,7 @@ img { max-width: 100%; }
       try { document.execCommand('defaultParagraphSeparator', false, 'div'); } catch (e) {}
     } else {
       nview = 'list';
-      nmain.innerHTML = '<div class="npg" id="npg">' + pagesBarHTML() + '</div>' + pageEditHTML() + '<button class="nfab" data-n="new" aria-label="Add note"' + (loaded ? '' : ' disabled') + '><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' +
+      nmain.innerHTML = (ngp ? pageHeadHTML() : '') + '<div class="nmenu" id="nmenu" hidden><button data-n="new">Add note</button><button data-n="pgadd">Add page</button></div><button class="nfab" data-n="menu" aria-label="Add"' + (loaded ? '' : ' disabled') + '><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' +
         '<input class="search" id="nq" type="search" placeholder="Search notes" autocomplete="off" value="' + esc(nq) + '"><div class="nlist" id="nlist">' + nlistHTML() + '</div>';
     }
   }
@@ -868,25 +871,29 @@ img { max-width: 100%; }
     nview = 'list'; ncur = null; ndel = false; renderNotes();
   }
   nmain.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-n]'); if (!b) return;
+    var b = e.target.closest('[data-n]'), mn = document.getElementById('nmenu');
+    if (!b) { if (mn) mn.hidden = true; return; }
     var a = b.dataset.n;
+    if (a === 'menu') { mn.hidden = !mn.hidden; return; }
+    if (mn) mn.hidden = true;
     if (a === 'new' && loaded) {
       var n = { id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: '', b: '', h: '', g: ngp, u: Date.now() };
       notes.push(n); ncur = n.id; nview = 'edit'; ndel = false; renderNotes(); document.getElementById('nt').focus();
     }
     else if (a === 'open') { ncur = b.dataset.id; nview = 'edit'; ndel = false; renderNotes(); }
-    else if (a === 'pg') { ngp = b.dataset.id; nped = false; ndelp = false; nq = ''; renderNotes(); }
+    else if (a === 'pg') { ngp = b.dataset.id; ndelp = false; nq = ''; renderNotes(); window.scrollTo(0, 0); }
+    else if (a === 'up') { var cp = noteById(ngp); ngp = cp ? cp.g || '' : ''; ndelp = false; renderNotes(); }
     else if (a === 'pgadd' && loaded) {
-      var pn = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), k: 'page', t: 'Page ' + (pageItems().length + 2), u: Date.now() };
-      notes.push(pn); nsave(); ngp = pn.id; nped = true; ndelp = false; nq = ''; renderNotes();
-      var pi = document.getElementById('npn'); if (pi) { pi.focus(); pi.select(); }
+      var pn = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), k: 'page', t: '', g: ngp, u: Date.now() };
+      notes.push(pn); nsave(); ngp = pn.id; ndelp = false; nq = ''; renderNotes();
+      var pi = document.getElementById('npn'); if (pi) pi.focus();
     }
-    else if (a === 'pged') { nped = !nped; ndelp = false; renderNotes(); }
     else if (a === 'pgdel') {
       if (!ndelp) { ndelp = true; renderNotes(); }
       else {
-        var gid = ngp; notes.forEach(function (x) { if (!x.k && x.g === gid) { x.g = ''; x.u = Date.now(); } });
-        notes = notes.filter(function (x) { return x.id !== gid; }); nsave(); ngp = ''; nped = false; ndelp = false; renderNotes();
+        var gid = ngp, gp = noteById(gid), up = gp ? gp.g || '' : '';   // what was inside moves up one level
+        notes.forEach(function (x) { if ((x.g || '') === gid) { x.g = up; x.u = Date.now(); } });
+        notes = notes.filter(function (x) { return x.id !== gid; }); nsave(); ngp = up; ndelp = false; renderNotes();
       }
     }
     else if (a === 'list') closeNote();
@@ -898,7 +905,7 @@ img { max-width: 100%; }
   nmain.addEventListener('input', function (e) {
     var t = e.target;
     if (t.id === 'nq') { nq = t.value; document.getElementById('nlist').innerHTML = nlistHTML(); }
-    else if (t.id === 'npn') { var pg = noteById(ngp); if (!pg) return; pg.t = t.value; pg.u = Date.now(); nsave(); var cb2 = nmain.querySelector('[data-n="pg"][data-id="' + ngp + '"]'); if (cb2) cb2.textContent = t.value || 'Page'; }
+    else if (t.id === 'npn') { var pg = noteById(ngp); if (!pg) return; pg.t = t.value; pg.u = Date.now(); nsave(); }
     else if (t.id === 'nt') { var n = noteById(ncur); if (!n) return; n.t = t.value; n.u = Date.now(); nsave(); }
     else if (t.id === 'nb') {
       if (e.inputType === 'insertParagraph') { var cb = curBlock(); if (cb && cb.classList.contains('ck')) cb.classList.remove('on'); }
@@ -962,7 +969,12 @@ img { max-width: 100%; }
     document.execCommand('insertText', false, t);
   });
   document.addEventListener('selectionchange', function () { var o = document.getElementById('tbo'); if (o) o.hidden = !curCell(); });
-  document.getElementById('nback').addEventListener('click', function () { if (nview === 'edit') closeNote(); nflush(); show('home'); });
+  document.getElementById('nback').addEventListener('click', function () {
+    var wasEdit = nview === 'edit';
+    if (wasEdit) closeNote();
+    if (ngp && !wasEdit) { var cp = noteById(ngp); ngp = cp ? cp.g || '' : ''; ndelp = false; renderNotes(); return; }   // inside a page: one level up
+    nflush(); show('home');
+  });
 
   /* backup: everything in one JSON file, to move the data between this page and the standalone site */
   var MKEY = 'movies-and-series-v1', EKEY = 'daily-life-events-v1';
@@ -1063,7 +1075,7 @@ img { max-width: 100%; }
     if (s === 'diary' || s === 'check') setApp(s);
     homeEl.hidden = s !== 'home'; jEl.hidden = s !== 'diary' && s !== 'check'; NE.hidden = s !== 'notes';
     if (!jEl.hidden) document.documentElement.style.setProperty('--barh', jEl.querySelector('.bar').offsetHeight + 'px');   // where the day sticks
-    if (s === 'notes') { nview = 'list'; ncur = null; ndel = false; renderNotes(); }
+    if (s === 'notes') { nview = 'list'; ncur = null; ndel = false; ngp = ''; ndelp = false; renderNotes(); }
     else if (s === 'home') homeInfo(); else render();
     window.scrollTo(0, 0);
   }
