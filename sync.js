@@ -2,7 +2,7 @@
    The pages keep working from localStorage; this file mirrors it to the cloud and pulls changes made on other devices.
    Shared by index.html (shows the sign-in box) and movies.html (just syncs when signed in). */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 // local test copies must never touch the real cloud data
@@ -107,9 +107,9 @@ async function sync(reloadOk) {
 function run(reloadOk) {
   busy = busy.then(async function () {
     if (!user) return;
-    say('Syncing…');
-    try { await sync(reloadOk); say('Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })); }
-    catch (e) { say(navigator.onLine ? (e && e.message === 'too big' ? 'Too much data to sync' : 'Sync failed. Will try again') : 'Offline. Will sync when back online', true); }
+    say('Syncing…'); status('busy', 'Syncing…');
+    try { await sync(reloadOk); var ok = 'Synced ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); say(ok); status('ok', ok); }
+    catch (e) { var bad = navigator.onLine ? (e && e.message === 'too big' ? 'Too much data to sync' : 'Sync failed. Will try again') : 'Offline. Will sync when back online'; say(bad, true); status(navigator.onLine ? 'err' : 'off', bad); }
   });
   return busy;
 }
@@ -174,7 +174,13 @@ function draw() {
     }
     var i1 = document.createElement('button'); i1.textContent = 'Sign in'; i1.onclick = function () { go(false); };
     var i2 = document.createElement('button'); i2.textContent = 'Create account'; i2.onclick = function () { pw.autocomplete = 'new-password'; go(true); };
-    row2.appendChild(i1); row2.appendChild(i2);
+    var i3 = document.createElement('button'); i3.textContent = 'Forgot password'; i3.onclick = function () {
+      var e = em.value.trim();
+      if (!e) { say('Type your email above first', true); return; }
+      say('Sending…');
+      sendPasswordResetEmail(auth, e).then(function () { say('If that email has an account, a link to reset the password is on its way. Check your inbox and spam.'); }, function (x) { say(errText(x), true); });
+    };
+    row2.appendChild(i1); row2.appendChild(i2); row2.appendChild(i3);
     wrap.appendChild(em); wrap.appendChild(pw); wrap.appendChild(s2); wrap.appendChild(row2);
   }
   box.appendChild(wrap); paint();
@@ -196,5 +202,10 @@ onAuthStateChanged(auth, function (u) {
   var was = user; user = u;
   if (box && (!!was !== !!u || (was && u && was.uid !== u.uid))) draw();
   var dt = document.querySelector('.acdot'); if (dt) dt.hidden = !u;
-  if (u) run(true); else say('');
+  if (u) run(true); else { say(''); status('out', 'Not signed in. Tap to sign in'); }
 });
+/* the home page shows this under the greeting */
+function status(state, text) {
+  window.__dailySync = { state: state, text: text };
+  try { window.dispatchEvent(new CustomEvent('daily-sync')); } catch (e) {}
+}

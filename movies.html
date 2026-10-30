@@ -43,6 +43,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 /* the title bar stays at the top while you scroll */
 .top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
 .ibtn[hidden] { display: none; }
+/* gentle motion: a small press */
+button { transition: transform .12s ease, background-color .15s ease; }
+button:active:not(:disabled) { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
 .ibtn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); color: var(--ink); }
 input[type="search"], input[type="text"] { width: 100%; padding: 14px 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
@@ -443,7 +447,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       '<label>Year<select id="ly"><option value="">All</option>' + yl.map(function (y) { return '<option value="' + esc(y) + '"' + sel(y, lf.y) + '>' + esc(y) + '</option>'; }).join('') + '</select></label>' +
       '<label>Genre<select id="lg"><option value="">All</option>' + gl.map(function (g) { return '<option value="' + esc(g) + '"' + sel(g, lf.g) + '>' + esc(g) + '</option>'; }).join('') + '</select></label>';
     if (lk === 'b') h += '<label>Rating<select id="lr"><option value="">All</option>' + [5, 4, 3, 2, 1].map(function (n) { return '<option value="' + n + '"' + sel(String(n), lf.r) + '>' + n + '★ +</option>'; }).join('') + '</select></label>';
-    if (lk === 'm') h += '<label>Seen<select id="lc"><option value="">All</option><option value="1"' + sel('1', lf.c) + '>Cinema</option></select></label>';
+    if (lk === 'm') h += '<label>Seen at<select id="lc"><option value="">All</option><option value="1"' + sel('1', lf.c) + '>Cinema</option></select></label>';
     return h + '<label>Order by<select id="lo">' + ord.map(function (o) { return '<option value="' + o[0] + '"' + sel(o[0], lf.o) + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>';
   }
   function listBody(all) {
@@ -783,6 +787,6 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   db.items.filter(function (i) { return isShow(i) && (i.s === 'p' || i.st !== 'Ended') && (!i.ef || Date.now() - i.ef > 864e5); }).slice(0, 10).forEach(function (i) { fetchEps(i).then(function () { if (view === 'lists') render(); }, function () {}); });
 })();
 </script>
-<script type="module" src="sync.js?v=4"></script>
+<script type="module" src="sync.js?v=5"></script>
 </body>
 </html>
