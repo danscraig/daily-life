@@ -285,6 +285,15 @@ button:disabled { cursor: default; }
 .ntb button:active { background: var(--orchid); }
 .ntb .sw { display: flex; gap: 8px; align-items: center; width: 100%; padding: 4px 6px; }
 .ntb .sw button { min-width: 0; width: 30px; height: 30px; padding: 0; border-radius: 50%; }
+.nfab { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); right: max(20px, calc((100vw - 640px) / 2 + 20px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 14px 28px -10px var(--shadow); }
+.nfab:disabled { opacity: .5; }
+.nlist { padding-bottom: 90px; }
+.nsheet { background: #fff; border-radius: 26px; padding: 14px 20px 20px; box-shadow: 0 10px 26px -16px var(--shadow); min-height: 60vh; }
+.nsheet .ntitle { border-bottom: 1px solid var(--line); margin-bottom: 8px; padding: 8px 0 12px; }
+.nrich { position: relative; }
+.nrich.e::before { content: 'Add note...'; position: absolute; left: 0; top: 0; color: var(--mute); opacity: .7; pointer-events: none; }
+.npe { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; }
+.npe input { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 999px; background: var(--paper); font: 500 15px var(--font-display); color: var(--ink); }
 .nrich { min-height: 50vh; outline: none; font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
 .nrich h1 { font-size: 26px; line-height: 1.25; font-weight: 600; margin: .3em 0; }
 .nrich ul, .nrich ol { padding-left: 26px; margin: .3em 0; }
@@ -788,7 +797,7 @@ img { max-width: 100%; }
   window.addEventListener('pagehide', nflush);
   function nlistHTML() {
     var q = nq.trim().toLowerCase();
-    var items = notes.slice().sort(function (a, b) { return b.u - a.u; }).filter(function (n) { return !q || (n.t + ' ' + n.b).toLowerCase().indexOf(q) !== -1; });
+    var items = notes.slice().sort(function (a, b) { return b.u - a.u; }).filter(function (n) { return !n.k && (q || (n.g || '') === ngp) && (!q || (n.t + ' ' + n.b).toLowerCase().indexOf(q) !== -1); });
     if (!items.length) return '<p class="empty">' + (q ? 'No notes match.' : 'No notes yet.') + '</p>';
     return items.map(function (n) {
       var dt = new Date(n.u);
@@ -797,7 +806,7 @@ img { max-width: 100%; }
     }).join('');
   }
   /* rich pages: n.pg = [html, ...]; n.b = plain text of every page (search + preview) */
-  var npi = 0, ndelp = false;
+  var ngp = '', nped = false, ndelp = false;   // current page (folder) of the Notes list; '' = the first page
   function inert(html) { return new DOMParser().parseFromString('<body>' + html, 'text/html').body; }
   function cleanHTML(html) {
     var body = inert(html);
@@ -812,15 +821,24 @@ img { max-width: 100%; }
   }
   function htmlText(html) { return inert(html.replace(/<(div|p|h\d|li|tr)\b|<br\s*\/?>/gi, '\n$&')).textContent; }
   function firstLine(s) { var l = (s || '').split('\n'); for (var i = 0; i < l.length; i++) if (l[i].trim()) return l[i].trim(); return ''; }
-  function notePages(n) {
-    if (!n.pg || !n.pg.length) n.pg = [n.b ? n.b.split('\n').map(function (l) { return '<div>' + (esc(l) || '<br>') + '</div>'; }).join('') : ''];
-    return n.pg;
+  function noteHTML(n) {   // n.h = rich body; older notes only have plain text n.b (or the short-lived per-note pages n.pg)
+    if (typeof n.h !== 'string') {
+      n.h = n.pg && n.pg.length ? n.pg.join('<div><br></div>') : (n.b || '').split('\n').map(function (l) { return '<div>' + (esc(l) || '<br>') + '</div>'; }).join('');
+      delete n.pg;
+    }
+    return n.h;
   }
-  function pagesBarHTML(n) {
-    var h = notePages(n).map(function (p, i) { return '<button data-n="pg" data-i="' + i + '"' + (i === npi ? ' class="on"' : '') + '>' + (i + 1) + '</button>'; }).join('');
+  function pageItems() { return notes.filter(function (x) { return x.k === 'page'; }).sort(function (a, b) { return a.u - b.u; }); }
+  function pagesBarHTML() {
+    var h = '<button data-n="pg" data-id=""' + (ngp === '' ? ' class="on"' : '') + '>Notes</button>';
+    pageItems().forEach(function (p) { h += '<button data-n="pg" data-id="' + p.id + '"' + (ngp === p.id ? ' class="on"' : '') + '>' + esc(p.t || 'Page') + '</button>'; });
     h += '<button data-n="pgadd" aria-label="Add page">+</button>';
-    if (n.pg.length > 1) h += '<button data-n="pgdel"' + (ndelp ? ' class="yes"' : '') + '>' + (ndelp ? 'Delete page?' : 'Delete page') + '</button>';
+    if (ngp !== '') h += '<button data-n="pged">' + (nped ? 'Done' : 'Edit') + '</button>';
     return h;
+  }
+  function pageEditHTML() {
+    var p = noteById(ngp); if (!p || !nped) return '';
+    return '<div class="npe"><input id="npn" placeholder="Page name" autocomplete="off" value="' + esc(p.t) + '"><button class="nrm' + (ndelp ? ' yes' : '') + '" data-n="pgdel">' + (ndelp ? 'Delete?' : 'Delete page') + '</button></div>';
   }
   var SW = ['#65406F', '#A064B0', '#D9534F', '#E8923A', '#3E9D6A', '#3E7FD9'];
   function toolbarHTML() {
@@ -832,15 +850,15 @@ img { max-width: 100%; }
   function renderNotes() {
     if (nview === 'edit' && noteById(ncur)) {
       var n = noteById(ncur);
-      if (npi >= notePages(n).length) npi = 0;
       nmain.innerHTML = '<div class="ned"><button data-n="list">‹ Notes</button><button class="nrm' + (ndel ? ' yes' : '') + '" data-n="del">' + (ndel ? 'Delete?' : 'Delete') + '</button></div>' +
-        '<input class="ntitle" id="nt" placeholder="Title" autocomplete="off" value="' + esc(n.t) + '"><div class="npg" id="npg">' + pagesBarHTML(n) + '</div>' +
-        '<div class="ntb" id="ntb">' + toolbarHTML() + '</div><div class="nrich" id="nb" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note"></div>';
-      document.getElementById('nb').innerHTML = cleanHTML(n.pg[npi]) || '<div><br></div>';
+        '<div class="ntb" id="ntb">' + toolbarHTML() + '</div>' +
+        '<div class="nsheet"><input class="ntitle" id="nt" placeholder="Title" autocomplete="off" value="' + esc(n.t) + '"><div class="nrich" id="nb" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note"></div></div>';
+      document.getElementById('nb').innerHTML = cleanHTML(noteHTML(n)) || '<div><br></div>';
+      markEmpty();
       try { document.execCommand('defaultParagraphSeparator', false, 'div'); } catch (e) {}
     } else {
       nview = 'list';
-      nmain.innerHTML = '<button class="nnew nadd" data-n="new"' + (loaded ? '' : ' disabled') + '>Add Note</button>' +
+      nmain.innerHTML = '<div class="npg" id="npg">' + pagesBarHTML() + '</div>' + pageEditHTML() + '<button class="nfab" data-n="new" aria-label="Add note"' + (loaded ? '' : ' disabled') + '><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' +
         '<input class="search" id="nq" type="search" placeholder="Search notes" autocomplete="off" value="' + esc(nq) + '"><div class="nlist" id="nlist">' + nlistHTML() + '</div>';
     }
   }
@@ -853,15 +871,23 @@ img { max-width: 100%; }
     var b = e.target.closest('[data-n]'); if (!b) return;
     var a = b.dataset.n;
     if (a === 'new' && loaded) {
-      var n = { id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: '', b: '', u: Date.now() };
-      notes.push(n); ncur = n.id; nview = 'edit'; ndel = false; npi = 0; ndelp = false; renderNotes(); document.getElementById('nt').focus();
+      var n = { id: 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: '', b: '', h: '', g: ngp, u: Date.now() };
+      notes.push(n); ncur = n.id; nview = 'edit'; ndel = false; renderNotes(); document.getElementById('nt').focus();
     }
-    else if (a === 'open') { ncur = b.dataset.id; nview = 'edit'; ndel = false; npi = 0; ndelp = false; renderNotes(); }
-    else if (a === 'pg') { npi = +b.dataset.i; ndelp = false; renderNotes(); }
-    else if (a === 'pgadd') { var cn = noteById(ncur); notePages(cn).push(''); npi = cn.pg.length - 1; ndelp = false; cn.u = Date.now(); nsave(); renderNotes(); document.getElementById('nb').focus(); }
+    else if (a === 'open') { ncur = b.dataset.id; nview = 'edit'; ndel = false; renderNotes(); }
+    else if (a === 'pg') { ngp = b.dataset.id; nped = false; ndelp = false; nq = ''; renderNotes(); }
+    else if (a === 'pgadd' && loaded) {
+      var pn = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), k: 'page', t: 'Page ' + (pageItems().length + 2), u: Date.now() };
+      notes.push(pn); nsave(); ngp = pn.id; nped = true; ndelp = false; nq = ''; renderNotes();
+      var pi = document.getElementById('npn'); if (pi) { pi.focus(); pi.select(); }
+    }
+    else if (a === 'pged') { nped = !nped; ndelp = false; renderNotes(); }
     else if (a === 'pgdel') {
       if (!ndelp) { ndelp = true; renderNotes(); }
-      else { var dn = noteById(ncur); dn.pg.splice(npi, 1); npi = Math.max(0, npi - 1); ndelp = false; syncNote(dn); renderNotes(); }
+      else {
+        var gid = ngp; notes.forEach(function (x) { if (!x.k && x.g === gid) { x.g = ''; x.u = Date.now(); } });
+        notes = notes.filter(function (x) { return x.id !== gid; }); nsave(); ngp = ''; nped = false; ndelp = false; renderNotes();
+      }
     }
     else if (a === 'list') closeNote();
     else if (a === 'del') {
@@ -872,14 +898,18 @@ img { max-width: 100%; }
   nmain.addEventListener('input', function (e) {
     var t = e.target;
     if (t.id === 'nq') { nq = t.value; document.getElementById('nlist').innerHTML = nlistHTML(); }
+    else if (t.id === 'npn') { var pg = noteById(ngp); if (!pg) return; pg.t = t.value; pg.u = Date.now(); nsave(); var cb2 = nmain.querySelector('[data-n="pg"][data-id="' + ngp + '"]'); if (cb2) cb2.textContent = t.value || 'Page'; }
     else if (t.id === 'nt') { var n = noteById(ncur); if (!n) return; n.t = t.value; n.u = Date.now(); nsave(); }
     else if (t.id === 'nb') {
       if (e.inputType === 'insertParagraph') { var cb = curBlock(); if (cb && cb.classList.contains('ck')) cb.classList.remove('on'); }
       nbChanged();
     }
   });
-  function syncNote(n) { n.b = notePages(n).map(htmlText).join('\n'); n.u = Date.now(); nsave(); }
-  function nbChanged() { var n = noteById(ncur); if (!n) return; notePages(n)[npi] = document.getElementById('nb').innerHTML; syncNote(n); }
+  function markEmpty() { var nb = document.getElementById('nb'); if (nb) nb.classList.toggle('e', !nb.textContent.trim() && !nb.querySelector('table,li,.ck')); }
+  function nbChanged() {
+    var n = noteById(ncur); if (!n) return;
+    n.h = document.getElementById('nb').innerHTML; n.b = htmlText(n.h); n.u = Date.now(); nsave(); markEmpty();
+  }
   function curBlock() {
     var nb = document.getElementById('nb'), s = getSelection(); if (!nb || !s.rangeCount) return null;
     var nd = s.anchorNode; if (!nd || !nb.contains(nd)) return null;
@@ -1013,7 +1043,7 @@ img { max-width: 100%; }
       }
       document.getElementById(x[1]).textContent = t;
     });
-    document.getElementById('nmeta').textContent = loaded && notes.length ? notes.length + (notes.length === 1 ? ' note' : ' notes') : '';
+    document.getElementById('nmeta').textContent = loaded && notes.filter(function (x) { return !x.k; }).length ? notes.filter(function (x) { return !x.k; }).length + (notes.filter(function (x) { return !x.k; }).length === 1 ? ' note' : ' notes') : '';
     var evd = lsGet(EKEY, null), evn = 0, tds = TY + '-' + pad(TM) + '-' + pad(TD);
     if (evd && Array.isArray(evd.items)) evd.items.forEach(function (e) { if (occursOn(e, tds)) evn++; });
     document.getElementById('kmeta').textContent = evn ? evn + (evn === 1 ? ' event today' : ' events today') : '';
