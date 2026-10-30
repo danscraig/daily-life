@@ -290,6 +290,7 @@ button:disabled { cursor: default; }
 .ntb .sw { display: flex; gap: 10px; align-items: center; padding: 4px 6px; }
 .ntb .sw button { min-width: 0; width: 30px; height: 30px; padding: 0; border-radius: 50%; }
 .nsheet { margin-bottom: 110px; }
+.jtoday { flex: none; height: 36px; padding: 0 16px; border-radius: 999px; background: var(--paper); color: var(--accent); font: 500 14px var(--font-display); box-shadow: 0 6px 16px -12px var(--shadow); }
 .nhact { display: flex; align-items: center; gap: 6px; }
 .hb { flex: none; min-width: 36px; height: 36px; padding: 0 10px; border-radius: 999px; background: var(--paper); color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px -12px var(--shadow); font: 500 13px var(--font-display); }
 .hb.on { color: var(--accent); }
@@ -399,6 +400,7 @@ img { max-width: 100%; }
   <header class="bar">
     <button class="back" id="back" aria-label="Back to home">‹</button>
     <span class="brand" id="appname"></span>
+    <button class="jtoday" id="jtoday" hidden>Today</button>
     <span class="status" id="status" role="status"></span>
   </header>
   <div id="banner"></div>
@@ -570,7 +572,6 @@ img { max-width: 100%; }
       '<button class="center" data-act="cal" aria-label="Open calendar"><span class="dayname">' + d + ' ' + MN[m - 1] + '</span>' +
       '<span class="daysub">' + wd + (isToday ? '<span class="today-pill">Today</span>' : '') + '</span></button>' +
       '<button class="step" data-act="next" aria-label="Next day">›</button></div>';
-    if (!isToday) h += '<button class="jump" data-act="today">Back to today</button>';
     h += '<div class="rows">';
     if (!ys.length || ys[0] !== TY) h += '<div class="future">This date has not happened yet this year.</div>';
     ys.forEach(function (y) {
@@ -711,7 +712,9 @@ img { max-width: 100%; }
     else if (view === 'cal') main.innerHTML = calHTML();
     else if (view === 'ov') main.innerHTML = ovHTML();
     if (!am.hidden) abody.innerHTML = actsHTML();
+    document.getElementById('jtoday').hidden = !(view === 'day' && !(sel.m === TM && sel.d === TD));   // top-right: back to today
   }
+  document.getElementById('jtoday').addEventListener('click', function () { sel = { m: TM, d: TD }; render(); window.scrollTo(0, 0); });
   function refreshAfterData() {
     var a = document.activeElement;
     if (!sm.hidden) resEl.innerHTML = resultsHTML();
