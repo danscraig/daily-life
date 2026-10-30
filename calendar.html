@@ -114,6 +114,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .modal.dock { background: transparent; align-items: flex-end; padding: 0; pointer-events: none; }
 .modal.dock .sheet { pointer-events: auto; max-width: 760px; max-height: 46vh; border-radius: 26px 26px 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -16px rgba(101, 64, 111, .5); }
 body.editing { padding-bottom: calc(50vh + env(safe-area-inset-bottom, 0px)); }
+/* week and day: the page stays put; only the time grid scrolls, inside its rounded card */
+body.tgv { height: 100vh; height: 100dvh; overflow: hidden; padding-bottom: 14px; }
+body.tgv .wrap { height: 100%; display: flex; flex-direction: column; }
+body.tgv .stick { position: static; flex: none; }
+body.tgv main { flex: 1; min-height: 0; }
+body.tgv .tg { height: 100%; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+body.tgv .tgh { top: 0; }
+body.tgv.editing .tg { padding-bottom: 46vh; }
+html.nolock, html.nolock body { overflow: hidden; }
 body.editing .fab { display: none; }
 .now { position: absolute; left: 0; right: 0; height: 2px; background: #E0506A; pointer-events: none; z-index: 3; }
 .now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #E0506A; }
@@ -179,8 +188,7 @@ body.editing .fab { display: none; }
   var REPEATS = [['', 'Does not repeat'], ['d', 'Every day'], ['wd', 'Every weekday (Mon–Fri)'], ['w', 'Every week'], ['m', 'Every month on this day'], ['6m', 'Every 6 months on this day'], ['y', 'Every year on this day']];
   var HR = 46;   // pixels per hour in the week and day views
   var START = 300;   // the grid starts at 05:00 (minutes after midnight)
-  var items = [], view = 'month', cur = new Date(), sel = null, edit = null, pend = null;
-  try { var v = localStorage.getItem('daily-life-cal-view'); if (v === 'week' || v === 'day' || v === 'month') view = v; } catch (e) {}
+  var items = [], view = 'week', cur = new Date(), sel = null, edit = null, pend = null;   // always opens on the week view
 
   var main = document.getElementById('main'), titleEl = document.getElementById('title');
   var em = document.getElementById('em'), ebody = document.getElementById('ebody');
@@ -364,9 +372,20 @@ body.editing .fab { display: none; }
 
   function render(keep) {   // keep: leave the scroll position alone; otherwise the page goes back to the top
     setTitle();
+    document.body.classList.toggle('tgv', view !== 'month');
     main.innerHTML = view === 'month' ? monthHTML() : view === 'week' ? weekHTML() : dayHTML();
-    if (!keep) window.scrollTo(0, 0);
+    if (!keep) { window.scrollTo(0, 0); var t = tgEl(); if (t) t.scrollTop = 0; }
+    lockMonth();
   }
+  /* week and day: only the grid scrolls, inside its rounded card; month: no scrolling when it all fits */
+  function tgEl() { return view === 'month' ? null : main.querySelector('.tg'); }
+  function sY() { var t = tgEl(); return t ? t.scrollTop : window.scrollY; }
+  function scrollV(d) { var t = tgEl(); if (t) t.scrollTop += d; else window.scrollBy(0, d); }
+  function lockMonth() {
+    var fit = view === 'month' && main.getBoundingClientRect().bottom + window.scrollY + 14 <= window.innerHeight;
+    document.documentElement.classList.toggle('nolock', fit);
+  }
+  window.addEventListener('resize', lockMonth);
   function go(n) {
     var step = view === 'month' ? 0 : n * (view === 'week' ? 7 : 1);
     if (view === 'month') cur = new Date(cur.getFullYear(), cur.getMonth() + n, 1);
@@ -392,7 +411,7 @@ body.editing .fab { display: none; }
     em.hidden = false;
     if (edit.dock) {
       ensureVisible(); render(true);
-      var dr = main.querySelector('.draft'); if (dr) window.scrollTo(0, Math.max(0, dr.getBoundingClientRect().top + window.scrollY - (document.getElementById('stick').offsetHeight + 110)));
+      var dr = main.querySelector('.draft'), tg = tgEl(); if (dr && tg) tg.scrollTop = Math.max(0, tg.scrollTop + dr.getBoundingClientRect().top - tg.getBoundingClientRect().top - 110);
     }
     else if (edit.isNew) setTimeout(function () { var t = document.getElementById('et'); if (t) t.focus(); }, 50);
   }
@@ -619,7 +638,7 @@ body.editing .fab { display: none; }
   var mdrag = null, noClick = 0;
   function mdUpdate() {
     var m = mdrag; if (!m || !m.active) return;
-    var dm = Math.round((m.cy + window.scrollY - m.y0) / HR * 4) * 15, dur = m.en0 - m.s0;
+    var dm = Math.round((m.cy + sY() - m.y0) / HR * 4) * 15, dur = m.en0 - m.s0;
     m.s = Math.max(Math.min(START, m.s0), Math.min(1439 - dur, m.s0 + dm));
     var c0 = main.querySelector('.col'), r = c0.getBoundingClientRect();
     m.idx = Math.max(0, Math.min(shown.length - 1, Math.floor((m.cx - r.left) / r.width)));
@@ -633,8 +652,8 @@ body.editing .fab { display: none; }
     try { if (navigator.vibrate) navigator.vibrate(12); } catch (x) {}
     m.scroller = setInterval(function () {   // near the top or bottom edge of the screen: scroll along
       var top = document.getElementById('stick').offsetHeight + 40;
-      if (m.cy > window.innerHeight - 70) { window.scrollBy(0, 14); mdUpdate(); }
-      else if (m.cy < top) { window.scrollBy(0, -14); mdUpdate(); }
+      if (m.cy > window.innerHeight - 70) { scrollV(14); mdUpdate(); }
+      else if (m.cy < top) { scrollV(-14); mdUpdate(); }
     }, 30);
     mdUpdate();
   }
@@ -643,7 +662,7 @@ body.editing .fab { display: none; }
     var e = byId(te.dataset.id); if (!e || !e.st || isMulti(e)) return;   // multi-day events are changed in the form
     var s0 = mins(e.st), en0 = e.en ? mins(e.en) : s0 + 60; if (en0 <= s0) en0 = s0 + 30;
     mdrag = { el: te, id: ev.pointerId, touch: ev.pointerType !== 'mouse', active: false, e: e, occ: te.dataset.d, s0: s0, en0: en0, s: s0,
-      idx0: shown.findIndex(function (d) { return ymd(d) === te.dataset.d; }), cx: ev.clientX, cy: ev.clientY, x0: ev.clientX, y0: ev.clientY + window.scrollY, c0y: ev.clientY };
+      idx0: shown.findIndex(function (d) { return ymd(d) === te.dataset.d; }), cx: ev.clientX, cy: ev.clientY, x0: ev.clientX, y0: ev.clientY + sY(), c0y: ev.clientY };
     mdrag.idx = mdrag.idx0;
     if (mdrag.idx0 < 0) { mdrag = null; return; }
     if (mdrag.touch) mdrag.timer = setTimeout(mdActivate, 380);

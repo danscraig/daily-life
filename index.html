@@ -280,11 +280,23 @@ button:disabled { cursor: default; }
 .npg button { flex: none; min-width: 38px; height: 38px; padding: 0 12px; border-radius: 999px; background: var(--paper); color: var(--ink); font: 500 15px var(--font-display); box-shadow: 0 6px 16px -12px var(--shadow); }
 .npg button.on { background: var(--accent); color: #fff; }
 .npg button.yes { background: var(--ink); color: #fff; }
-.ntb { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; margin: 0 0 10px; background: var(--paper); border-radius: 22px; box-shadow: 0 10px 26px -16px var(--shadow); }
-.ntb button { min-width: 40px; height: 40px; padding: 0 10px; border-radius: 14px; background: transparent; color: var(--ink); font: 500 16px var(--font-display); }
+.ntb { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: var(--paper); border-radius: 24px 24px 0 0; box-shadow: 0 -10px 30px -14px var(--shadow); }
+.ntb.kb { padding-bottom: 8px; }
+.ntb .ntr, .ntb .tbo { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.ntb .ntr::-webkit-scrollbar { display: none; }
+.ntb .tbo[hidden], .ntb .sw[hidden] { display: none; }
+.ntb button { flex: none; min-width: 38px; height: 40px; padding: 0 10px; border-radius: 14px; background: transparent; color: var(--ink); font: 500 16px var(--font-display); }
 .ntb button:active { background: var(--orchid); }
-.ntb .sw { display: flex; gap: 8px; align-items: center; width: 100%; padding: 4px 6px; }
+.ntb .sw { display: flex; gap: 10px; align-items: center; padding: 4px 6px; }
 .ntb .sw button { min-width: 0; width: 30px; height: 30px; padding: 0; border-radius: 50%; }
+.nsheet { margin-bottom: 110px; }
+.nhact { display: flex; align-items: center; gap: 6px; }
+.hb { flex: none; min-width: 36px; height: 36px; padding: 0 10px; border-radius: 999px; background: var(--paper); color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px -12px var(--shadow); font: 500 13px var(--font-display); }
+.hb.on { color: var(--accent); }
+.hb.yes { color: #C0392B; font-weight: 600; }
+.ncard.npage b svg.pin { width: 15px; height: 15px; }
+.ncard b .pin { flex: none; width: 15px; height: 15px; color: var(--accent); margin-left: 6px; vertical-align: -2px; }
+.ncard.npage b .pin { margin-left: auto; }
 .nfab { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); right: max(20px, calc((100vw - 640px) / 2 + 20px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 14px 28px -10px var(--shadow); }
 .nfab:disabled { opacity: .5; }
 .nlist { padding-bottom: 90px; }
@@ -404,6 +416,7 @@ img { max-width: 100%; }
   <header class="bar">
     <button class="back" id="nback" aria-label="Back to home">‹</button>
     <span class="brand">Notes</span>
+    <span class="nhact" id="nhact"></span>
     <span class="status" id="nstatus" role="status"></span>
   </header>
   <main id="nmain"></main>
@@ -817,16 +830,17 @@ img { max-width: 100%; }
   window.addEventListener('pagehide', nflush);
   function nlistHTML() {
     var q = nq.trim().toLowerCase();
-    var items = notes.slice().sort(function (a, b) { return b.u - a.u; }).filter(function (n) { return !n.k && (q || (n.g || '') === ngp) && (!q || (n.t + ' ' + n.b).toLowerCase().indexOf(q) !== -1); });
-    var pgs = q ? [] : notes.filter(function (x) { return x.k === 'page' && (x.g || '') === ngp; }).sort(function (a, b) { return b.u - a.u; });
+    var byPin = function (a, b) { return (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || b.u - a.u; };   // pinned first, then newest
+    var items = notes.slice().sort(byPin).filter(function (n) { return !n.k && (q || (n.g || '') === ngp) && (!q || (n.t + ' ' + n.b).toLowerCase().indexOf(q) !== -1); });
+    var pgs = q ? [] : notes.filter(function (x) { return x.k === 'page' && (x.g || '') === ngp; }).sort(byPin);
     if (!items.length && !pgs.length) return '<p class="empty">' + (q ? 'No notes match.' : ngp ? 'Empty.' : 'No notes yet.') + '</p>';
     return pgs.map(function (p) {
       var c = notes.filter(function (x) { return (x.g || '') === p.id; }).length;
-      return '<button class="ncard npage" data-n="pg" data-id="' + p.id + '"><b><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' + esc(p.t || 'Untitled page') + '</b><i>' + c + (c === 1 ? ' item' : ' items') + '</i></button>';
+      return '<button class="ncard npage" data-n="pg" data-id="' + p.id + '"><b><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>' + esc(p.t || 'Untitled page') + (p.pin ? PIN : '') + '</b><i>' + c + (c === 1 ? ' item' : ' items') + '</i></button>';
     }).join('') + items.map(function (n) {
       var dt = new Date(n.u);
       var fl = firstLine(n.b);
-      return '<button class="ncard" data-n="open" data-id="' + n.id + '"><b>' + esc(n.t || 'Untitled') + '</b>' + (fl ? '<span>' + esc(fl) + '</span>' : '') + '<i>' + dt.getDate() + ' ' + MN[dt.getMonth()].slice(0, 3) + ' ' + dt.getFullYear() + '</i></button>';
+      return '<button class="ncard" data-n="open" data-id="' + n.id + '"><b>' + esc(n.t || 'Untitled') + (n.pin ? PIN : '') + '</b>' + (fl ? '<span>' + esc(fl) + '</span>' : '') + '<i>' + dt.getDate() + ' ' + MN[dt.getMonth()].slice(0, 3) + ' ' + dt.getFullYear() + '</i></button>';
     }).join('');
   }
   /* rich pages: n.pg = [html, ...]; n.b = plain text of every page (search + preview) */
@@ -854,21 +868,34 @@ img { max-width: 100%; }
   }
   function pageHeadHTML() {   // inside a page: back to the parent, rename, delete
     var p = noteById(ngp); if (!p) { ngp = ''; return ''; }
-    return '<div class="ned"><button class="nrm' + (ndelp ? ' yes' : '') + '" data-n="pgdel">' + (ndelp ? 'Delete?' : 'Delete') + '</button></div>' +
-      '<input class="ntitle" id="npn" placeholder="Page name" autocomplete="off" value="' + esc(p.t) + '">';
+    return '<input class="ntitle" id="npn" placeholder="Page name" autocomplete="off" value="' + esc(p.t) + '">';
   }
   var SW = ['#65406F', '#A064B0', '#D9534F', '#E8923A', '#3E9D6A', '#3E7FD9'];
   function toolbarHTML() {
-    return '<button data-f="title">Title</button><button data-f="body">Body</button><button data-f="b"><b>B</b></button><button data-f="i"><i>I</i></button><button data-f="u"><u>U</u></button>' +
-      '<button data-f="ul" aria-label="Bullets">•</button><button data-f="ol" aria-label="Numbers">1.</button><button data-f="ck" aria-label="Checklist">☑</button><button data-f="tbl" aria-label="Table">▦</button><button data-f="col" aria-label="Colour"><span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:conic-gradient(#D9534F,#E8923A,#3E9D6A,#3E7FD9,#A064B0,#D9534F);vertical-align:middle"></span></button>' +
-      '<span id="tbo" hidden><button data-f="row">+ Row</button><button data-f="cell">+ Col</button><button data-f="deltbl">Del table</button></span>' +
-      '<div class="sw" id="nsw" hidden>' + SW.map(function (c) { return '<button data-f="c" data-c="' + c + '" style="background:' + c + '" aria-label="' + c + '"></button>'; }).join('') + '</div>';
+    return '<div class="sw" id="nsw" hidden>' + SW.map(function (c) { return '<button data-f="c" data-c="' + c + '" style="background:' + c + '" aria-label="' + c + '"></button>'; }).join('') + '</div>' +
+      '<div class="tbo" id="tbo" hidden><button data-f="row">+ Row</button><button data-f="cell">+ Col</button><button data-f="deltbl">Del table</button></div>' +
+      '<div class="ntr"><button data-f="title">Title</button><button data-f="body">Body</button><button data-f="b"><b>B</b></button><button data-f="i"><i>I</i></button><button data-f="u"><u>U</u></button>' +
+      '<button data-f="ul" aria-label="Bullets">•</button><button data-f="ol" aria-label="Numbers">1.</button><button data-f="ck" aria-label="Checklist">☑</button><button data-f="tbl" aria-label="Table">▦</button><button data-f="col" aria-label="Colour"><span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:conic-gradient(#D9534F,#E8923A,#3E9D6A,#3E7FD9,#A064B0,#D9534F);vertical-align:middle"></span></button></div>';
+  }
+  var PIN = '<svg class="pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z"/></svg>';
+  function placeTb() {   // keep the formatting bar glued to the bottom edge, above the keyboard when it is open
+    var tb = document.getElementById('ntb'); if (!tb) return;
+    var vv = window.visualViewport, kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
+    tb.style.bottom = kb + 'px'; tb.classList.toggle('kb', kb > 80);
+  }
+  if (window.visualViewport) { visualViewport.addEventListener('resize', placeTb); visualViewport.addEventListener('scroll', placeTb); }
+  window.addEventListener('scroll', placeTb, { passive: true });
+  function headActs() {   // top-right buttons: search on the main list; pin + delete inside a page or a note
+    var h = document.getElementById('nhact'), it = nview === 'edit' ? noteById(ncur) : ngp ? noteById(ngp) : null, del = nview === 'edit' ? ndel : ndelp, s = '';
+    if (it) s = '<button class="hb' + (it.pin ? ' on' : '') + '" data-n="pin" aria-label="' + (it.pin ? 'Unpin' : 'Pin') + '"><svg viewBox="0 0 24 24" width="16" height="16" fill="' + (it.pin ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z"/></svg></button>' +
+      '<button class="hb' + (del ? ' yes' : '') + '" data-n="' + (nview === 'edit' ? 'del' : 'pgdel') + '" aria-label="Delete">' + (del ? 'Delete?' : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>') + '</button>';
+    else s = '<button class="hb" data-n="srch" aria-label="Search"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>';
+    h.innerHTML = s;
   }
   function renderNotes() {
     if (nview === 'edit' && noteById(ncur)) {
       var n = noteById(ncur);
-      nmain.innerHTML = '<div class="ned"><button class="nrm' + (ndel ? ' yes' : '') + '" data-n="del">' + (ndel ? 'Delete?' : 'Delete') + '</button></div>' +
-        '<div class="ntb" id="ntb">' + toolbarHTML() + '</div>' +
+      nmain.innerHTML = '<div class="ntb" id="ntb">' + toolbarHTML() + '</div>' +
         '<div class="nsheet"><input class="ntitle" id="nt" placeholder="Title" autocomplete="off" value="' + esc(n.t) + '"><div class="nrich" id="nb" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Note"></div></div>';
       document.getElementById('nb').innerHTML = cleanHTML(noteHTML(n)) || '<div><br></div>';
       markEmpty();
@@ -876,20 +903,21 @@ img { max-width: 100%; }
     } else {
       nview = 'list';
       nmain.innerHTML = (ngp ? pageHeadHTML() : '') + '<div class="nmenu" id="nmenu" hidden><button data-n="new">Add note</button><button data-n="pgadd">Add page</button></div><button class="nfab" data-n="menu" aria-label="Add"' + (loaded ? '' : ' disabled') + '><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' +
-        (ngp ? '' : '<div class="nsr"><button class="nlupa" data-n="srch" aria-label="Search"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>' + (nsrch || nq ? '<input class="search" id="nq" type="search" placeholder="Search notes" autocomplete="off" value="' + esc(nq) + '">' : '') + '</div>') +
+        (!ngp && (nsrch || nq) ? '<div class="nsr"><input class="search" id="nq" type="search" placeholder="Search notes" autocomplete="off" value="' + esc(nq) + '"></div>' : '') +
         '<div class="nlist" id="nlist">' + nlistHTML() + '</div>' + actSheetHTML();
     }
+    headActs(); placeTb();
   }
   function closeNote() {
     var n = noteById(ncur);
     if (n && !n.t.trim() && !n.b.trim()) { notes = notes.filter(function (x) { return x !== n; }); nsave(); }
     nview = 'list'; ncur = null; ndel = false; renderNotes();
   }
-  nmain.addEventListener('click', function (e) {
+  function nclick(e) {
     var b = e.target.closest('[data-n]'), mn = document.getElementById('nmenu');
     if (!b) { if (mn) mn.hidden = true; return; }
     var a = b.dataset.n;
-    if (nact && a !== 'actdel') { nact = ''; if (a === 'actx') { renderNotes(); return; } }
+    if (nact && a !== 'actdel' && a !== 'actpin') { nact = ''; if (a === 'actx') { renderNotes(); return; } }
     if (a === 'actdel') { removeItem(nact); nact = ''; renderNotes(); return; }
     if (a === 'actx') { nact = ''; renderNotes(); return; }
     if (a === 'menu') { mn.hidden = !mn.hidden; return; }
@@ -915,11 +943,19 @@ img { max-width: 100%; }
       }
     }
     else if (a === 'list') closeNote();
+    else if (a === 'pin' || a === 'actpin') {
+      var pt = noteById(a === 'actpin' ? nact : nview === 'edit' ? ncur : ngp);
+      if (pt) { pt.pin = !pt.pin; pt.u = Date.now(); nsave(); }
+      if (a === 'actpin') nact = '';
+      renderNotes();
+    }
     else if (a === 'del') {
       if (!ndel) { ndel = true; renderNotes(); }
-      else { notes = notes.filter(function (x) { return x.id !== ncur; }); nsave(); nview = 'list'; ncur = null; ndel = false; renderNotes(); }
+      else { var dn = noteById(ncur); if (dn) ngp = dn.g || ''; nq = ''; nsrch = false; notes = notes.filter(function (x) { return x.id !== ncur; }); nsave(); nview = 'list'; ncur = null; ndel = false; renderNotes(); }   // back to the page it was in
     }
-  });
+  }
+  nmain.addEventListener('click', nclick);
+  document.getElementById('nhact').addEventListener('click', nclick);
   nmain.addEventListener('input', function (e) {
     var t = e.target;
     if (t.id === 'nq') { nq = t.value; document.getElementById('nlist').innerHTML = nlistHTML(); }
@@ -932,7 +968,7 @@ img { max-width: 100%; }
   });
   function actSheetHTML() {
     var it = nact && noteById(nact); if (!it) { nact = ''; return ''; }
-    return '<div class="nact"><b>' + esc(it.t || (it.k ? 'Untitled page' : 'Untitled')) + '</b><button class="yes" data-n="actdel">Delete' + (it.k ? (notes.some(function (x) { return (x.g || '') === it.id; }) ? ' page and everything inside' : ' page') : '') + '</button><button data-n="actx">Cancel</button></div>';
+    return '<div class="nact"><b>' + esc(it.t || (it.k ? 'Untitled page' : 'Untitled')) + '</b><button data-n="actpin">' + (it.pin ? 'Unpin' : 'Pin') + '</button><button class="yes" data-n="actdel">Delete' + (it.k ? (notes.some(function (x) { return (x.g || '') === it.id; }) ? ' page and everything inside' : ' page') : '') + '</button><button data-n="actx">Cancel</button></div>';
   }
   function removeItem(id) {
     var gone = {}, grew = true; gone[id] = true;   // a page takes everything inside it, at any depth
@@ -1160,11 +1196,21 @@ img { max-width: 100%; }
     if (s === 'notes') { nview = 'list'; ncur = null; ndel = false; ngp = ''; ndelp = false; renderNotes(); }
     else if (s === 'home') homeInfo(); else render();
     window.scrollTo(0, 0);
+    lockHome();
   }
+  /* home: when everything fits on the screen the page cannot be dragged up or down */
+  function lockHome() {
+    var el = document.documentElement;
+    el.style.overflow = ''; document.body.style.overflow = '';
+    if (!homeEl.hidden && el.scrollHeight <= window.innerHeight + 1) { el.style.overflow = 'hidden'; document.body.style.overflow = 'hidden'; }
+  }
+  window.addEventListener('resize', lockHome); window.addEventListener('load', lockHome);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(lockHome);
+  setTimeout(lockHome, 300);
   homeEl.addEventListener('click', function (e) { var b = e.target.closest('[data-app]'); if (b) show(b.dataset.app); });
   document.getElementById('back').addEventListener('click', function () { show('home'); });
   var _render = render;
-  render = function () { _render(); homeInfo(); if (!NE.hidden && nview === 'list') renderNotes(); };
+  render = function () { _render(); homeInfo(); lockHome(); if (!NE.hidden && nview === 'list') renderNotes(); };
 
   /* swipe left or right on the Day tab to change the day (left = next day, right = previous day) */
   (function () {
