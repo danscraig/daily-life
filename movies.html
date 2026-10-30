@@ -42,6 +42,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .wrap { max-width: 640px; margin: 0 auto; }
 /* the title bar stays at the top while you scroll */
 .top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
+.ibtn[hidden] { display: none; }
 .top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
 .ibtn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); color: var(--ink); }
 input[type="search"], input[type="text"] { width: 100%; padding: 14px 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
@@ -147,7 +148,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 <div class="wrap">
   <header class="top">
     <a class="ibtn" href="./" aria-label="Back to home" style="text-decoration:none;font-size:24px;line-height:1;padding-bottom:3px">‹</a>
-    <h1 style="flex:1;margin-left:6px;font-size:22px;line-height:1.15">Movies, Series &amp; Books</h1>
+    <h1 style="flex:1;margin-left:6px;font-size:18px;line-height:1.15;white-space:nowrap">Movies, Series &amp; Books</h1>
+    <button class="ibtn" id="lupa" aria-label="Search"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button>
     <button class="ibtn" id="gear" aria-label="Settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
   </header>
   <main id="main"></main>
@@ -428,6 +430,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   function tabItems(t) {   // "c" is not a status: every series with a dated episode still to come
     return db.items.filter(function (i) { return i.k === lk && (t === 'c' ? !!nextAir(i) : i.s === t); });
   }
+  var qopen = false, lopen = false;   // the search boxes only show after tapping the magnifier in the header
   /* filters for the Watched / Read lists */
   var lf = { q: '', y: '', g: '', r: '', c: '', o: 'u' };
   var LORD = [['u', 'Recent'], ['t', 'A–Z'], ['yd', 'Newest'], ['ya', 'Oldest']];   // short, so four filters fit on one line
@@ -436,7 +439,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     all.forEach(function (i) { if (i.y) ys[i.y] = 1; (i.gn || []).forEach(function (g) { gs[g] = 1; }); });
     var yl = Object.keys(ys).sort().reverse(), gl = Object.keys(gs).sort(), sel = function (v, c) { return v === c ? ' selected' : ''; };
     var ord = LORD.concat(lk === 'b' ? [['r', 'Rating']] : []);
-    var h = '<input class="lsearch" type="search" id="lq" placeholder="Search this list" autocomplete="off" aria-label="Search this list" value="' + esc(lf.q) + '"><div class="filters lfil">' +
+    var h = (lopen || lf.q ? '<input class="lsearch" type="search" id="lq" placeholder="Search this list" autocomplete="off" aria-label="Search this list" value="' + esc(lf.q) + '">' : '') + '<div class="filters lfil">' +
       '<label>Year<select id="ly"><option value="">All</option>' + yl.map(function (y) { return '<option value="' + esc(y) + '"' + sel(y, lf.y) + '>' + esc(y) + '</option>'; }).join('') + '</select></label>' +
       '<label>Genre<select id="lg"><option value="">All</option>' + gl.map(function (g) { return '<option value="' + esc(g) + '"' + sel(g, lf.g) + '>' + esc(g) + '</option>'; }).join('') + '</select></label>';
     if (lk === 'b') h += '<label>Rating<select id="lr"><option value="">All</option>' + [5, 4, 3, 2, 1].map(function (n) { return '<option value="' + n + '"' + sel(String(n), lf.r) + '>' + n + '★ +</option>'; }).join('') + '</select></label>';
@@ -477,7 +480,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   }
   function searchHTML() {
     return '<div class="kinds" role="group" aria-label="Type"><button data-sk="s" aria-pressed="' + (sk === 's') + '">Series</button><button data-sk="m" aria-pressed="' + (sk === 'm') + '">Movies</button><button data-sk="b" aria-pressed="' + (sk === 'b') + '">Books</button></div>' +
-      '<form id="sf" role="search"><input type="search" id="q" placeholder="' + (sk === 'b' ? 'Search by title or author' : 'Search by name') + '" autocomplete="off" aria-label="Search" value="' + esc(sq) + '"></form>' +
+      (qopen || sq.trim() ? '<form id="sf" role="search"><input type="search" id="q" placeholder="' + (sk === 'b' ? 'Search by title or author' : 'Search by name') + '" autocomplete="off" aria-label="Search" value="' + esc(sq) + '"></form>' : '') +
       '<div class="filters">' +
       '<label>Year<select id="fy">' + yearOpts() + '</select></label>' +
       '<label>Genre<select id="fg"' + (db.tmdb || sk === 'b' ? '' : ' disabled') + '>' + genreOpts() + '</select></label>' +
@@ -509,8 +512,20 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       main.innerHTML = searchHTML(); renderSres();
       loadGenres(sk).then(function () { var g = document.getElementById('fg'); if (g && view === 'search') g.innerHTML = genreOpts(); });
     }
+    document.getElementById('lupa').hidden = view === 'lists' && !(tab === 'd' && tabItems('d').length);   // lists: only where there is a list to search
     if (!dm.hidden) renderDetail();
   }
+  document.getElementById('lupa').addEventListener('click', function () {
+    if (view === 'search') {
+      qopen = !(qopen || sq.trim());
+      if (!qopen) { sq = ''; render(); fetchBrowse(false); return; }
+      render(); var qi = document.getElementById('q'); if (qi) qi.focus();
+    } else {
+      lopen = !(lopen || lf.q);
+      if (!lopen) lf.q = '';
+      render(); var li = document.getElementById('lq'); if (li) li.focus();
+    }
+  });
 
   function seasonsOf(it) {
     var map = {}, order = [];
