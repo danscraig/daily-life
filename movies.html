@@ -91,6 +91,7 @@ select:disabled { opacity: .5; }
 .filters label { display: block; min-width: 0; font: 500 11px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
 .filters select { margin-top: 4px; }
 .lfil { margin: 10px 0 16px; }
+em.soon, .note.soon { display: block; font-style: normal; font-size: 12.5px; color: var(--accent); }
 .lsearch { width: 100%; margin-top: 12px; padding: 11px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 14px var(--font); }
 @media (max-width: 430px) { .filters { grid-template-columns: 1fr 1fr; } .filters label:last-child { grid-column: 1 / -1; } }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 10px; }
@@ -211,6 +212,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   function ek(e) { return e[0] + '-' + e[1]; }
   function aired(it) { return (it.eps || []).filter(function (e) { return e[2] && e[2] <= today; }); }
   function seenN(it) { return aired(it).filter(function (e) { return it.seen[ek(e)]; }).length; }
+  function nextAir(it) { var u = (it.eps || []).filter(function (e) { return e[2] && e[2] > today; }).sort(function (a, b) { return a[2] < b[2] ? -1 : a[2] > b[2] ? 1 : a[0] - b[0] || a[1] - b[1]; }); return u[0] || null; }   // the next episode that has a date still ahead
+  function airText(e) { return epLabel(e).replace(' · ', '') + ' · ' + new Date(e[2] + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
   function nextEp(it) { var a = aired(it); for (var i = 0; i < a.length; i++) if (!it.seen[ek(a[i])]) return a[i]; return null; }
   // progress text: episodes watched in the current season (the next episode's) and seasons finished
   function seasonInfo(it, nx) {
@@ -399,6 +402,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       var si = seasonInfo(it, nx);   // the bar shows the current season, not the whole series
       if (a.length) extra = '<span class="bar"><span style="width:' + (si.cur.all ? Math.round(si.cur.seen * 100 / si.cur.all) : 0) + '%"></span></span>';
       if (a.length) extra += progHTML(si) + (nx ? '' : '<em>Up to date</em>');
+      var na = nextAir(it); if (na) extra += '<em class="soon">Next episode: ' + airText(na) + '</em>';
       if (nx && it.s !== 'd') quick = '<span class="qwrap"><button class="quick" data-next="' + it.id + '">Watched ' + epLabel(nx).replace(' · ', '') + '</button></span>';
     }
     if (it.k === 'b') {
@@ -410,16 +414,20 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     return '<div class="card"><button class="open" data-open="' + it.id + '">' + pst(it) + '<span class="ct"><b>' + esc(it.t) + '</b><i>' + meta + '</i>' + extra + '</span></button>' + quick + '</div>';
   }
   function listsHTML() {
-    var tabs = lk === 'm' ? MTABS : lk === 'b' ? BTABS : TABS;   // movies have no "Watching"; books read instead of watch
+    var tabs = listTabs();   // movies have no "Watching"; books read instead of watch; series also get "Coming soon"
     if (!tabs.some(function (t) { return t[0] === tab; })) tab = tabs[0][0];
     var h = '<div class="kinds" role="group" aria-label="Type"><button data-lk="s" aria-pressed="' + (lk === 's') + '">Series</button><button data-lk="m" aria-pressed="' + (lk === 'm') + '">Movies</button><button data-lk="b" aria-pressed="' + (lk === 'b') + '">Books</button></div>' +
       '<div class="seg3" role="group" aria-label="Lists" style="margin-top:6px;grid-template-columns:repeat(' + tabs.length + ',1fr)">' + tabs.map(function (t) {
-        var n = db.items.filter(function (i) { return i.k === lk && i.s === t[0]; }).length;
+        var n = tabItems(t[0]).length;
         return '<button data-tab="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' <span>' + n + '</span></button>';
       }).join('') + '</div>';
-    var all = db.items.filter(function (i) { return i.k === lk && i.s === tab; });
+    var all = tabItems(tab);
     if (tab === 'd' && all.length) h += listFiltersHTML(all);   // filters on what is already watched / read
     return h + '<div id="lres">' + listBody(all) + '</div>';
+  }
+  function listTabs() { return lk === 'm' ? MTABS : lk === 'b' ? BTABS : TABS.concat([['c', 'Coming soon']]); }
+  function tabItems(t) {   // "c" is not a status: every series with a dated episode still to come
+    return db.items.filter(function (i) { return i.k === lk && (t === 'c' ? !!nextAir(i) : i.s === t); });
   }
   /* filters for the Watched / Read lists */
   var lf = { q: '', y: '', g: '', r: '', c: '', o: 'u' };
@@ -437,7 +445,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     return h + '<label>Order by<select id="lo">' + ord.map(function (o) { return '<option value="' + o[0] + '"' + sel(o[0], lf.o) + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>';
   }
   function listBody(all) {
-    if (!all.length) return '<p class="empty">Nothing here yet. Use the Search tab to add something.</p>';
+    if (!all.length) return '<p class="empty">' + (tab === 'c' ? 'No dated episodes coming up yet.' : 'Nothing here yet. Use the Search tab to add something.') + '</p>';
     var items = all;
     if (tab === 'd') {
       var q = lf.q.trim().toLowerCase(), yr = function (i) { return +i.y || 0; };
@@ -452,7 +460,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
         return b.u - a.u;
       });
       if (!items.length) return '<p class="empty">No matches.</p>';
-    } else items = all.slice().sort(function (a, b) { return b.u - a.u; });
+    } else if (tab === 'c') items = all.slice().sort(function (a, b) { return nextAir(a)[2] < nextAir(b)[2] ? -1 : 1; });   // soonest first
+    else items = all.slice().sort(function (a, b) { return b.u - a.u; });
     return '<div class="list">' + items.map(cardHTML).join('') + '</div>';
   }
   function genreNames(r) { return r.k === 'b' ? (r.g || []).slice(0, 4) : (r.g || []).map(function (id) { return gmap[r.k][id]; }).filter(Boolean); }
@@ -528,6 +537,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       } else {
         h += '<div class="next"><div><b>' + (nx ? 'Next: ' + epLabel(nx) : 'Up to date') + '</b><span>' + (nx ? esc(nx[3]) : n + ' of ' + a.length + ' episodes watched') + '</span>' + progHTML(seasonInfo(it, nx)) + '</div>' +
           (nx ? '<span class="qwrap"><button class="btn" data-next="' + it.id + '">Watched</button></span>' : '') + '</div>';
+        var nda = nextAir(it); if (nda) h += '<p class="note soon" style="margin:6px 2px 10px">Next episode: ' + airText(nda) + '</p>';
         seasonsOf(it).forEach(function (sn) {
           var s = sn[0], eps = sn[1], sa = eps.filter(function (e) { return e[2] && e[2] <= today; }), sdone = sa.filter(function (e) { return it.seen[ek(e)]; }).length;
           var open = openS[it.id + '-' + s] != null ? openS[it.id + '-' + s] : (nx && nx[0] === s);
@@ -727,7 +737,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       ok = false;
       var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
       if (!(Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - st < 700)) return;
-      var tabs = lk === 'm' ? MTABS : lk === 'b' ? BTABS : TABS, i = -1, n;
+      var tabs = listTabs(), i = -1, n;
       tabs.forEach(function (x, k) { if (x[0] === tab) i = k; });
       n = i + (dx < 0 ? 1 : -1);
       if (i >= 0 && n >= 0 && n < tabs.length) { tab = tabs[n][0]; render(); }
