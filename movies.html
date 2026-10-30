@@ -272,13 +272,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   /* books: Open Library needs no key */
   function kindName(it) { return it.k === 's' ? 'Series' : it.k === 'b' ? 'Book' : 'Movie'; }
-  function cardMeta(it) { return kindName(it) + (it.k === 'b' && it.a ? ' · ' + esc(it.a) : '') + (it.y ? ' · ' + esc(it.y) : ''); }
+  function cardMeta(it) { return kindName(it) + (it.k === 'b' && it.a ? ' · ' + esc(it.a) : '') + (it.y ? ' · ' + esc(it.y) : '') + (it.k === 'm' && it.s === 'd' && it.cin ? ' · Cinema' : ''); }
   function kindMeta(it) { return cardMeta(it) + (it.k === 'b' && it.pages ? ' · ' + it.pages + ' pages' : '') + (it.k === 's' && it.st ? ' · ' + esc(it.st) : ''); }
   function listLabel(it) { var l = it.k === 'b' ? BTABS : it.k === 'm' ? MTABS : TABS; return l.filter(function (t) { return t[0] === it.s; })[0][1]; }
   function stars(n) { var s = ''; for (var i = 1; i <= 5; i++) s += i <= n ? '★' : '☆'; return s; }
   function bStatus(it, s) {
     it.s = s;
-    if (s === 'd') it.pct = 100; else if (s === 'w') { it.pct = 0; it.r = 0; } else if (s === 'p' && (it.pct === 100 || !it.pct)) it.pct = 0;
+    if (s === 'd') it.pct = 100; else if (s === 'w') { it.pct = 0; it.r = 0; }   // books only else if (s === 'p' && (it.pct === 100 || !it.pct)) it.pct = 0;
   }
   function bPct(it, v) { it.pct = Math.max(0, Math.min(100, v)); if (it.pct === 100) it.s = 'd'; it.u = Date.now(); }
   function olMap(d) {
@@ -422,7 +422,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     return h + '<div id="lres">' + listBody(all) + '</div>';
   }
   /* filters for the Watched / Read lists */
-  var lf = { q: '', y: '', g: '', r: '', o: 'u' };
+  var lf = { q: '', y: '', g: '', r: '', c: '', o: 'u' };
   var LORD = [['u', 'Recently updated'], ['t', 'Title A–Z'], ['yd', 'Newest first'], ['ya', 'Oldest first']];
   function listFiltersHTML(all) {
     var ys = {}, gs = {};
@@ -433,6 +433,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       '<label>Year<select id="ly"><option value="">Any year</option>' + yl.map(function (y) { return '<option value="' + esc(y) + '"' + sel(y, lf.y) + '>' + esc(y) + '</option>'; }).join('') + '</select></label>' +
       '<label>Genre<select id="lg"><option value="">All genres</option>' + gl.map(function (g) { return '<option value="' + esc(g) + '"' + sel(g, lf.g) + '>' + esc(g) + '</option>'; }).join('') + '</select></label>';
     if (lk === 'b') h += '<label>Rating<select id="lr"><option value="">Any rating</option>' + [5, 4, 3, 2, 1].map(function (n) { return '<option value="' + n + '"' + sel(String(n), lf.r) + '>' + n + (n === 1 ? ' star' : ' stars') + ' and up</option>'; }).join('') + '</select></label>';
+    if (lk === 'm') h += '<label>Seen<select id="lc"><option value="">Anywhere</option><option value="1"' + sel('1', lf.c) + '>In the cinema</option></select></label>';
     return h + '<label>Order by<select id="lo">' + ord.map(function (o) { return '<option value="' + o[0] + '"' + sel(o[0], lf.o) + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>';
   }
   function listBody(all) {
@@ -441,7 +442,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     if (tab === 'd') {
       var q = lf.q.trim().toLowerCase(), yr = function (i) { return +i.y || 0; };
       items = all.filter(function (i) {
-        return (!lf.y || String(i.y) === lf.y) && (!lf.g || (i.gn || []).indexOf(lf.g) !== -1) && (!lf.r || (i.r || 0) >= +lf.r) && (!q || (i.t + ' ' + (i.a || '')).toLowerCase().indexOf(q) !== -1);
+        return (!lf.y || String(i.y) === lf.y) && (!lf.g || (i.gn || []).indexOf(lf.g) !== -1) && (!lf.r || (i.r || 0) >= +lf.r) && (!lf.c || i.cin) && (!q || (i.t + ' ' + (i.a || '')).toLowerCase().indexOf(q) !== -1);
       });
       items = items.slice().sort(function (a, b) {
         if (lf.o === 't') return a.t.localeCompare(b.t);
@@ -542,6 +543,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       }
     }
     if (it.k === 'b' && it.s === 'p') h += '<div class="box"><div class="lbl"><span>Progress</span><b id="pv">' + (it.pct || 0) + '%</b></div><input type="range" id="pr" min="0" max="100" step="1" value="' + (it.pct || 0) + '" aria-label="Progress in percent"></div>';
+    if (it.k === 'm' && it.s === 'd') h += '<div class="box"><button class="btn' + (it.cin ? '' : ' ghost') + '" data-cin="1" aria-pressed="' + !!it.cin + '">' + (it.cin ? '✓ Seen in the cinema' : 'Seen in the cinema?') + '</button></div>';
     if (it.k === 'b' && it.s === 'd') h += '<div class="box"><div class="lbl"><span>Your rating</span></div><div class="rate" role="group" aria-label="Rating">' + [1, 2, 3, 4, 5].map(function (n) { return '<button data-star="' + n + '" class="' + (it.r >= n ? 'on' : '') + '" aria-label="' + n + ' stars">★</button>'; }).join('') + '</div></div>';
     h += '<div class="row"><button class="btn ghost danger" data-act="del">' + (delAsk ? 'Remove? Tap again' : 'Remove') + '</button></div>';
     dbody.innerHTML = h;
@@ -596,8 +598,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   nav.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b && b.dataset.view) setView(b.dataset.view); });
   main.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.tab) { tab = b.dataset.tab; lf = { q: '', y: '', g: '', r: '', o: 'u' }; render(); }
-    else if (b.dataset.lk) { lk = b.dataset.lk; tab = lk === 'm' ? 'd' : 'p'; lf = { q: '', y: '', g: '', r: '', o: 'u' }; render(); }
+    if (b.dataset.tab) { tab = b.dataset.tab; lf = { q: '', y: '', g: '', r: '', c: '', o: 'u' }; render(); }
+    else if (b.dataset.lk) { lk = b.dataset.lk; tab = lk === 'm' ? 'd' : 'p'; lf = { q: '', y: '', g: '', r: '', c: '', o: 'u' }; render(); }
     else if (b.dataset.open) openDetail(b.dataset.open);
     else if (b.dataset.next) markNext(b.dataset.next);
     else if (b.dataset.plus) { var bk = byId(b.dataset.plus); if (bk) { bPct(bk, (bk.pct || 0) + 10); save(); render(); } }
@@ -608,7 +610,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   });
   main.addEventListener('change', function (e) {
     var t = e.target;
-    var lkey = { ly: 'y', lg: 'g', lr: 'r', lo: 'o' }[t.id];
+    var lkey = { ly: 'y', lg: 'g', lr: 'r', lc: 'c', lo: 'o' }[t.id];
     if (lkey) { lf[lkey] = t.value; document.getElementById('lres').innerHTML = listBody(db.items.filter(function (i) { return i.k === lk && i.s === tab; })); return; }
     if (t.id === 'fy') fy = t.value; else if (t.id === 'fg') fg = t.value; else if (t.id === 'fo') fo = t.value; else return;
     fetchBrowse(false);
@@ -643,6 +645,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       else { db.items = db.items.filter(function (x) { return x !== it; }); save(); dm.hidden = true; render(); }
     }
     else if (b.dataset.status) { if (it.k === 'b') bStatus(it, b.dataset.status); else it.s = b.dataset.status; it.u = Date.now(); save(); render(); }
+    else if (b.dataset.cin) { it.cin = !it.cin; it.u = Date.now(); save(); render(); }
     else if (b.dataset.star) { var n = +b.dataset.star; it.r = it.r === n ? 0 : n; it.u = Date.now(); save(); render(); }
     else if (b.dataset.next) markNext(it.id);
     else if (b.dataset.ep) {
