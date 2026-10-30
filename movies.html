@@ -87,13 +87,12 @@ select:disabled { opacity: .5; }
 .kinds { display: flex; gap: 8px; margin: 6px 0 12px; }
 .kinds button { flex: 1; padding: 11px 14px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-weight: 500; font-size: 14px; color: var(--mute); }
 .kinds button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 20px; }
-.filters label { display: block; min-width: 0; font: 500 11px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
-.filters select { margin-top: 4px; }
+.filters { display: flex; gap: 6px; margin: 18px 0 20px; }   /* all the filters on one line */
+.filters label { display: block; flex: 1 1 0; min-width: 0; font: 500 10px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+.filters select { margin-top: 4px; padding: 9px 22px 9px 11px; font-size: 13px; text-overflow: ellipsis; background-position: right 9px center; }
 .lfil { margin: 10px 0 16px; }
 em.soon, .note.soon { display: block; font-style: normal; font-size: 12.5px; color: var(--accent); }
 .lsearch { width: 100%; margin-top: 12px; padding: 11px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 14px var(--font); }
-@media (max-width: 430px) { .filters { grid-template-columns: 1fr 1fr; } .filters label:last-child { grid-column: 1 / -1; } }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 10px; }
 .tile { display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0; }
 .tp { position: relative; display: grid; place-items: center; aspect-ratio: 2 / 3; border-radius: 14px; background: var(--line); overflow: hidden; box-shadow: 0 10px 22px -14px var(--shadow); color: var(--mute); font-size: 12px; font-weight: 500; text-align: center; padding: 6px; }
@@ -431,17 +430,17 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   }
   /* filters for the Watched / Read lists */
   var lf = { q: '', y: '', g: '', r: '', c: '', o: 'u' };
-  var LORD = [['u', 'Recently updated'], ['t', 'Title A–Z'], ['yd', 'Newest first'], ['ya', 'Oldest first']];
+  var LORD = [['u', 'Recent'], ['t', 'A–Z'], ['yd', 'Newest'], ['ya', 'Oldest']];   // short, so four filters fit on one line
   function listFiltersHTML(all) {
     var ys = {}, gs = {};
     all.forEach(function (i) { if (i.y) ys[i.y] = 1; (i.gn || []).forEach(function (g) { gs[g] = 1; }); });
     var yl = Object.keys(ys).sort().reverse(), gl = Object.keys(gs).sort(), sel = function (v, c) { return v === c ? ' selected' : ''; };
-    var ord = LORD.concat(lk === 'b' ? [['r', 'Highest rated']] : []);
+    var ord = LORD.concat(lk === 'b' ? [['r', 'Rating']] : []);
     var h = '<input class="lsearch" type="search" id="lq" placeholder="Search this list" autocomplete="off" aria-label="Search this list" value="' + esc(lf.q) + '"><div class="filters lfil">' +
-      '<label>Year<select id="ly"><option value="">Any year</option>' + yl.map(function (y) { return '<option value="' + esc(y) + '"' + sel(y, lf.y) + '>' + esc(y) + '</option>'; }).join('') + '</select></label>' +
-      '<label>Genre<select id="lg"><option value="">All genres</option>' + gl.map(function (g) { return '<option value="' + esc(g) + '"' + sel(g, lf.g) + '>' + esc(g) + '</option>'; }).join('') + '</select></label>';
-    if (lk === 'b') h += '<label>Rating<select id="lr"><option value="">Any rating</option>' + [5, 4, 3, 2, 1].map(function (n) { return '<option value="' + n + '"' + sel(String(n), lf.r) + '>' + n + (n === 1 ? ' star' : ' stars') + ' and up</option>'; }).join('') + '</select></label>';
-    if (lk === 'm') h += '<label>Seen<select id="lc"><option value="">Anywhere</option><option value="1"' + sel('1', lf.c) + '>In the cinema</option></select></label>';
+      '<label>Year<select id="ly"><option value="">All</option>' + yl.map(function (y) { return '<option value="' + esc(y) + '"' + sel(y, lf.y) + '>' + esc(y) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Genre<select id="lg"><option value="">All</option>' + gl.map(function (g) { return '<option value="' + esc(g) + '"' + sel(g, lf.g) + '>' + esc(g) + '</option>'; }).join('') + '</select></label>';
+    if (lk === 'b') h += '<label>Rating<select id="lr"><option value="">All</option>' + [5, 4, 3, 2, 1].map(function (n) { return '<option value="' + n + '"' + sel(String(n), lf.r) + '>' + n + '★ +</option>'; }).join('') + '</select></label>';
+    if (lk === 'm') h += '<label>Seen<select id="lc"><option value="">All</option><option value="1"' + sel('1', lf.c) + '>Cinema</option></select></label>';
     return h + '<label>Order by<select id="lo">' + ord.map(function (o) { return '<option value="' + o[0] + '"' + sel(o[0], lf.o) + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>';
   }
   function listBody(all) {
