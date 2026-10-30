@@ -90,6 +90,8 @@ select:disabled { opacity: .5; }
 .filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 20px; }
 .filters label { display: block; min-width: 0; font: 500 11px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
 .filters select { margin-top: 4px; }
+.lfil { margin: 10px 0 16px; }
+.lsearch { width: 100%; margin-top: 12px; padding: 11px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 14px var(--font); }
 @media (max-width: 430px) { .filters { grid-template-columns: 1fr 1fr; } .filters label:last-child { grid-column: 1 / -1; } }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 10px; }
 .tile { display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0; }
@@ -415,11 +417,44 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
         var n = db.items.filter(function (i) { return i.k === lk && i.s === t[0]; }).length;
         return '<button data-tab="' + t[0] + '" aria-pressed="' + (tab === t[0]) + '">' + t[1] + ' <span>' + n + '</span></button>';
       }).join('') + '</div>';
-    var items = db.items.filter(function (i) { return i.k === lk && i.s === tab; }).sort(function (a, b) { return b.u - a.u; });
-    if (!items.length) h += '<p class="empty">Nothing here yet. Use the Search tab to add something.</p>';
-    else h += '<div class="list">' + items.map(cardHTML).join('') + '</div>';
-    return h;
+    var all = db.items.filter(function (i) { return i.k === lk && i.s === tab; });
+    if (tab === 'd' && all.length) h += listFiltersHTML(all);   // filters on what is already watched / read
+    return h + '<div id="lres">' + listBody(all) + '</div>';
   }
+  /* filters for the Watched / Read lists */
+  var lf = { q: '', y: '', g: '', r: '', o: 'u' };
+  var LORD = [['u', 'Recently updated'], ['t', 'Title A–Z'], ['yd', 'Newest first'], ['ya', 'Oldest first']];
+  function listFiltersHTML(all) {
+    var ys = {}, gs = {};
+    all.forEach(function (i) { if (i.y) ys[i.y] = 1; (i.gn || []).forEach(function (g) { gs[g] = 1; }); });
+    var yl = Object.keys(ys).sort().reverse(), gl = Object.keys(gs).sort(), sel = function (v, c) { return v === c ? ' selected' : ''; };
+    var ord = LORD.concat(lk === 'b' ? [['r', 'Highest rated']] : []);
+    var h = '<input class="lsearch" type="search" id="lq" placeholder="Search this list" autocomplete="off" aria-label="Search this list" value="' + esc(lf.q) + '"><div class="filters lfil">' +
+      '<label>Year<select id="ly"><option value="">Any year</option>' + yl.map(function (y) { return '<option value="' + esc(y) + '"' + sel(y, lf.y) + '>' + esc(y) + '</option>'; }).join('') + '</select></label>' +
+      '<label>Genre<select id="lg"><option value="">All genres</option>' + gl.map(function (g) { return '<option value="' + esc(g) + '"' + sel(g, lf.g) + '>' + esc(g) + '</option>'; }).join('') + '</select></label>';
+    if (lk === 'b') h += '<label>Rating<select id="lr"><option value="">Any rating</option>' + [5, 4, 3, 2, 1].map(function (n) { return '<option value="' + n + '"' + sel(String(n), lf.r) + '>' + n + (n === 1 ? ' star' : ' stars') + ' and up</option>'; }).join('') + '</select></label>';
+    return h + '<label>Order by<select id="lo">' + ord.map(function (o) { return '<option value="' + o[0] + '"' + sel(o[0], lf.o) + '>' + o[1] + '</option>'; }).join('') + '</select></label></div>';
+  }
+  function listBody(all) {
+    if (!all.length) return '<p class="empty">Nothing here yet. Use the Search tab to add something.</p>';
+    var items = all;
+    if (tab === 'd') {
+      var q = lf.q.trim().toLowerCase(), yr = function (i) { return +i.y || 0; };
+      items = all.filter(function (i) {
+        return (!lf.y || String(i.y) === lf.y) && (!lf.g || (i.gn || []).indexOf(lf.g) !== -1) && (!lf.r || (i.r || 0) >= +lf.r) && (!q || (i.t + ' ' + (i.a || '')).toLowerCase().indexOf(q) !== -1);
+      });
+      items = items.slice().sort(function (a, b) {
+        if (lf.o === 't') return a.t.localeCompare(b.t);
+        if (lf.o === 'yd') return yr(b) - yr(a) || b.u - a.u;
+        if (lf.o === 'ya') return (yr(a) || 9999) - (yr(b) || 9999) || b.u - a.u;
+        if (lf.o === 'r') return (b.r || 0) - (a.r || 0) || b.u - a.u;
+        return b.u - a.u;
+      });
+      if (!items.length) return '<p class="empty">No matches.</p>';
+    } else items = all.slice().sort(function (a, b) { return b.u - a.u; });
+    return '<div class="list">' + items.map(cardHTML).join('') + '</div>';
+  }
+  function genreNames(r) { return r.k === 'b' ? (r.g || []).slice(0, 4) : (r.g || []).map(function (id) { return gmap[r.k][id]; }).filter(Boolean); }
   function yearOpts() {
     var o = '<option value="">Any year</option>';
     for (var y = now.getFullYear() + (sk === 'b' ? 0 : 1); y >= (sk === 'b' ? 1800 : 1950); y--) o += '<option value="' + y + '"' + (String(y) === fy ? ' selected' : '') + '>' + y + '</option>';
@@ -532,7 +567,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   /* actions */
   function addItem(r, status) {
     if (haveItem(r)) return null;
-    var it = { id: uid(), src: r.src, ref: r.ref, k: r.k, t: r.t, y: r.y, img: (r.img || '').replace('/w342/', '/w185/'), st: r.st || '', s: status, u: Date.now(), seen: {}, eps: [], a: r.a || '', pages: r.pages || 0, pct: 0, r: 0 };
+    var it = { id: uid(), src: r.src, ref: r.ref, k: r.k, t: r.t, y: r.y, img: (r.img || '').replace('/w342/', '/w185/'), st: r.st || '', s: status, u: Date.now(), seen: {}, eps: [], a: r.a || '', pages: r.pages || 0, pct: 0, r: 0, gn: genreNames(r) };
     if (it.k === 'b') bStatus(it, status);
     db.items.push(it); save(); toast('Added');
     lk = it.k; tab = it.s;   // My lists opens on the kind and list of what was just added
@@ -561,8 +596,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   nav.addEventListener('click', function (e) { var b = e.target.closest('button'); if (b && b.dataset.view) setView(b.dataset.view); });
   main.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.tab) { tab = b.dataset.tab; render(); }
-    else if (b.dataset.lk) { lk = b.dataset.lk; tab = lk === 'm' ? 'd' : 'p'; render(); }
+    if (b.dataset.tab) { tab = b.dataset.tab; lf = { q: '', y: '', g: '', r: '', o: 'u' }; render(); }
+    else if (b.dataset.lk) { lk = b.dataset.lk; tab = lk === 'm' ? 'd' : 'p'; lf = { q: '', y: '', g: '', r: '', o: 'u' }; render(); }
     else if (b.dataset.open) openDetail(b.dataset.open);
     else if (b.dataset.next) markNext(b.dataset.next);
     else if (b.dataset.plus) { var bk = byId(b.dataset.plus); if (bk) { bPct(bk, (bk.pct || 0) + 10); save(); render(); } }
@@ -573,11 +608,14 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   });
   main.addEventListener('change', function (e) {
     var t = e.target;
+    var lkey = { ly: 'y', lg: 'g', lr: 'r', lo: 'o' }[t.id];
+    if (lkey) { lf[lkey] = t.value; document.getElementById('lres').innerHTML = listBody(db.items.filter(function (i) { return i.k === lk && i.s === tab; })); return; }
     if (t.id === 'fy') fy = t.value; else if (t.id === 'fg') fg = t.value; else if (t.id === 'fo') fo = t.value; else return;
     fetchBrowse(false);
   });
   main.addEventListener('submit', function (e) { e.preventDefault(); clearTimeout(qTimer); fetchBrowse(false); });
   main.addEventListener('input', function (e) {
+    if (e.target.id === 'lq') { lf.q = e.target.value; document.getElementById('lres').innerHTML = listBody(db.items.filter(function (i) { return i.k === lk && i.s === tab; })); return; }
     if (e.target.id !== 'q') return;
     sq = e.target.value; clearTimeout(qTimer);
     var o = document.getElementById('fo'); if (o) o.disabled = !(sk === 'b' || (db.tmdb && !sq.trim()));
@@ -704,6 +742,17 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   db.items.forEach(syncStatus);
   setView('search');
   // refresh episode lists once a day for shows being watched or still airing (new episodes move a show back to Watching)
+  // titles added before genres were saved get them once, so the Genre filter works on the whole list
+  function fetchGenres(it) {
+    var p = null;
+    if (it.src === 'tvmaze') p = getJSON('https://api.tvmaze.com/shows/' + it.ref).then(function (d) { return d.genres || []; });
+    else if ((it.src === 'tmdb' || it.src === 'tmdbtv') && db.tmdb) p = getJSON(T((it.src === 'tmdb' ? '/movie/' : '/tv/') + it.ref)).then(function (d) { return (d.genres || []).map(function (g) { return g.name; }); });
+    else if (it.src === 'ol' && it.ref) p = getJSON('https://openlibrary.org' + it.ref + '.json').then(function (d) { return (d.subjects || []).slice(0, 4); });
+    else it.gn = [];
+    return p ? p.then(function (g) { it.gn = g; }) : Promise.resolve();
+  }
+  var gtodo = db.items.filter(function (i) { return !i.gn && i.s === 'd'; }).slice(0, 12);
+  if (gtodo.length) Promise.all(gtodo.map(function (i) { return fetchGenres(i).catch(function () {}); })).then(function () { save(); if (view === 'lists' && !(document.activeElement && document.activeElement.tagName === 'INPUT')) render(); });
   db.items.filter(function (i) { return isShow(i) && (i.s === 'p' || i.st !== 'Ended') && (!i.ef || Date.now() - i.ef > 864e5); }).slice(0, 10).forEach(function (i) { fetchEps(i).then(function () { if (view === 'lists') render(); }, function () {}); });
 })();
 </script>
