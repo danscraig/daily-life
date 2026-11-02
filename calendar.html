@@ -113,6 +113,7 @@ button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.96); }
 .te.rp b { padding-right: 11px; }
 .leg > div { display: flex; align-items: center; gap: 14px; padding: 9px 4px; font-size: 15px; }
 .leg span { flex: none; width: 18px; height: 18px; border-radius: 50%; }
+.leg input { flex: 1; min-width: 0; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); min-height: 44px; -webkit-appearance: none; appearance: none; }
 .tgad > div { padding: 3px 2px; display: flex; flex-direction: column; gap: 2px; min-width: 0; border-left: 1px solid var(--line); }
 .tgad > div:first-child { border-left: 0; font-size: 9px; color: var(--mute); text-align: right; padding-right: 4px; }
 .tgb { position: relative; }
@@ -204,7 +205,9 @@ body.editing .fab { display: none; }
   var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var COLORS = ['#A064B0', '#D9709C', '#E08A4F', '#C99A2E', '#5BA06E', '#3E9DA3', '#5C80D0', '#7C7590'];
-  var CLAB = ['Personal', 'Birthdays', 'Work & study', 'Appointments', 'Health & sport', 'Travel', 'Family & friends', 'Public holidays'];
+  var CLABD = ['Personal', 'Birthdays', 'Work & study', 'Appointments', 'Health & sport', 'Travel', 'Family & friends', 'Public holidays'];
+  var CLAB = CLABD.slice();   // what each colour is for; she can rename them (kept on this device only, so cloud sync leaves it alone)
+  try { var cl = JSON.parse(localStorage.getItem('daily-life-cal-labels')); if (Array.isArray(cl)) cl.forEach(function (x, i) { if (i < CLAB.length && typeof x === 'string' && x.trim()) CLAB[i] = x.trim().slice(0, 30); }); } catch (e) {}
   var BDC = COLORS[1], HOLC = COLORS[7];
   var REPEATS = [['', 'Does not repeat'], ['d', 'Every day'], ['wd', 'Every weekday (Mon–Fri)'], ['w', 'Every week'], ['m', 'Every month on this day'], ['6m', 'Every 6 months on this day'], ['y', 'Every year on this day']];
   var HR = 46;   // pixels per hour in the week and day views
@@ -545,7 +548,7 @@ body.editing .fab { display: none; }
   var infoOpen = false;
   function openInfo() {
     infoOpen = true; em.className = 'modal';
-    ebody.innerHTML = '<h2>Colours</h2><div class="leg">' + COLORS.map(function (c, i) { return '<div><span style="background:' + c + '"></span>' + CLAB[i] + '</div>'; }).join('') + '</div><div class="row"><button class="btn ghost" data-a="info-close">Close</button></div>';
+    ebody.innerHTML = '<h2>Colours</h2><div class="leg">' + COLORS.map(function (c, i) { return '<div><span style="background:' + c + '"></span><input type="text" maxlength="30" data-l="' + i + '" aria-label="Name of this colour" value="' + esc(CLAB[i]) + '"></div>'; }).join('') + '</div><div class="row"><button class="btn" data-a="info-close">Done</button></div>';
     em.hidden = false;
   }
   function closeInfo() { infoOpen = false; em.hidden = true; }
@@ -660,6 +663,12 @@ body.editing .fab { display: none; }
     else if (a === 'del-no') { edit.askDel = false; drawEditor(); }
   });
   em.addEventListener('change', function (ev) {
+    if (infoOpen && ev.target.dataset.l != null) {   // renamed a colour
+      var li = +ev.target.dataset.l, v = ev.target.value.trim().slice(0, 30) || CLABD[li];
+      CLAB[li] = v; ev.target.value = v;
+      try { localStorage.setItem('daily-life-cal-labels', JSON.stringify(CLAB)); } catch (x) {}
+      return;
+    }
     var id = ev.target.id;
     if (id === 'er') document.getElementById('eul').textContent = ev.target.value ? 'Repeat until (optional)' : 'To date (optional)';
     if (edit && (id === 'es' || id === 'ee')) {   // typed hours become HH:MM (or go back to the last good value)
