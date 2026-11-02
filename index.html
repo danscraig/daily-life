@@ -1293,7 +1293,7 @@ img { max-width: 100%; }
     document.getElementById('kmeta').textContent = evn ? evn + (evn === 1 ? ' event today' : ' events today') : '';
     var mvd = lsGet(MKEY, null), wp = 0, ww = 0, br = 0;
     if (mvd && Array.isArray(mvd.items)) mvd.items.forEach(function (i) { if (i.k === 'b') { if (i.s === 'p') br++; } else if (i.k === 's' && i.s === 'p') wp++; else if (i.s === 'w') ww++; });
-    document.getElementById('wmeta').textContent = [wp ? wp + ' watching' : '', ww ? ww + ' to watch' : '', br ? br + ' reading' : ''].filter(Boolean).join(' · ');
+    document.getElementById('wmeta').textContent = [wp ? wp + ' watching' : '', br ? br + ' reading' : ''].filter(Boolean).join(' · ');
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
   function setApp(a) {
