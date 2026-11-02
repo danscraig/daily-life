@@ -111,6 +111,10 @@ button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.96); }
 .chip.rp { position: relative; padding-right: 14px; }
 .chip.seg.rp i { padding-right: 0; }
 .te.rp b { padding-right: 11px; }
+.pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(60, 40, 70, .45); pointer-events: auto; }
+.pop[hidden] { display: none; }
+.pop .card { width: 100%; max-width: 340px; background: var(--bg); border-radius: 26px; padding: 20px; box-shadow: 0 24px 50px -16px rgba(101, 64, 111, .6); }
+.pop p { margin: 0 0 14px; font-weight: 600; font-size: 17px; }
 .leg > div { display: flex; align-items: center; gap: 14px; padding: 9px 4px; font-size: 15px; }
 .leg span { flex: none; width: 18px; height: 18px; border-radius: 50%; }
 .leg input { flex: 1; min-width: 0; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); min-height: 44px; -webkit-appearance: none; appearance: none; }
@@ -196,7 +200,7 @@ body.editing .fab { display: none; }
 </div>
 <button class="fab" id="add" aria-label="Add event">+</button>
 <div class="undo" id="undo" hidden role="status"><span></span><button>Undo</button></div>
-<div class="modal" id="em" hidden role="dialog" aria-modal="true" aria-label="Event"><div class="sheet" id="ebody"></div></div>
+<div class="modal" id="em" hidden role="dialog" aria-modal="true" aria-label="Event"><div class="sheet" id="ebody"></div><div class="pop" id="pop" hidden></div></div>
 
 <script>
 (function () {
@@ -509,18 +513,19 @@ body.editing .fab { display: none; }
       '<span class="fl">Colour' + (COLORS.indexOf(e.c) >= 0 ? ' · ' + CLAB[COLORS.indexOf(e.c)] : '') + '</span><div class="cols" id="ec">' + COLORS.map(function (c, ci) { return '<button style="background:' + c + '" data-c="' + c + '" aria-pressed="' + (c === e.c) + '" aria-label="' + CLAB[ci] + '">' + (c === e.c ? '✓' : '') + '</button>'; }).join('') + '</div>' +
       '<label class="fl" for="el">Location</label><input type="text" id="el" maxlength="120" autocomplete="off" value="' + esc(e.loc) + '">' +
       '<label class="fl" for="en">Notes</label><textarea id="en" maxlength="2000">' + esc(e.n) + '</textarea>';
-    if (edit.askSave) {
-      h += scopeHTML('Save changes to this repeating event?', 'sv');
-    } else if (edit.askDel) {
-      h += scopeHTML('Delete which events?', 'del');
-    } else {
-      h += '<div class="row"><button class="btn" data-a="save">Save</button><button class="btn ghost" data-a="cancel">Cancel</button>' + (edit.isNew ? '' : '<button class="btn danger" data-a="del">Delete</button>') + '</div>';
-    }
+    h += '<div class="row"><button class="btn" data-a="save">Save</button><button class="btn ghost" data-a="cancel">Cancel</button>' + (edit.isNew ? '' : '<button class="btn danger" data-a="del">Delete</button>') + '</div>';
     ebody.innerHTML = h;
+    if (edit.askSave) showPop('Save changes to this repeating event?', 'sv');
+    else if (edit.askDel) showPop('Delete which events?', 'del');
+    else hidePop();
   }
-  function scopeHTML(q, pre) {   // "which events?" question for a repeating event, like Google Calendar
-    return '<p class="hint" style="margin-top:18px;color:var(--ink);font-size:14px">' + q + '</p><div class="row" style="flex-direction:column;align-items:stretch"><button class="btn" data-a="' + pre + '-one">This event</button><button class="btn" data-a="' + pre + '-fol">This and following events</button><button class="btn" data-a="' + pre + '-all">All events</button><button class="btn ghost" data-a="' + pre + '-no">Cancel</button></div>';
+  /* "which events?" question for a repeating event: a pop-up over the form, like Google Calendar */
+  var pop = document.getElementById('pop');
+  function showPop(q, pre, alone) {   // alone: nothing behind it (after dragging an event)
+    pop.innerHTML = '<div class="card"><p>' + q + '</p><div class="row" style="flex-direction:column;align-items:stretch;margin-top:0"><button class="btn" data-a="' + pre + '-one">This event</button><button class="btn" data-a="' + pre + '-fol">This and following events</button><button class="btn" data-a="' + pre + '-all">All events</button><button class="btn ghost" data-a="' + pre + '-no">Cancel</button></div></div>';
+    pop.hidden = false; ebody.hidden = !!alone;
   }
+  function hidePop() { pop.hidden = true; ebody.hidden = false; }
   function readForm() {
     var e = edit.e;
     e.t = document.getElementById('et').value.trim(); e.d = document.getElementById('ed').value || e.d;
@@ -539,15 +544,15 @@ body.editing .fab { display: none; }
     if (e.rp) h += '<p class="hint" style="margin:2px 4px 0">↻ ' + esc((REPEATS.filter(function (r) { return r[0] === e.rp; })[0] || ['', ''])[1]) + '</p>';
     if (e.loc) h += '<p class="hint" style="margin:8px 4px 0">' + esc(e.loc) + '</p>';
     if (e.n) h += '<p class="hint" style="margin:8px 4px 0;white-space:pre-wrap;overflow-wrap:anywhere">' + esc(e.n) + '</p>';
-    if (peek.askDel) h += scopeHTML('Delete which events?', 'pk');
-    else if (e.hol) h += '<div class="row"><button class="btn ghost" data-a="pk-close">Close</button></div>';
+    if (e.hol) h += '<div class="row"><button class="btn ghost" data-a="pk-close">Close</button></div>';
     else h += '<div class="row"><button class="btn" data-a="pk-edit">Edit</button><button class="btn ghost" data-a="pk-close">Close</button><button class="btn danger" data-a="pk-del">Delete</button></div>';
     ebody.innerHTML = h;
+    if (peek.askDel) showPop('Delete which events?', 'pk'); else hidePop();
   }
   /* "i" button: which colour is for which occasion */
   var infoOpen = false;
   function openInfo() {
-    infoOpen = true; em.className = 'modal';
+    infoOpen = true; em.className = 'modal'; hidePop();
     ebody.innerHTML = '<h2>Colours</h2><div class="leg">' + COLORS.map(function (c, i) { return '<div><span style="background:' + c + '"></span><input type="text" maxlength="30" data-l="' + i + '" aria-label="Name of this colour" value="' + esc(CLAB[i]) + '"></div>'; }).join('') + '</div><div class="row"><button class="btn" data-a="info-close">Done</button></div>';
     em.hidden = false;
   }
@@ -621,6 +626,10 @@ body.editing .fab { display: none; }
   }
 
   em.addEventListener('click', function (ev) {
+    if (ev.target === pop) {   // tapped outside the pop-up: same as Cancel
+      if (peek) { peek.askDel = false; drawPeek(); } else if (pend) closePend(); else if (edit) { edit.askSave = false; edit.askDel = false; drawEditor(); }
+      return;
+    }
     if (infoOpen) { var ib = ev.target.closest('button'); if (ev.target === em || (ib && ib.dataset.a === 'info-close')) closeInfo(); return; }
     if (peek) {
       var kb = ev.target.closest('button'), ka = kb && kb.dataset.a, p = peek;
@@ -698,7 +707,7 @@ body.editing .fab { display: none; }
     var o = ev.target.closest('[data-open]');
     if (o) { if (edit) closeEditor(); cur = parse(o.dataset.open); view = 'day'; try { localStorage.setItem('daily-life-cal-view', view); } catch (x) {} render(); return; }
     var c = ev.target.closest('.mc');
-    if (c) { sel = c.dataset.d; var d = parse(sel); if (d.getMonth() !== cur.getMonth()) cur = new Date(d.getFullYear(), d.getMonth(), 1); render(); return; }
+    if (c) { sel = c.dataset.d; cur = parse(sel); view = 'day'; try { localStorage.setItem('daily-life-cal-view', view); } catch (x) {} render(); return; }   // tapping a day opens that day
     var col = ev.target.closest('.col');
     if (col) {
       var y = ev.clientY - col.getBoundingClientRect().top, s = START + Math.max(0, Math.min(22 - START / 60, Math.floor(y / HR))) * 60;
@@ -785,8 +794,7 @@ body.editing .fab { display: none; }
     ne.st = hhmm(m.s); ne.en = hhmm(m.s + dur);
     if (e.rp) {   // repeating: ne.d is the new date of the occurrence that was dragged
       ne.d = ymd(nd); pend = { orig: e, occ: m.occ, ne: ne };
-      ebody.innerHTML = '<h2>Move repeating event</h2>' + scopeHTML('Which events should move?', 'mv');
-      em.className = 'modal'; em.hidden = false; render(true); return;
+      em.className = 'modal'; showPop('Which events should move?', 'mv', true); em.hidden = false; render(true); return;
     }
     var delta = Math.round((nd - parse(m.occ)) / 864e5);
     ne.d = ymd(addDays(parse(e.d), delta)); if (e.un) ne.un = ymd(addDays(parse(e.un), delta));
