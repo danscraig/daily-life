@@ -371,7 +371,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     var o = (p.offers || []).filter(function (x) { return x.s === 'koreanbeauty' && /koreanbeauty\.pt\/products\//.test(x.url || ''); })[0];
     if (!o) return Promise.resolve(0);
     return fetch(o.url.split('?')[0].replace(/\/$/, '') + '.js').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
-      var vs = j.variants || [], sz = sizeOf(p), v = vs.length === 1 ? vs[0] : vs.filter(function (x) { return String(x.title).replace(/\s/g, '').toLowerCase() === sz; })[0];
+      var vs = j.variants || [], sz = (o.vt || sizeOf(p)).replace(/\s/g, '').toLowerCase(), v = vs.length === 1 ? vs[0] : vs.filter(function (x) { return String(x.title).replace(/\s/g, '').toLowerCase() === sz; })[0];
       if (!v) return -1;
       o.price = v.price / 100; o.at = ds(new Date()); o.oos = !v.available; p.u = Date.now(); return 1;
     });
