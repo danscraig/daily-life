@@ -274,7 +274,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     });
   }
   function renderFilters() {
-    var h = '<div class="fbar"><button class="btn ghost" data-fopen="1">' + (fopen ? 'Hide filters' : 'Filters' + (filterOn() ? ' •' : '')) + '</button><span class="cnt" id="fcnt"></span>' + (filterOn() ? '<button class="btn ghost" data-fclear="1">Clear</button>' : '') + '</div>';
+    var h = '<div class="fbar"><button class="btn ghost" data-fopen="1">' + (fopen ? 'Hide filters' : 'Filters' + (filterOn() ? ' •' : '')) + '</button><span class="cnt" id="fcnt"></span>' + (filterOn() ? '<button class="btn ghost" data-fclear="1">Clear</button>' : '') + '<button class="btn ghost" data-upall="1" title="Refresh the live prices">↻ Prices</button></div>' + (upMsg ? '<p class="hint" id="upmsg">' + esc(upMsg) + '</p>' : '');
     if (fopen) h += '<div class="fpanel">' +
       '<div><label for="ft">Type</label><select id="ft" data-f="t">' + opts(TYPES.map(function (x) { return x[0]; }), flt.t, 'Any') + '</select></div>' +
       '<div><label for="fu">Use</label><select id="fu" data-f="use">' + opts(USES, flt.use, 'Any') + '</select></div>' +
@@ -306,7 +306,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   var SHOPS = [
     { id: 'stylevana', n: 'Stylevana', cur: 'EUR', fee: 4.39, free: 59, days: '6–11 working days', host: 'stylevana.com', q: 'https://www.stylevana.com/pt_PT/catalogsearch/result/?q={q}', note: 'Insurance available for 4% of the order' },
     { id: 'yesstyle', n: 'YesStyle', cur: 'EUR', fee: 4.70, free: 55, days: '', host: 'yesstyle.com', q: 'https://www.yesstyle.com/en/list.html?q={q}', note: 'EU import tax on small parcels is covered by YesStyle' },
-    { id: 'koreanbeauty', n: 'Koreanbeauty.pt', cur: 'EUR', fee: 9, free: 53, days: '3–5 working days', host: 'koreanbeauty.pt', q: 'https://www.koreanbeauty.pt/search?q={q}', note: 'Shipping page says free from ≈53 €, the banner says 59 €' },
+    { id: 'koreanbeauty', n: 'Koreanbeauty.pt', live: true, cur: 'EUR', fee: 9, free: 53, days: '3–5 working days', host: 'koreanbeauty.pt', q: 'https://www.koreanbeauty.pt/search?q={q}', note: 'Shipping page says free from ≈53 €, the banner says 59 €' },
     { id: 'stylekorean', n: 'StyleKorean', cur: 'EUR', fee: null, free: null, days: '', host: 'stylekorean.com', q: '', note: 'Free shipping over US$80 (≈ 69 €); below that it is worked out at checkout. Ships from Korea, import fees may apply' },
     { id: 'oliveyoung', n: 'Olive Young Global', cur: 'EUR', fee: null, free: null, days: '', host: 'global.oliveyoung.com', q: G + 'global.oliveyoung.com', note: 'Free shipping over about US$60 in most regions; Portugal is not listed, check at checkout' },
     { id: 'beautybay', n: 'Beauty Bay', cur: 'EUR', fee: 8, free: 145, days: '3–5 working days after dispatch', host: 'beautybay.com', q: G + 'beautybay.com', note: 'Tracked delivery, from the product page with a Portugal address' },
@@ -342,9 +342,10 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       }
       return r;
     });
-    var known = rows.filter(function (r) { return r.total != null; }), best = known.length ? known.reduce(function (a, b) { return b.total < a.total ? b : a; }) : null;
-    $('csheet').innerHTML = '<div class="acts" style="margin:0"><button id="ccx">Close</button></div><h2>' + esc(p.n) + '</h2>' +
-      '<p class="hint">Shops that ship to Portugal. Type the price you see on each shop; the total adds shipping for this one item (free shipping is reached with a bigger order).</p>' +
+    var known = rows.filter(function (r) { return r.total != null && !(r.o && r.o.oos); }), best = known.length ? known.reduce(function (a, b) { return b.total < a.total ? b : a; }) : null;
+    $('csheet').innerHTML = '<div class="acts" style="margin:0"><button id="ccx">Close</button><button class="pri" data-upone="' + p.id + '">↻ Update prices</button></div><h2>' + esc(p.n) + '</h2>' +
+      (upMsg ? '<p class="hint" id="upmsg2">' + esc(upMsg) + '</p>' : '') +
+      '<p class="hint">Shops that ship to Portugal. Prices marked "live" update by themselves with ↻; for the others, tap Open and type the price you see. The total adds shipping for this one item (free shipping is reached with a bigger order).</p>' +
       rows.map(function (r) {
         var sh = r.sh, isBest = best === r, o = r.o, age = o && o.at ? Math.round((new Date(today) - new Date(o.at)) / 864e5) : null;
         var rule = sh.fee == null ? 'Shipping: see checkout, then type it below' : (sh.free ? 'Shipping ' + money(sh.fee, sh.cur) + ', free from ' + money(sh.free, sh.cur) : 'Shipping ' + money(sh.fee, sh.cur));
@@ -353,7 +354,8 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
           (!isBest && best && r.total != null ? ' · +' + money(r.total - best.total, 'EUR') : '') +
           (o && o.at ? ' · checked ' + o.at + (age > 14 ? ' <span class="stale">(check again)</span>' : '') : ' · date unknown');
         var href = o && o.url ? o.url : sh.q ? sh.q.replace('{q}', encodeURIComponent([p.brand, p.n].filter(Boolean).join(' '))) : 'https://www.' + sh.host + '/';
-        return '<div class="orow' + (isBest ? ' best' : '') + '"><div class="oh"><b>' + esc(sh.n) + '</b>' + (isBest ? '<span class="badge best">Cheapest</span>' : '') + '<span class="hint" style="margin:0">' + esc(rule) + (sh.days ? ' · ' + esc(sh.days) : '') + '</span></div>' +
+        if (o && o.oos && r.price != null) line = '<b>Out of stock</b> · was ' + money(r.price, 'EUR') + (o.at ? ' · checked ' + o.at : '');
+        return '<div class="orow' + (isBest ? ' best' : '') + '"><div class="oh"><b>' + esc(sh.n) + '</b>' + (sh.live ? '<span class="badge">live</span>' : '') + (isBest ? '<span class="badge best">Cheapest</span>' : '') + '<span class="hint" style="margin:0">' + esc(rule) + (sh.days ? ' · ' + esc(sh.days) : '') + '</span></div>' +
           '<div class="oi"><input type="number" min="0" step="0.01" inputmode="decimal" data-op="' + sh.id + '" placeholder="Price (' + (sh.cur === 'USD' ? 'US$' : '€') + ')" value="' + (r.price != null ? r.price : '') + '" aria-label="Price at ' + esc(sh.n) + '">' +
           '<input type="number" min="0" step="0.01" inputmode="decimal" data-os="' + sh.id + '" placeholder="Shipping €" value="' + (o && o.ship !== '' && o.ship != null ? o.ship : '') + '" aria-label="Shipping cost at ' + esc(sh.n) + '">' +
           '<input type="text" data-ou="' + sh.id + '" placeholder="Product link (optional)" value="' + esc(o && o.url ? o.url : '') + '" autocapitalize="off" aria-label="Link at ' + esc(sh.n) + '">' +
@@ -362,12 +364,34 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       }).join('') +
       '<p class="hint">All prices in euros. If a shop shows another currency, switch it to EUR on the shop or convert it. Prices and shipping change often; shops with no shipping rule need the shipping you see at their checkout (Portugal address), otherwise they are not ranked.</p>';
   }
+  /* live prices: only Koreanbeauty.pt lets a web page read its product data (the other shops block it), so those are refreshed here and the rest are typed in */
+  var upMsg = '', upBusy = false;
+  function sizeOf(p) { var m = (p.n || '').match(/(\d+)\s?ml/i); return m ? m[1] + 'ml' : ''; }
+  function refreshKb(p) {   // resolves 1 = updated, 0 = nothing to do, -1 = could not tell which size
+    var o = (p.offers || []).filter(function (x) { return x.s === 'koreanbeauty' && /koreanbeauty\.pt\/products\//.test(x.url || ''); })[0];
+    if (!o) return Promise.resolve(0);
+    return fetch(o.url.split('?')[0].replace(/\/$/, '') + '.js').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
+      var vs = j.variants || [], sz = sizeOf(p), v = vs.length === 1 ? vs[0] : vs.filter(function (x) { return String(x.title).replace(/\s/g, '').toLowerCase() === sz; })[0];
+      if (!v) return -1;
+      o.price = v.price / 100; o.at = ds(new Date()); o.oos = !v.available; p.u = Date.now(); return 1;
+    });
+  }
+  function updatePrices(list) {
+    if (upBusy) return; upBusy = true; upMsg = 'Updating…'; renderFilters(); if (!$('cm').hidden) renderCompare();
+    var ok = 0, skip = 0, fail = 0, chain = Promise.resolve();
+    list.forEach(function (p) { chain = chain.then(function () { return refreshKb(p); }).then(function (n) { if (n === 1) ok++; else if (n === -1) skip++; }, function () { fail++; }); });
+    chain.then(function () {
+      upBusy = false; if (ok) save();
+      upMsg = (ok ? 'Updated ' + ok + ' live price' + (ok === 1 ? '' : 's') + ' from Koreanbeauty.pt. ' : 'No live price was updated. ') + (fail ? fail + ' could not be reached (offline?). ' : '') + (skip ? skip + ' skipped (size not found). ' : '') + 'Other shops: open them and type the price.';
+      if (view === 'prods') { renderFilters(); renderPlist(); } if (!$('cm').hidden) renderCompare();
+    });
+  }
   function setOffer(shopId, field, val) {
     var p = prodById(cmpId); if (!p) return;
     p.offers = p.offers || [];
     var o = p.offers.filter(function (x) { return x.s === shopId; })[0];
     if (!o) { var sh = SHOPS.filter(function (x) { return x.id === shopId; })[0], seed = sh && offerFor(p, sh); o = seed ? { s: seed.s, price: seed.price, at: seed.at, url: seed.url } : { s: shopId, price: '', at: '', url: '' }; p.offers.push(o); }
-    if (field === 'price') { o.price = val === '' ? '' : Number(val); o.at = val === '' ? '' : ds(new Date()); }
+    if (field === 'price') { o.price = val === '' ? '' : Number(val); o.at = val === '' ? '' : ds(new Date()); o.oos = false; }
     else if (field === 'ship') { o.ship = val === '' ? '' : Number(val); if (o.price !== '' && o.price != null) o.at = ds(new Date()); }
     else o.url = /^https?:\/\//.test(val.trim()) ? val.trim() : '';
     p.u = Date.now(); save(); renderCompare();
@@ -480,6 +504,8 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       save(); b.setAttribute('aria-pressed', String(k === -1));
     }
     else if (b.dataset.cmp) openCompare(b.dataset.cmp);
+    else if (b.dataset.upone) { var up1 = prodById(b.dataset.upone); if (up1) updatePrices([up1]); }
+    else if (b.dataset.upall) updatePrices(data.prods.slice());
     else if (b.id === 'ccx') { $('cm').hidden = true; }
     else if (b.dataset.pv) { pvR = sres[Number(b.dataset.pv)]; renderPreview(); }
     else if (b.dataset.more) runSearch(sq, spage + 1);
