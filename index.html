@@ -83,6 +83,8 @@ textarea::placeholder { color: var(--mute); opacity: .85; font-style: italic; }
 textarea:disabled { opacity: .6; }
 .lone { display: block; font: 500 11px var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 2px; }
 .learn { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.lone, .learn .ll { display: flex !important; align-items: center; justify-content: space-between; }
+.bul { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--accent); font-size: 18px; line-height: 1; text-transform: none; }
 .learn .ll { display: block; font: 500 11px var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); margin-bottom: 2px; }
 .learn textarea, .now .learn textarea { min-height: 2.6em; font-size: 16px; }
 .hint { color: var(--mute); font-size: 14px; max-width: 46ch; margin: 10px 4px 0; }
@@ -362,7 +364,15 @@ button:active:not(:disabled) { transform: scale(.96); }
 .nrich td { border: 1px solid var(--line); padding: 8px; vertical-align: top; min-height: 1.5em; }
 
 .bk { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
-.streakline { margin: -4px 0 12px; text-align: center; font-size: 13px; color: var(--accent); }
+.aname .sk { margin-left: 8px; font-size: 16px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.sk:empty { display: none; }
+/* the activities to tick stay on one line (they scroll sideways when there are many) */
+.chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px -2px 10px; }
+.chips::-webkit-scrollbar { display: none; }
+.chips .chip { flex: none; white-space: nowrap; }
+.aedit { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; }
+.aedit input { padding: 10px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font-display); min-width: 0; min-height: 44px; }
+.aedit input:first-child { text-align: center; font-size: 20px; padding-inline: 4px; }
 .bkinfo { margin: 0 2px 10px; font-size: 13px; color: var(--mute); }
 .syncst { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; min-height: 36px; padding: 0 2px; font: 400 13px var(--font-display); color: var(--mute); }
 .syncst::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--mute); flex: none; }
@@ -401,12 +411,12 @@ img { max-width: 100%; }
   <nav class="apps" aria-label="Your apps">
     <button class="app" data-app="check">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
-      <span class="atxt"><span class="aname">Daily Check-in</span><span class="ameta" id="cmeta"></span></span>
+      <span class="atxt"><span class="aname">Daily Check-in<span class="sk" id="csk"></span></span><span class="ameta" id="cmeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </button>
     <button class="app" data-app="diary">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.6 7.6"></path><circle cx="11" cy="11" r="2"></circle></svg></span>
-      <span class="atxt"><span class="aname">Journal</span><span class="ameta" id="jmeta"></span></span>
+      <span class="atxt"><span class="aname">Journal<span class="sk" id="jsk"></span></span><span class="ameta" id="jmeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </button>
     <a class="app" href="calendar.html">
@@ -433,6 +443,7 @@ img { max-width: 100%; }
     <button class="back" id="back" aria-label="Back to home">‹</button>
     <span class="brand" id="appname"></span>
     <button class="jtoday" id="jtoday" hidden>Today</button>
+    <button class="hb" id="actset" hidden aria-label="Activity settings"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
     <span class="status" id="status" role="status"></span>
   </header>
   <div id="banner"></div>
@@ -560,7 +571,8 @@ img { max-width: 100%; }
   }
 
   /* saving */
-  function setStatus(t, err) {
+  function setStatus(t, err) {   // only problems are shown: "Saving…" and "Saved" are gone
+    if (!err) t = '';
     document.querySelectorAll('.status').forEach(function (el) { el.textContent = t; el.className = 'status' + (err ? ' err' : ''); });
   }
   async function persist(k) {
@@ -605,12 +617,6 @@ img { max-width: 100%; }
       '<button class="center" data-act="cal" aria-label="Open calendar"><span class="dayname">' + d + ' ' + MN[m - 1] + '</span>' +
       '<span class="daysub">' + wd + (isToday ? '<span class="today-pill">Today</span>' : '') + '</span></button>' +
       '<button class="step" data-act="next" aria-label="Next day">›</button></div>';
-    if (loaded) {   // a small encouragement: the current streak and the last 7 days
-      var sk = streak(), l7 = 0;
-      for (var di = 0; di < 7; di++) { var dd = new Date(TY, TM - 1, TD - di); if (has(dd.getFullYear(), dd.getMonth() + 1, dd.getDate())) l7++; }
-      var parts = []; if (sk >= 2) parts.push(sk + ' days in a row'); if (l7 >= 1) parts.push(l7 + ' of the last 7 days');
-      if (parts.length) h += '<p class="streakline">' + parts.join(' · ') + '</p>';
-    }
     h += '<div class="rows">';
     if (!ys.length || ys[0] !== TY) h += '<div class="future">This date has not happened yet this year.</div>';
     ys.forEach(function (y) {
@@ -622,16 +628,38 @@ img { max-width: 100%; }
       }).join('') + (mv ? '<span class="lbl">' + MOODS[mv - 1][1] + '</span>' : '') + '</div>';
       var ch = acts.length ? '<div class="chips" role="group" aria-label="Activities for ' + y + '">' + acts.map(function (a) {
         return '<button class="chip" data-aid="' + a.id + '" data-y="' + y + '" aria-pressed="' + (da.indexOf(a.id) !== -1) + '"' + dis + '>' + (a.e ? esc(a.e) + ' ' : '') + esc(a.n) + '</button>';
-      }).join('') + (y === ys[0] ? '<button class="chip ghost" data-act="editacts">Edit</button>' : '') + '</div>' : y === TY ? '<div class="chips"><button class="chip ghost" data-act="editacts">+ Add daily activities</button></div>' : '';
+      }).join('') + '</div>' : y === TY ? '<div class="chips"><button class="chip ghost" data-act="editacts">+ Add daily activities</button></div>' : '';
       var head = '<div class="yr"><span class="y">' + y + '</span><span class="ago">' + label +
         '</span><span class="wk">' + WD[new Date(y, m - 1, d).getDay()].slice(0, 3) + '</span></div>';
-      var ta = '<span class="lone">Something to remember</span><textarea data-y="' + y + '" rows="1" aria-label="Entry for ' + d + ' ' + MN[m - 1] + ' ' + y + '" placeholder="' + (loaded ? esc(ph) : 'Opening your diary…') + '"' + (loaded ? '' : ' disabled') + '>' + esc(g(y, m, d)) + '</textarea>';
-      var lr = '<div class="learn"><span class="ll">Something I learned</span><textarea data-y="' + y + '" data-f="l" rows="1" aria-label="Something learned on ' + d + ' ' + MN[m - 1] + ' ' + y + '" placeholder="' + '' + '"' + (loaded ? '' : ' disabled') + '>' + esc(gl(y, m, d)) + '</textarea></div>';
+      var ta = '<span class="lone">Something to remember' + BULB + '</span><textarea data-y="' + y + '" rows="1" aria-label="Entry for ' + d + ' ' + MN[m - 1] + ' ' + y + '" placeholder="' + (loaded ? esc(ph) : 'Opening your diary…') + '"' + (loaded ? '' : ' disabled') + '>' + esc(g(y, m, d)) + '</textarea>';
+      var lr = '<div class="learn"><span class="ll">Something I learned' + BULB + '</span><textarea data-y="' + y + '" data-f="l" rows="1" aria-label="Something learned on ' + d + ' ' + MN[m - 1] + ' ' + y + '" placeholder="' + '' + '"' + (loaded ? '' : ' disabled') + '>' + esc(gl(y, m, d)) + '</textarea></div>';
       h += '<section class="row' + (y === TY ? ' now' : '') + (app === 'check' ? ' check' : '') + '">' + head + (app === 'diary' ? ta : mh + ch + lr) + '</section>';
     });
     h += '</div>';
     return h;
   }
+  /* bullet points in the entries: the round button, or type "- " at the start of a line; Enter continues the list and Enter on an empty bullet ends it */
+  var BUL = '• ', BULB = '<button class="bul" data-bul="1" aria-label="Bullet points">•</button>';
+  function putText(t, text) {   // typing-like edit, so undo keeps working
+    if (!document.execCommand('insertText', false, text)) { t.setRangeText(text, t.selectionStart, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input', { bubbles: true })); }
+  }
+  function lineStart(v, s) { return s === 0 ? 0 : v.lastIndexOf('\n', s - 1) + 1; }
+  function toggleBullets(t) {
+    var v = t.value, a = lineStart(v, t.selectionStart), b = v.indexOf('\n', t.selectionEnd); if (b < 0) b = v.length;
+    var seg = v.slice(a, b).split('\n'), many = seg.length > 1;   // with several lines, empty lines are left alone
+    var used = seg.filter(function (l) { return !many || l.trim(); }), all = used.length && used.every(function (l) { return l.indexOf(BUL) === 0; });
+    t.focus(); t.setSelectionRange(a, b);
+    putText(t, seg.map(function (l) { if (many && !l.trim()) return l; return all ? l.slice(BUL.length) : l.indexOf(BUL) === 0 ? l : BUL + l; }).join('\n'));
+  }
+  main.addEventListener('pointerdown', function (e) { if (e.target.closest('.bul')) e.preventDefault(); });   // keep the keyboard and the caret where they are
+  main.addEventListener('keydown', function (e) {
+    var t = e.target; if (t.tagName !== 'TEXTAREA' || e.key !== 'Enter' || e.isComposing || t.selectionStart !== t.selectionEnd) return;
+    var v = t.value, s = t.selectionStart, a = lineStart(v, s), end = v.indexOf('\n', s); if (end < 0) end = v.length;
+    if (v.slice(a, s).indexOf(BUL) !== 0) return;
+    e.preventDefault();
+    if (v.slice(a, end) === BUL) { t.setSelectionRange(a, end); if (!document.execCommand('delete')) { t.setRangeText('', a, end, 'end'); t.dispatchEvent(new Event('input', { bubbles: true })); } }   // empty bullet: the list ends
+    else putText(t, '\n' + BUL);
+  });
   function autosize(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
 
   /* calendar view */
@@ -652,7 +680,7 @@ img { max-width: 100%; }
       Object.keys(store).forEach(function (k) { var o = store[k].a; Object.keys(o).forEach(function (dd) { if (o[dd].indexOf(a.id) !== -1) total++; }); });
       var st = streak(function (y, m, d) { return ga(y, m, d).indexOf(a.id) !== -1; });
       var ask = delAsk === a.id;
-      return '<div class="arow"><span class="nm">' + (a.e ? esc(a.e) + ' ' : '') + esc(a.n) + '</span>' +
+      return '<div class="arow"><span class="aedit"><input data-aid="' + a.id + '" data-f="e" maxlength="8" placeholder="🙂" aria-label="Emoji" autocomplete="off" value="' + esc(a.e || '') + '"><input data-aid="' + a.id + '" data-f="n" maxlength="40" aria-label="Activity name" autocomplete="off" value="' + esc(a.n) + '"></span>' +
         (ask ? '<button class="rm yes" data-act="rmyes" data-aid="' + a.id + '">Delete?</button>' : '<button class="rm" data-act="rmask" data-aid="' + a.id + '" aria-label="Delete ' + esc(a.n) + '">Delete</button>') +
         '<span class="meta">' + MN[TM - 1].slice(0, 3) + ' ' + inMonth + '/' + TD + ' days · streak ' + st + ' · all time ' + total + '</span></div>';
     }).join('') + '</div>';
@@ -763,6 +791,10 @@ img { max-width: 100%; }
   /* events */
   main.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.tagName === 'TEXTAREA' && e.inputType === 'insertText' && e.data === ' ') {   // "- " or "* " at the start of a line becomes a bullet
+      var cv = t.value, cs = t.selectionStart, ca = lineStart(cv, cs), cl = cv.slice(ca, cs);
+      if (cl === '- ' || cl === '* ') { t.setSelectionRange(ca, cs); putText(t, BUL); return; }
+    }
     if (t.tagName === 'TEXTAREA') { autosize(t); put(+t.dataset.y, sel.m, sel.d, t.value, t.dataset.f); setStatus('Saving…'); }
   });
   main.addEventListener('focusout', function (e) { if (e.target.tagName === 'TEXTAREA') { flush(); } });
@@ -773,6 +805,7 @@ img { max-width: 100%; }
     var act = b.dataset.act;
     if (b.dataset.mood) { putMood(+b.dataset.y, sel.m, sel.d, +b.dataset.mood); render(); }
     else if (b.dataset.aid && !act) { toggleAct(+b.dataset.y, sel.m, sel.d, b.dataset.aid); render(); }
+    else if (b.dataset.bul) { var bt = (b.closest('.learn') || b.closest('.row')).querySelector('textarea'); if (bt && !bt.disabled) toggleBullets(bt); }
     else if (act === 'editacts') openActs();
     else if (b.dataset.m) { sel = { m: +b.dataset.m, d: +b.dataset.d }; view = 'day'; render(); window.scrollTo(0, 0); }
     else if (act === 'prev') shift(-1);
@@ -810,6 +843,13 @@ img { max-width: 100%; }
     else if (act === 'rmask') { delAsk = b.dataset.aid; render(); }
     else if (act === 'rmyes') { acts = acts.filter(function (a) { return a.id !== b.dataset.aid; }); delAsk = null; saveActs(); render(); }
     else if (delAsk && b.type !== 'submit') { delAsk = null; render(); }
+  });
+  document.getElementById('actset').addEventListener('click', openActs);
+  am.addEventListener('change', function (e) {   // renamed an activity (or changed its emoji)
+    var t = e.target, a = t.dataset.aid && acts.filter(function (x) { return x.id === t.dataset.aid; })[0]; if (!a) return;
+    if (t.dataset.f === 'e') a.e = t.value.trim();
+    else { var v = t.value.trim().slice(0, 40); if (!v) { t.value = a.n; return; } a.n = v; t.value = v; }
+    saveActs();
   });
   am.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -932,6 +972,47 @@ img { max-width: 100%; }
   }
   if (window.visualViewport) { visualViewport.addEventListener('resize', placeTb); visualViewport.addEventListener('scroll', placeTb); }
   window.addEventListener('scroll', placeTb, { passive: true });
+  /* typing in any text field: the line you are writing stays in view, above the keyboard and the formatting bar (phone and computer) */
+  var MIRROR = ['boxSizing', 'width', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'textTransform', 'wordSpacing', 'textIndent', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'tabSize'];
+  function caretRect(el) {
+    if (el.isContentEditable) {
+      var s = getSelection(); if (!s.rangeCount || !el.contains(s.anchorNode)) return null;
+      var r = s.getRangeAt(0).cloneRange(); r.collapse(false);
+      var rs = r.getClientRects(), rc = rs.length ? rs[rs.length - 1] : null;
+      if (!rc || !rc.height) {   // an empty line has no caret box: use the line itself
+        var n = r.startContainer; n = n.nodeType === 3 ? n.parentNode : n;
+        if (n === el || !n.getBoundingClientRect) return null;
+        rc = n.getBoundingClientRect();
+      }
+      return rc;
+    }
+    var er = el.getBoundingClientRect();
+    if (el.tagName !== 'TEXTAREA' || el.selectionEnd == null) return er;
+    var cs = getComputedStyle(el), m = document.createElement('div'), k = document.createElement('span');
+    MIRROR.forEach(function (p) { m.style[p] = cs[p]; });
+    m.style.cssText += ';position:absolute;visibility:hidden;left:-9999px;top:0;height:auto;white-space:pre-wrap;overflow-wrap:break-word';
+    m.textContent = el.value.slice(0, el.selectionEnd); k.textContent = '​'; m.appendChild(k); document.body.appendChild(m);
+    var top = k.offsetTop, lh = parseFloat(cs.lineHeight) || k.offsetHeight || 22; m.remove();
+    var y = er.top + (parseFloat(cs.borderTopWidth) || 0) + top - el.scrollTop;
+    return { top: y, bottom: y + lh, height: lh };
+  }
+  function ensureCaret() {
+    var el = document.activeElement; if (!el || el.closest('.modal')) return;
+    var ok = el.isContentEditable || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && /^(text|search|email|url|tel)$/.test(el.type));
+    if (!ok) return;
+    var rc = caretRect(el); if (!rc) return;
+    var vv = window.visualViewport, vt = vv ? vv.offsetTop : 0, bot = vt + (vv ? vv.height : window.innerHeight) - 24, top = vt + 110;
+    var tb = document.getElementById('ntb'); if (tb && el.isContentEditable) bot = Math.min(bot, tb.getBoundingClientRect().top - 16);
+    if (rc.bottom > bot) window.scrollBy(0, rc.bottom - bot);
+    else if (rc.top < top) window.scrollBy(0, rc.top - top);
+  }
+  var caretTimer = 0;
+  function followCaret() { clearTimeout(caretTimer); caretTimer = setTimeout(function () { placeTb(); ensureCaret(); }, 30); }
+  document.addEventListener('input', followCaret, true);
+  document.addEventListener('keyup', function (e) { if (/^(Arrow|Page|Home|End|Enter)/.test(e.key)) followCaret(); }, true);
+  document.addEventListener('focusin', function () { [0, 150, 400, 800].forEach(function (ms) { setTimeout(followCaret, ms); }); });   // the keyboard takes a moment to open
+  document.addEventListener('focusout', function () { setTimeout(placeTb, 50); setTimeout(placeTb, 400); });
+  if (window.visualViewport) visualViewport.addEventListener('resize', followCaret);
   function headActs() {   // top-right buttons: search on the main list; pin + delete inside a page or a note
     var h = document.getElementById('nhact'), it = nview === 'edit' ? noteById(ncur) : ngp ? noteById(ngp) : null, del = nview === 'edit' ? ndel : ndelp, s = '';
     if (it) s = '<button class="hb' + (it.pin ? ' on' : '') + '" data-n="pin" aria-label="' + (it.pin ? 'Unpin' : 'Pin') + '"><svg viewBox="0 0 24 24" width="16" height="16" fill="' + (it.pin ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z"/></svg></button>' +
@@ -1286,6 +1367,8 @@ img { max-width: 100%; }
         t = (hasApp(x[0], TY, TM, TD) ? x[2] : x[3]) + (earlier ? ' · ' + earlier + (earlier === 1 ? ' earlier year' : ' earlier years') + ' on this day' : '');
       }
       document.getElementById(x[1]).textContent = t;
+      var sk = loaded ? streak(function (y, m, d) { return hasApp(x[0], y, m, d); }) : 0;   // days in a row, next to the name of the app
+      document.getElementById(x[0] === 'diary' ? 'jsk' : 'csk').textContent = sk >= 1 ? sk + '🔥' : '';
     });
     document.getElementById('nmeta').textContent = loaded && notes.filter(function (x) { return !x.k && !x.del; }).length ? notes.filter(function (x) { return !x.k && !x.del; }).length + (notes.filter(function (x) { return !x.k && !x.del; }).length === 1 ? ' note' : ' notes') : '';
     var evd = lsGet(EKEY, null), evn = 0, tds = TY + '-' + pad(TM) + '-' + pad(TD);
@@ -1297,7 +1380,7 @@ img { max-width: 100%; }
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
   function setApp(a) {
-    app = a; ovTab.hidden = a === 'diary';
+    app = a; ovTab.hidden = a === 'diary'; document.getElementById('actset').hidden = a !== 'check';
     tabsIn.style.gridTemplateColumns = 'repeat(' + (a === 'diary' ? 2 : 3) + ', 1fr)';
     document.getElementById('appname').textContent = a === 'diary' ? 'Journal' : 'Daily Check-in';
     view = 'day'; query = ''; sel = { m: TM, d: TD }; calM = TM;   // every time an app is opened it starts on today
