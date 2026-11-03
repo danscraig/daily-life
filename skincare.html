@@ -134,6 +134,22 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 .fpanel label { display: block; font: 500 10px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); margin: 0 0 4px 4px; }
 .fpanel .wide { grid-column: 1 / -1; }
 .fpanel select, .fpanel input { padding: 10px 14px; font-size: 14px; }
+.orow { background: var(--paper); border: 2px solid transparent; border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.orow.best { border-color: var(--ok); }
+.orow .oh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.orow .oh b { font-weight: 600; }
+.orow .oi { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.orow .oi input[type="number"] { width: 96px; flex: none; padding: 9px 12px; font-size: 15px; }
+.orow .oi input[type="text"] { flex: 1 1 140px; min-width: 0; padding: 9px 12px; font-size: 13px; }
+.orow .oi a { flex: none; padding: 9px 12px; border-radius: 999px; background: var(--bg); color: var(--accent); font-size: 13px; font-weight: 500; text-decoration: none; }
+.orow .ot { font-size: 12.5px; color: var(--mute); }
+.orow .ot b { color: var(--ink); font-weight: 600; }
+.orow.best .ot b { color: var(--ok); }
+.stale { color: var(--warn); }
+.badge.best { background: var(--ok); color: #fff; }
+.cprice { display: flex; gap: 6px; }
+.cprice input { flex: 1; min-width: 0; }
+.cprice .btn { flex: none; padding: 10px 14px; font-size: 13px; }
 .tags { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
@@ -166,6 +182,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 
 <div class="modal" id="pm" hidden><div class="sheet" id="psheet"></div></div>
 <div class="modal" id="vm" hidden><div class="sheet" id="vsheet"></div></div>
+<div class="modal" id="cm" hidden><div class="sheet" id="csheet"></div></div>
 
 <nav class="navbar" aria-label="Sections"><div class="tabbar">
   <button data-v="today" aria-pressed="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Routine</button>
@@ -274,13 +291,86 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     $('plist').innerHTML = list.length ? list.map(function (p) {
       var x = expiry(p), b = '';
       if (x) b = x.left < 0 ? '<span class="badge bad">Expired</span>' : x.left <= 30 ? '<span class="badge warn">' + x.left + ' d left</span>' : '<span class="badge ok">until ' + MON[x.date.getMonth()] + ' ' + x.date.getFullYear() + '</span>';
-      return '<button class="pcard" data-pid="' + p.id + '"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span class="pt"><span class="pn">' + esc(p.n) + '</span><span class="ps">' + esc([p.brand, p.t, p.use ? (USES.filter(function (u) { return u[0] === p.use; })[0] || [0, ''])[1] : ''].filter(Boolean).join(' · ')) + '</span>' + ((p.skin || []).length || (p.conc || []).length ? '<span class="tags">' + esc((p.skin || []).concat(p.conc || []).join(' · ')) + '</span>' : '') + '</span>' + b + '</button>';
+      return '<button class="pcard" data-pid="' + p.id + '"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span class="pt"><span class="pn">' + esc(p.n) + '</span><span class="ps">' + esc([p.brand, p.t, p.use ? (USES.filter(function (u) { return u[0] === p.use; })[0] || [0, ''])[1] : '', p.price != null && p.price !== '' ? (p.cur === 'USD' ? 'US$' : '€') + Number(p.price).toFixed(2) : ''].filter(Boolean).join(' · ')) + '</span>' + ((p.skin || []).length || (p.conc || []).length ? '<span class="tags">' + esc((p.skin || []).concat(p.conc || []).join(' · ')) + '</span>' : '') + '</span>' + b + '</button>';
     }).join('') : '<div class="empty">Your shelf is empty.<br>Add the products you use.</div>';
   }
   function render() {
     $('v-today').hidden = view !== 'today'; $('v-prods').hidden = view !== 'prods'; $('v-search').hidden = view !== 'search'; $('editb').hidden = view !== 'today';
     [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
     if (view === 'today') renderToday(); else if (view === 'prods') renderProds(); else renderSres();
+  }
+
+  /* price comparison: shops that ship to Portugal. Shipping rules are read from each shop's own page (checked 2026-11-03); "fee: null" = worked out at checkout.
+     q = the shop's search page ({q} is replaced by the product name); no q = open the shop's home page. */
+  var G = 'https://www.google.com/search?q={q}+site%3A';   // for shops whose own search page I have not checked
+  var SHOPS = [
+    { id: 'stylevana', n: 'Stylevana', cur: 'EUR', fee: 4.39, free: 59, days: '6–11 working days', host: 'stylevana.com', q: 'https://www.stylevana.com/pt_PT/catalogsearch/result/?q={q}', note: 'Insurance available for 4% of the order' },
+    { id: 'yesstyle', n: 'YesStyle', cur: 'EUR', fee: 4.70, free: 55, days: '', host: 'yesstyle.com', q: 'https://www.yesstyle.com/en/list.html?q={q}', note: 'EU import tax on small parcels is covered by YesStyle' },
+    { id: 'koreanbeauty', n: 'Koreanbeauty.pt', cur: 'EUR', fee: 9, free: 53, days: '3–5 working days', host: 'koreanbeauty.pt', q: 'https://www.koreanbeauty.pt/search?q={q}', note: 'Shipping page says free from ≈53 €, the banner says 59 €' },
+    { id: 'stylekorean', n: 'StyleKorean', cur: 'EUR', fee: null, free: null, days: '', host: 'stylekorean.com', q: '', note: 'Free shipping over US$80 (≈ 69 €); below that it is worked out at checkout. Ships from Korea, import fees may apply' },
+    { id: 'oliveyoung', n: 'Olive Young Global', cur: 'EUR', fee: null, free: null, days: '', host: 'global.oliveyoung.com', q: G + 'global.oliveyoung.com', note: 'Free shipping over about US$60 in most regions; Portugal is not listed, check at checkout' },
+    { id: 'beautybay', n: 'Beauty Bay', cur: 'EUR', fee: null, free: null, days: '', host: 'beautybay.com', q: G + 'beautybay.com', note: 'Ships from the UK; Portugal rates shown at checkout' },
+    { id: 'cultbeauty', n: 'Cult Beauty', cur: 'EUR', fee: null, free: null, days: '', host: 'cultbeauty.com', q: G + 'cultbeauty.com', note: 'Says there are no additional charges on delivery for the EU' },
+    { id: 'lookfantastic', n: 'Lookfantastic', cur: 'EUR', fee: null, free: null, days: '', host: 'lookfantastic.pt', q: G + 'lookfantastic.pt', note: 'Check delivery cost at checkout' },
+    { id: 'bperfect', n: 'BPerfect (EU)', cur: 'EUR', fee: null, free: null, days: '', host: 'eu.bperfectcosmetics.com', q: G + 'eu.bperfectcosmetics.com', note: 'EU site mentions free shipping over 40 €; not confirmed for Portugal' }
+  ];  var fx = { USD: 0.86, at: 0, live: false };
+  function loadFx() {
+    try { var c = JSON.parse(localStorage.getItem('skincare-fx')); if (c && c.USD) { fx.USD = c.USD; fx.at = c.at; fx.live = Date.now() - c.at < 864e5; } } catch (e) {}
+    if (fx.live) return;
+    fetch('https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR').then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.rates && j.rates.EUR) { fx = { USD: j.rates.EUR, at: Date.now(), live: true }; try { localStorage.setItem('skincare-fx', JSON.stringify(fx)); } catch (e) {} if (!$('cm').hidden) renderCompare(); }
+    }).catch(function () {});
+  }
+  function money(n, cur) { return (cur === 'USD' ? 'US$' : '€') + n.toFixed(2); }
+  function offerFor(p, sh) {
+    var o = (p.offers || []).filter(function (x) { return x.s === sh.id; })[0];
+    if (!o && p.url && p.url.indexOf(sh.host) !== -1 && p.price != null && p.price !== '') o = { s: sh.id, price: p.price, at: p.priceAt || '', url: p.url };   // the price already on the product
+    return o || null;
+  }
+  var cmpId = '';
+  function openCompare(id) { cmpId = id; renderCompare(); $('cm').hidden = false; }
+  function renderCompare() {
+    var p = prodById(cmpId); if (!p) { $('cm').hidden = true; return; }
+    var today = ds(new Date()), rows = SHOPS.map(function (sh) {
+      var o = offerFor(p, sh), r = { sh: sh, o: o, price: o && o.price !== '' && o.price != null ? Number(o.price) : null };
+      if (r.price != null) {
+        var k = sh.cur === 'USD' ? fx.USD : 1;
+        r.item = r.price * k;
+        var own = o && o.ship !== '' && o.ship != null ? Number(o.ship) : null;   // shipping typed from the shop's checkout wins over the rule
+        r.ship = own != null ? own * k : sh.fee == null ? null : (sh.free && r.price >= sh.free ? 0 : sh.fee * k);
+        r.total = r.ship == null ? null : r.item + r.ship;
+      }
+      return r;
+    });
+    var known = rows.filter(function (r) { return r.total != null; }), best = known.length ? known.reduce(function (a, b) { return b.total < a.total ? b : a; }) : null;
+    $('csheet').innerHTML = '<div class="acts" style="margin:0"><button id="ccx">Close</button></div><h2>' + esc(p.n) + '</h2>' +
+      '<p class="hint">Shops that ship to Portugal. Type the price you see on each shop; the total adds shipping for this one item (free shipping is reached with a bigger order).</p>' +
+      rows.map(function (r) {
+        var sh = r.sh, isBest = best === r, o = r.o, age = o && o.at ? Math.round((new Date(today) - new Date(o.at)) / 864e5) : null;
+        var rule = sh.fee == null ? 'Shipping: see checkout, then type it below' : (sh.free ? 'Shipping ' + money(sh.fee, sh.cur) + ', free from ' + money(sh.free, sh.cur) : 'Shipping ' + money(sh.fee, sh.cur));
+        var line = r.price == null ? 'No price yet' : '<b>' + (r.total != null ? 'Total ' + (sh.cur === 'USD' ? '≈ ' : '') + money(r.total, 'EUR') : 'Item ' + (sh.cur === 'USD' ? '≈ ' : '') + money(r.item, 'EUR') + ' + shipping') + '</b>' +
+          (r.ship === 0 ? ' · free shipping' : r.ship ? ' · incl. ' + money(r.ship, 'EUR') + ' shipping' : '') +
+          (!isBest && best && r.total != null ? ' · +' + money(r.total - best.total, 'EUR') : '') +
+          (o && o.at ? ' · checked ' + o.at + (age > 14 ? ' <span class="stale">(check again)</span>' : '') : ' · date unknown');
+        var href = o && o.url ? o.url : sh.q ? sh.q.replace('{q}', encodeURIComponent([p.brand, p.n].filter(Boolean).join(' '))) : 'https://www.' + sh.host + '/';
+        return '<div class="orow' + (isBest ? ' best' : '') + '"><div class="oh"><b>' + esc(sh.n) + '</b>' + (isBest ? '<span class="badge best">Cheapest</span>' : '') + '<span class="hint" style="margin:0">' + esc(rule) + (sh.days ? ' · ' + esc(sh.days) : '') + '</span></div>' +
+          '<div class="oi"><input type="number" min="0" step="0.01" inputmode="decimal" data-op="' + sh.id + '" placeholder="Price (' + (sh.cur === 'USD' ? 'US$' : '€') + ')" value="' + (r.price != null ? r.price : '') + '" aria-label="Price at ' + esc(sh.n) + '">' +
+          '<input type="number" min="0" step="0.01" inputmode="decimal" data-os="' + sh.id + '" placeholder="Shipping €" value="' + (o && o.ship !== '' && o.ship != null ? o.ship : '') + '" aria-label="Shipping cost at ' + esc(sh.n) + '">' +
+          '<input type="text" data-ou="' + sh.id + '" placeholder="Product link (optional)" value="' + esc(o && o.url ? o.url : '') + '" autocapitalize="off" aria-label="Link at ' + esc(sh.n) + '">' +
+          '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + (o && o.url ? 'Open' : sh.q ? 'Search' : 'Shop') + '</a></div>' +
+          '<div class="ot">' + line + (sh.note ? '<br>' + esc(sh.note) : '') + '</div></div>';
+      }).join('') +
+      '<p class="hint">All prices in euros. If a shop shows another currency, switch it to EUR on the shop or convert it. Prices and shipping change often; shops with no shipping rule need the shipping you see at their checkout (Portugal address), otherwise they are not ranked.</p>';
+  }
+  function setOffer(shopId, field, val) {
+    var p = prodById(cmpId); if (!p) return;
+    p.offers = p.offers || [];
+    var o = p.offers.filter(function (x) { return x.s === shopId; })[0];
+    if (!o) { var sh = SHOPS.filter(function (x) { return x.id === shopId; })[0], seed = sh && offerFor(p, sh); o = seed ? { s: seed.s, price: seed.price, at: seed.at, url: seed.url } : { s: shopId, price: '', at: '', url: '' }; p.offers.push(o); }
+    if (field === 'price') { o.price = val === '' ? '' : Number(val); o.at = val === '' ? '' : ds(new Date()); }
+    else if (field === 'ship') { o.ship = val === '' ? '' : Number(val); if (o.price !== '' && o.price != null) o.at = ds(new Date()); }
+    else o.url = /^https?:\/\//.test(val.trim()) ? val.trim() : '';
+    p.u = Date.now(); save(); renderCompare();
   }
 
   function openProd(id, opt) {
@@ -297,7 +387,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       '<div><label>Skin concerns</label>' + chips('conc', CONC) + '</div>' +
       '<div class="two"><div><label for="po">Opened on</label><input type="date" id="po" value="' + esc(p.opened) + '"></div><div><label for="pp">Good for (months)</label><input type="number" id="pp" min="1" max="60" inputmode="numeric" value="' + esc(p.pao) + '" placeholder="12"></div></div>' +
       '<p class="hint">The open-jar symbol on the pack shows the months (e.g. 12M).</p>' +
-      '<div class="two"><div><label for="ppr">Price (' + esc(p.cur || '€') + ')</label><input type="number" id="ppr" min="0" step="0.01" inputmode="decimal" value="' + esc(p.price) + '"></div><div><label for="pu">Shop link</label><input type="text" id="pu" value="' + esc(p.url) + '" placeholder="https://…" autocapitalize="off"></div></div>' +
+      '<div class="two"><div><label for="ppr">Price (' + esc(p.cur || '€') + ')</label><div class="cprice"><input type="number" id="ppr" min="0" step="0.01" inputmode="decimal" value="' + esc(p.price) + '">' + (id ? '<button type="button" class="btn ghost" data-cmp="' + id + '">Compare</button>' : '') + '</div></div><div><label for="pu">Shop link</label><input type="text" id="pu" value="' + esc(p.url) + '" placeholder="https://…" autocapitalize="off"></div></div>' +
       (p.info ? '<details><summary class="hint">Details from the shop</summary><p class="hint" id="pinfo" style="white-space:pre-line">' + esc(p.info) + '</p></details>' : '') +
       '<div><label for="pig">Ingredients</label><textarea id="pig" rows="3" placeholder="Water, glycerin, niacinamide…" autocapitalize="off">' + esc(picked.ing) + '</textarea></div>' +
       '<div><label for="pw">Notes</label><textarea id="pw" rows="2" placeholder="How your skin reacted, where you bought it…">' + esc(p.notes) + '</textarea></div>' +
@@ -389,6 +479,8 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       s.days = s.days || []; var k = s.days.indexOf(j); if (k === -1) s.days.push(j); else s.days.splice(k, 1); s.u = Date.now();
       save(); b.setAttribute('aria-pressed', String(k === -1));
     }
+    else if (b.dataset.cmp) openCompare(b.dataset.cmp);
+    else if (b.id === 'ccx') { $('cm').hidden = true; }
     else if (b.dataset.pv) { pvR = sres[Number(b.dataset.pv)]; renderPreview(); }
     else if (b.dataset.more) runSearch(sq, spage + 1);
     else if (b.dataset.manual) openProd('', { name: sq.trim() });
@@ -419,6 +511,9 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   document.addEventListener('change', function (e) {
     var t = e.target;
     if (t.id === 'fi') return;   // typed live by the input handler
+    if (t.dataset.op) { setOffer(t.dataset.op, 'price', t.value); return; }
+    if (t.dataset.os) { setOffer(t.dataset.os, 'ship', t.value); return; }
+    if (t.dataset.ou) { setOffer(t.dataset.ou, 'url', t.value); return; }
     if (t.dataset.f && t.closest('.fpanel')) { flt[t.dataset.f] = t.value; renderFilters(); renderPlist(); return; }
     if (t.dataset.sp !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sp; })[0]; if (s) { s.prod = t.value; s.u = Date.now(); var p = prodById(t.value); if (p && !s.n.trim()) { s.n = p.n; } save(); renderToday(); } }
   });
@@ -434,8 +529,9 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   }, true);
   $('sf').addEventListener('submit', function (e) { e.preventDefault(); sq = $('sq').value; runSearch(sq, 1); $('sq').blur(); });
   $('pm').addEventListener('click', function (e) { if (e.target === $('pm')) closeProd(); });
+  $('cm').addEventListener('click', function (e) { if (e.target === $('cm')) $('cm').hidden = true; });
   $('vm').addEventListener('click', function (e) { if (e.target === $('vm')) { pvR = null; $('vm').hidden = true; } });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('pm').hidden) closeProd(); else if (!$('vm').hidden) { pvR = null; $('vm').hidden = true; } } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('cm').hidden) $('cm').hidden = true; else if (!$('pm').hidden) closeProd(); else if (!$('vm').hidden) { pvR = null; $('vm').hidden = true; } } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); render(); } });
   render();
   /* import from a shop page: skincare.html#import=<JSON>  (name, brand, type, img, price, cur, url, info, ing) opens the form filled in */
