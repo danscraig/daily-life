@@ -104,6 +104,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 .pimgrow .pi img { width: 100%; height: 100%; object-fit: contain; }
 .pimgrow button { color: var(--bad); font-size: 13px; padding: 8px 12px; }
 .pcard .pt { flex: 1; min-width: 0; }
+.pcard .pn, .pcard .ps { display: block; }
 .pcard .pn { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pcard .ps { font-size: 13px; color: var(--mute); }
 .badge { flex: none; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: var(--bg); color: var(--mute); white-space: nowrap; }
@@ -123,6 +124,17 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 .acts .pri { background: var(--accent); color: var(--accent-ink); }
 .acts .dng { color: var(--bad); }
 .hint { font-size: 13px; color: var(--mute); margin: 2px 4px; }
+.chipsrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipsrow button { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 13px; color: var(--mute); }
+.chipsrow button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.fbar { display: flex; gap: 8px; align-items: center; margin: 4px 0 10px; }
+.fbar .btn { flex: none; }
+.fbar .cnt { flex: 1; font-size: 13px; color: var(--mute); }
+.fpanel { background: var(--paper); border-radius: 20px; padding: 12px; margin-bottom: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.fpanel label { display: block; font: 500 10px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); margin: 0 0 4px 4px; }
+.fpanel .wide { grid-column: 1 / -1; }
+.fpanel select, .fpanel input { padding: 10px 14px; font-size: 14px; }
+.tags { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body>
@@ -141,6 +153,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   </section>
 
   <section id="v-prods" hidden>
+    <div id="filters"></div>
     <div class="list" id="plist"></div>
     <button class="addb" id="addp">+ Add product</button>
   </section>
@@ -223,12 +236,45 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     var left = Math.round((e - t) / 864e5);
     return { date: e, left: left };
   }
-  function renderProds() {
-    var list = data.prods.slice().sort(function (a, b) { var x = expiry(a), y = expiry(b); return (x ? x.left : 1e9) - (y ? y.left : 1e9); });
+  /* filters on the shelf: all the chosen ones must match; ingredients are comma separated, "-alcohol" means without */
+  var SKIN = ['Combination', 'Normal', 'Oily', 'Dry', 'Sensitive'];
+  var CONC = ['Anti-aging / wrinkles', 'Brightening / dark spots', 'Dryness / hydration', 'Acne / blemishes', 'Redness / soothing', 'Pores / oil control', 'Dullness', 'Sun protection'];
+  var USES = [['day', 'Day'], ['night', 'Night'], ['both', 'Day & night']];
+  var flt = { t: '', use: '', skin: '', conc: '', ing: '' }, fopen = false;
+  function opts(list, cur, any) { return '<option value="">' + any + '</option>' + list.map(function (x) { var v = Array.isArray(x) ? x[0] : x, l = Array.isArray(x) ? x[1] : x; return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join(''); }
+  function extra(list, base, key) {   // the fixed choices plus anything already used on a product
+    var o = base.slice(); data.prods.forEach(function (p) { (p[key] || []).forEach(function (v) { if (o.indexOf(v) === -1) o.push(v); }); }); return o;
+  }
+  function filterOn() { return !!(flt.t || flt.use || flt.skin || flt.conc || flt.ing.trim()); }
+  function matches(p) {
+    if (flt.t && p.t !== flt.t) return false;
+    if (flt.use && !(p.use === flt.use || p.use === 'both')) return false;
+    if (flt.skin && (p.skin || []).indexOf(flt.skin) === -1) return false;
+    if (flt.conc && (p.conc || []).indexOf(flt.conc) === -1) return false;
+    var hay = (p.ing || '').toLowerCase();
+    return flt.ing.split(',').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean).every(function (q) {
+      return q[0] === '-' ? (q.length < 2 || hay.indexOf(q.slice(1).trim()) === -1) : hay.indexOf(q) !== -1;
+    });
+  }
+  function renderFilters() {
+    var h = '<div class="fbar"><button class="btn ghost" data-fopen="1">' + (fopen ? 'Hide filters' : 'Filters' + (filterOn() ? ' •' : '')) + '</button><span class="cnt" id="fcnt"></span>' + (filterOn() ? '<button class="btn ghost" data-fclear="1">Clear</button>' : '') + '</div>';
+    if (fopen) h += '<div class="fpanel">' +
+      '<div><label for="ft">Type</label><select id="ft" data-f="t">' + opts(TYPES.map(function (x) { return x[0]; }), flt.t, 'Any') + '</select></div>' +
+      '<div><label for="fu">Use</label><select id="fu" data-f="use">' + opts(USES, flt.use, 'Any') + '</select></div>' +
+      '<div><label for="fs">Skin type</label><select id="fs" data-f="skin">' + opts(extra(0, SKIN, 'skin'), flt.skin, 'Any') + '</select></div>' +
+      '<div><label for="fc">Concern</label><select id="fc" data-f="conc">' + opts(extra(0, CONC, 'conc'), flt.conc, 'Any') + '</select></div>' +
+      '<div class="wide"><label for="fi">Ingredients (e.g. niacinamide, -alcohol)</label><input type="text" id="fi" data-f="ing" value="' + esc(flt.ing) + '" placeholder="niacinamide, hyaluronic" autocapitalize="off" autocomplete="off"></div></div>';
+    $('filters').innerHTML = h;
+  }
+  function renderProds() { renderFilters(); renderPlist(); }
+  function renderPlist() {
+    var all = data.prods, list = all.filter(matches).sort(function (a, b) { var x = expiry(a), y = expiry(b); return (x ? x.left : 1e9) - (y ? y.left : 1e9); });
+    var c = $('fcnt'); if (c) c.textContent = filterOn() ? list.length + ' of ' + all.length : all.length + (all.length === 1 ? ' product' : ' products');
+    if (!list.length && all.length) { $('plist').innerHTML = '<div class="empty">No product matches these filters.</div>'; return; }
     $('plist').innerHTML = list.length ? list.map(function (p) {
       var x = expiry(p), b = '';
       if (x) b = x.left < 0 ? '<span class="badge bad">Expired</span>' : x.left <= 30 ? '<span class="badge warn">' + x.left + ' d left</span>' : '<span class="badge ok">until ' + MON[x.date.getMonth()] + ' ' + x.date.getFullYear() + '</span>';
-      return '<button class="pcard" data-pid="' + p.id + '"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span class="pt"><span class="pn">' + esc(p.n) + '</span><span class="ps">' + esc([p.brand, p.t].filter(Boolean).join(' · ')) + '</span></span>' + b + '</button>';
+      return '<button class="pcard" data-pid="' + p.id + '"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span class="pt"><span class="pn">' + esc(p.n) + '</span><span class="ps">' + esc([p.brand, p.t, p.use ? (USES.filter(function (u) { return u[0] === p.use; })[0] || [0, ''])[1] : ''].filter(Boolean).join(' · ')) + '</span>' + ((p.skin || []).length || (p.conc || []).length ? '<span class="tags">' + esc((p.skin || []).concat(p.conc || []).join(' · ')) + '</span>' : '') + '</span>' + b + '</button>';
     }).join('') : '<div class="empty">Your shelf is empty.<br>Add the products you use.</div>';
   }
   function render() {
@@ -240,16 +286,20 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   function openProd(id, opt) {
     opt = opt || {};
     var p = id ? prodById(id) : Object.assign({ n: opt.name || '', brand: '', t: '', opened: '', pao: '', notes: '' }, opt.prefill || {});
-    picked = { ing: p.ing || '', code: p.code || '', img: p.img || '', info: p.info || '' };
+    picked = { ing: p.ing || '', code: p.code || '', img: p.img || '', info: p.info || '', skin: (p.skin || []).slice(), conc: (p.conc || []).slice() };
+    function chips(key, base) { return '<div class="chipsrow" data-chips="' + key + '">' + extra(0, base, key).map(function (v) { return '<button type="button" data-chip="' + key + '" data-cv="' + esc(v) + '" aria-pressed="' + (picked[key].indexOf(v) !== -1) + '">' + esc(v) + '</button>'; }).join('') + '</div>'; }
     $('psheet').innerHTML = '<h2>' + (opt.title || (id ? 'Edit product' : 'New product')) + '</h2>' + (opt.hint ? '<p class="hint">' + opt.hint + '</p>' : '') +
       '<div class="pimgrow" id="pimg"' + (picked.img ? '' : ' hidden') + '><span class="pi">' + (picked.img ? '<img src="' + esc(picked.img) + '" alt="">' : '') + '</span><button id="pimgx">Remove photo</button></div>' +
       '<div><label for="pn">Name</label><input type="text" id="pn" value="' + esc(p.n) + '" placeholder="e.g. Gentle cleanser"></div>' +
       '<div class="two"><div><label for="pb">Brand</label><input type="text" id="pb" value="' + esc(p.brand) + '"></div><div><label for="pt">Type</label><select id="pt"><option value="">Choose…</option>' + TYPES.map(function (x) { return '<option' + (x[0] === p.t ? ' selected' : '') + '>' + x[0] + '</option>'; }).join('') + '</select></div></div>' +
+      '<div><label for="pus">Use</label><select id="pus"><option value="">Not set</option>' + USES.map(function (u) { return '<option value="' + u[0] + '"' + (u[0] === p.use ? ' selected' : '') + '>' + u[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div><label>Skin type</label>' + chips('skin', SKIN) + '</div>' +
+      '<div><label>Skin concerns</label>' + chips('conc', CONC) + '</div>' +
       '<div class="two"><div><label for="po">Opened on</label><input type="date" id="po" value="' + esc(p.opened) + '"></div><div><label for="pp">Good for (months)</label><input type="number" id="pp" min="1" max="60" inputmode="numeric" value="' + esc(p.pao) + '" placeholder="12"></div></div>' +
       '<p class="hint">The open-jar symbol on the pack shows the months (e.g. 12M).</p>' +
       '<div class="two"><div><label for="ppr">Price (' + esc(p.cur || '€') + ')</label><input type="number" id="ppr" min="0" step="0.01" inputmode="decimal" value="' + esc(p.price) + '"></div><div><label for="pu">Shop link</label><input type="text" id="pu" value="' + esc(p.url) + '" placeholder="https://…" autocapitalize="off"></div></div>' +
       (p.info ? '<details><summary class="hint">Details from the shop</summary><p class="hint" id="pinfo" style="white-space:pre-line">' + esc(p.info) + '</p></details>' : '') +
-      '<details id="pig"' + (picked.ing ? '' : ' hidden') + '><summary class="hint">Ingredients</summary><p class="hint" id="pigt">' + esc(picked.ing) + '</p></details>' +
+      '<div><label for="pig">Ingredients</label><textarea id="pig" rows="3" placeholder="Water, glycerin, niacinamide…" autocapitalize="off">' + esc(picked.ing) + '</textarea></div>' +
       '<div><label for="pw">Notes</label><textarea id="pw" rows="2" placeholder="How your skin reacted, where you bought it…">' + esc(p.notes) + '</textarea></div>' +
       '<div class="acts"><button id="pcx">Cancel</button>' + (id ? '<button class="dng" id="pdel">' + 'Delete</button>' : '') + '<button class="pri" id="psv">Save</button></div>';
     $('pm').hidden = false; $('pm').dataset.id = id || '';
@@ -345,6 +395,9 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     else if (b.id === 'pvx') { pvR = null; $('vm').hidden = true; }
     else if (b.id === 'pvadd') addFromResult();
     else if (b.id === 'pvopen') { var oid = b.dataset.id; pvR = null; $('vm').hidden = true; openProd(oid); }
+    else if (b.dataset.chip) { var arr = picked[b.dataset.chip], v = b.dataset.cv, ix = arr.indexOf(v); if (ix === -1) arr.push(v); else arr.splice(ix, 1); b.setAttribute('aria-pressed', String(ix === -1)); }
+    else if (b.dataset.fopen) { fopen = !fopen; renderFilters(); renderPlist(); }
+    else if (b.dataset.fclear) { flt = { t: '', use: '', skin: '', conc: '', ing: '' }; renderFilters(); renderPlist(); }
     else if (b.id === 'pimgx') { picked.img = ''; $('pimg').hidden = true; }
     else if (b.dataset.pid) openProd(b.dataset.pid);
     else if (b.id === 'addp') openProd('');
@@ -357,7 +410,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       var n = $('pn').value.trim(); if (!n) { $('pn').focus(); return; }
       var id2 = $('pm').dataset.id, p = id2 ? prodById(id2) : null;
       if (!p) { p = { id: uid() }; data.prods.push(p); }
-      p.n = n; p.brand = $('pb').value.trim(); p.t = $('pt').value; p.opened = $('po').value; p.pao = $('pp').value ? Number($('pp').value) : ''; p.notes = $('pw').value.trim(); p.ing = picked.ing; p.code = picked.code; p.img = picked.img;
+      p.n = n; p.brand = $('pb').value.trim(); p.t = $('pt').value; p.opened = $('po').value; p.pao = $('pp').value ? Number($('pp').value) : ''; p.notes = $('pw').value.trim(); p.ing = $('pig').value.trim(); p.code = picked.code; p.img = picked.img; p.use = $('pus').value; p.skin = picked.skin; p.conc = picked.conc;
       var pr = $('ppr').value; if (pr !== '') { if (Number(pr) !== Number(p.price)) p.priceAt = ds(new Date()); p.price = Number(pr); if (!p.cur) p.cur = '€'; } else { delete p.price; delete p.priceAt; }
       p.url = $('pu').value.trim(); if (picked.info) p.info = picked.info; p.u = Date.now();
       save(); closeProd(); render();
@@ -365,10 +418,13 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   });
   document.addEventListener('change', function (e) {
     var t = e.target;
+    if (t.id === 'fi') return;   // typed live by the input handler
+    if (t.dataset.f && t.closest('.fpanel')) { flt[t.dataset.f] = t.value; renderFilters(); renderPlist(); return; }
     if (t.dataset.sp !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sp; })[0]; if (s) { s.prod = t.value; s.u = Date.now(); var p = prodById(t.value); if (p && !s.n.trim()) { s.n = p.n; } save(); renderToday(); } }
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.id === 'fi') { flt.ing = t.value; renderPlist(); return; }
     if (t.id === 'sq') { sq = t.value; clearTimeout(searchTimer); if (sq.trim().length < 3) { searchSeq++; sres = []; sbusy = false; smsg = ''; renderSres(); } else searchTimer = setTimeout(function () { runSearch(sq, 1); }, 450); }
     if (t.dataset.sn !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sn; })[0]; if (s) { s.n = t.value; s.u = Date.now(); save(); } }
   });
@@ -388,7 +444,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     var d = null; try { d = JSON.parse(decodeURIComponent(m[1])); } catch (e) {}
     history.replaceState(null, '', location.pathname + location.search);
     if (!d || typeof d !== 'object' || !String(d.n || '').trim()) return;
-    var pre = { n: String(d.n).slice(0, 200), brand: String(d.brand || '').slice(0, 80), t: TYPES.some(function (x) { return x[0] === d.t; }) ? d.t : guessType([], d.n), img: /^https:\/\//.test(d.img || '') ? d.img : '', url: /^https?:\/\//.test(d.url || '') ? d.url : '', info: String(d.info || '').slice(0, 2000), ing: String(d.ing || '').slice(0, 4000) };
+    var pre = { n: String(d.n).slice(0, 200), brand: String(d.brand || '').slice(0, 80), t: TYPES.some(function (x) { return x[0] === d.t; }) ? d.t : guessType([], d.n), img: /^https:\/\//.test(d.img || '') ? d.img : '', url: /^https?:\/\//.test(d.url || '') ? d.url : '', info: String(d.info || '').slice(0, 2000), ing: String(d.ing || '').slice(0, 4000), use: ['day', 'night', 'both'].indexOf(d.use) !== -1 ? d.use : '', skin: Array.isArray(d.skin) ? d.skin.map(String).slice(0, 8) : [], conc: Array.isArray(d.conc) ? d.conc.map(String).slice(0, 12) : [] };
     if (isFinite(Number(d.price)) && d.price !== '' && d.price != null) { pre.price = Number(d.price); pre.cur = String(d.cur || '€').slice(0, 3); pre.priceAt = ds(new Date()); }
     view = 'prods'; render();
     openProd('', { prefill: pre, title: 'Import from shop', hint: 'Check the details, add when you opened it and how many months it lasts, then Save.', focus: 'po' });
