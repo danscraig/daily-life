@@ -43,7 +43,9 @@ function readLocal() {
 function fromCloud(c, local) {
   function p(s, fb) { try { var v = JSON.parse(s); return v == null ? fb : v; } catch (e) { return fb; } }
   // a copy saved before the calendar (or skincare) existed lacks those fields: keep the ones on this device
-  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: c.skincare === undefined ? local.skincare : normSk(p(c.skincare, null)) };
+  var cs = c.skincare === undefined ? null : normSk(p(c.skincare, null));
+  // an empty cloud skincare never wipes what this device has: it goes up instead (see sync)
+  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs };
 }
 /* write to localStorage without triggering a push; returns true when something changed */
 function applyLocal(d) {
@@ -120,7 +122,9 @@ async function sync(reloadOk) {
     changed = applyLocal(merged);
     if (!meta.dirty) { setMeta({ uid: user.uid, at: cloud.updated, dirty: false }); }
   }
-  var needPush = !cloud || meta.uid !== user.uid || meta.dirty;
+  var cloudSk = null; try { cloudSk = cloud && cloud.skincare !== undefined ? normSk(JSON.parse(cloud.skincare)) : null; } catch (e) {}
+  var skUp = !!cloud && !skEmpty(merged.skincare) && (!cloudSk || skEmpty(cloudSk));   // skincare written on a device before it was synced
+  var needPush = !cloud || meta.uid !== user.uid || meta.dirty || skUp;
   if (needPush) await push(merged);
   if (changed && reloadOk && !sessionStorage.getItem('daily-life-synced')) { try { sessionStorage.setItem('daily-life-synced', '1'); } catch (e) {} location.reload(); }
 }
