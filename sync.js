@@ -19,8 +19,8 @@ var app = initializeApp({
 var auth = getAuth(app), db = getFirestore(app);
 
 var LS = 'year-after-year-v1', LSA = 'year-after-year-acts-v1', LSN = 'year-after-year-notes-v1', MKEY = 'movies-and-series-v1';
-var EKEY = 'daily-life-events-v1';
-var WATCH = [LS, LSA, LSN, MKEY, EKEY], META = 'daily-life-sync-meta';
+var EKEY = 'daily-life-events-v1', SKEY = 'skincare-v1';
+var WATCH = [LS, LSA, LSN, MKEY, EKEY, SKEY], META = 'daily-life-sync-meta';
 var rawSet = Storage.prototype.setItem;
 var user = null, applying = false, rev = 0, timer = null, busy = Promise.resolve(), msg = '', msgErr = false;
 
@@ -28,15 +28,22 @@ function lsGet(k, fb) { try { var v = JSON.parse(localStorage.getItem(k)); retur
 function getMeta() { return lsGet(META, {}) || {}; }
 function setMeta(m) { try { rawSet.call(localStorage, META, JSON.stringify(m)); } catch (e) {} }
 
+/* skincare: { am: [steps], pm: [steps], prods: [products], log: { 'YYYY-MM-DD': [step ids done] } }, always with the same key order */
+function normSk(o) {
+  o = (o && typeof o === 'object') ? o : {};
+  return { am: Array.isArray(o.am) ? o.am : [], pm: Array.isArray(o.pm) ? o.pm : [], prods: Array.isArray(o.prods) ? o.prods : [], log: (o.log && typeof o.log === 'object') ? o.log : {} };
+}
+function skEmpty(s) { return !s.am.length && !s.pm.length && !s.prods.length && !Object.keys(s.log).length; }
+
 /* local data as one object */
 function readLocal() {
   var mv = lsGet(MKEY, null), ev = lsGet(EKEY, null);
-  return { store: lsGet(LS, {}), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [] };
+  return { store: lsGet(LS, {}), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [], skincare: normSk(lsGet(SKEY, null)) };
 }
 function fromCloud(c, local) {
   function p(s, fb) { try { var v = JSON.parse(s); return v == null ? fb : v; } catch (e) { return fb; } }
-  // a copy saved before the calendar existed has no events: keep the ones on this device
-  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []) };
+  // a copy saved before the calendar (or skincare) existed lacks those fields: keep the ones on this device
+  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: c.skincare === undefined ? local.skincare : normSk(p(c.skincare, null)) };
 }
 /* write to localStorage without triggering a push; returns true when something changed */
 function applyLocal(d) {
@@ -50,6 +57,8 @@ function applyLocal(d) {
     var mv = lsGet(MKEY, null); if (!mv || !Array.isArray(mv.items)) mv = { items: [], tmdb: '' };
     var before = JSON.stringify(mv.items); mv.items = d.movies;
     if (JSON.stringify(mv.items) !== before) { rawSet.call(localStorage, MKEY, JSON.stringify(mv)); changed = true; }
+    var sk = normSk(d.skincare);
+    if (!skEmpty(sk) || localStorage.getItem(SKEY) !== null) put(SKEY, sk);
   } finally { applying = false; }
   return changed;
 }
@@ -77,15 +86,26 @@ function union(a, b) {
     ['t', 'm', 'a', 'l'].forEach(function (f) { Object.keys(y[f]).forEach(function (d) { if (!(d in x[f])) x[f][d] = y[f][d]; }); });
     store[k] = x;
   });
-  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true), events: unionList(a.events, b.events, true) };
+  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true), events: unionList(a.events, b.events, true), skincare: unionSk(a.skincare, b.skincare) };
+}
+function unionSk(a, b) {   // steps and products by id (the newer edit wins); a day's ticks are joined
+  a = normSk(a); b = normSk(b);
+  var log = {};
+  Object.keys(a.log).concat(Object.keys(b.log)).forEach(function (k) {
+    if (log[k]) return;
+    var x = (a.log[k] || []).slice();
+    (b.log[k] || []).forEach(function (id) { if (x.indexOf(id) === -1) x.push(id); });
+    log[k] = x;
+  });
+  return { am: unionList(a.am, b.am, true), pm: unionList(a.pm, b.pm, true), prods: unionList(a.prods, b.prods, true), log: log };
 }
 
 /* talking to the cloud */
 function ref() { return doc(db, 'users', user.uid); }
 async function push(d) {
   var r0 = rev, at = Date.now();
-  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies), events: JSON.stringify(d.events) };
-  if (body.store.length + body.acts.length + body.notes.length + body.movies.length + body.events.length > 900000) throw new Error('too big');
+  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies), events: JSON.stringify(d.events), skincare: JSON.stringify(normSk(d.skincare)) };
+  if (body.store.length + body.acts.length + body.notes.length + body.movies.length + body.events.length + body.skincare.length > 900000) throw new Error('too big');
   await setDoc(ref(), body);
   setMeta({ uid: user.uid, at: at, dirty: rev !== r0 });
 }

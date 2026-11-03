@@ -1291,6 +1291,7 @@ img { max-width: 100%; }
     if (typeof watch !== 'undefined') data.watch = watch;
     try { var mv = JSON.parse(localStorage.getItem(MKEY)); if (mv && Array.isArray(mv.items)) data.movies = mv; } catch (e) {}
     try { var ev = JSON.parse(localStorage.getItem(EKEY)); if (ev && Array.isArray(ev.items)) data.events = ev.items; } catch (e) {}
+    try { var sk0 = JSON.parse(localStorage.getItem('skincare-v1')); if (sk0 && typeof sk0 === 'object') data.skincare = sk0; } catch (e) {}
     var txt = JSON.stringify(data), name = 'daily-life-backup-' + TY + '-' + pad(TM) + '-' + pad(TD) + '.json';
     var dl = null;
     try { if (onClaude) dl = await window.claude.use('downloads'); } catch (e) {}
@@ -1355,6 +1356,16 @@ img { max-width: 100%; }
         var evs = lsGet(EKEY, null); evs = (evs && Array.isArray(evs.items)) ? evs.items : [];
         (r.events || []).forEach(function (x) { if (x && x.id && !evs.some(function (y) { return y.id === x.id; })) evs.push(x); });
         localStorage.setItem(EKEY, JSON.stringify({ items: evs }));
+        if (r.skincare && typeof r.skincare === 'object') {   // skincare: add what this device does not have yet
+          var sk = lsGet('skincare-v1', null) || {}, rs = r.skincare;
+          ['am', 'pm', 'prods'].forEach(function (f) {
+            sk[f] = Array.isArray(sk[f]) ? sk[f] : [];
+            (Array.isArray(rs[f]) ? rs[f] : []).forEach(function (x) { if (x && x.id && !sk[f].some(function (y) { return y.id === x.id; })) sk[f].push(x); });
+          });
+          sk.log = sk.log && typeof sk.log === 'object' ? sk.log : {};
+          Object.keys(rs.log || {}).forEach(function (k) { var a = sk.log[k] = sk.log[k] || []; (rs.log[k] || []).forEach(function (id) { if (a.indexOf(id) === -1) a.push(id); }); });
+          localStorage.setItem('skincare-v1', JSON.stringify(sk));
+        }
         location.reload();
       } catch (err) { lbl.textContent = 'Not a valid backup'; }
     };
@@ -1490,7 +1501,7 @@ img { max-width: 100%; }
   document.addEventListener('click', function (e) { pairs.forEach(function (x) { if (!x[1].hidden && !x[1].contains(e.target)) closeAll(); }); });
 })();
 </script>
-<script type="module" src="sync.js?v=5"></script>
+<script type="module" src="sync.js?v=6"></script>
 
 </body>
 </html>

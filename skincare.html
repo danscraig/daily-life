@@ -315,7 +315,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   }
   function addFromResult() {
     var r = pvR; if (!r || haveItem(r)) return;
-    var p = { id: uid(), n: r.t, brand: r.brand, t: r.type, opened: '', pao: '', notes: '', ing: r.ing, code: r.code, img: r.img };
+    var p = { id: uid(), n: r.t, brand: r.brand, t: r.type, opened: '', pao: '', notes: '', ing: r.ing, code: r.code, img: r.img, u: Date.now() };
     data.prods.push(p); save(); pvR = null; $('vm').hidden = true; renderSres();
     openProd(p.id, { title: 'Added to your products', hint: 'Add when you opened it and how many months it lasts.', focus: 'po' });
   }
@@ -332,11 +332,11 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       if (!l.length) delete data.log[ds(day)];
       save(); renderToday();
     }
-    else if (b.dataset.add) { data[part].push({ id: uid(), n: '', prod: '', days: [] }); save(); renderToday(); var ins = document.querySelectorAll('[data-sn]'); if (ins.length) ins[ins.length - 1].focus(); }
+    else if (b.dataset.add) { data[part].push({ id: uid(), n: '', prod: '', days: [], u: Date.now() }); save(); renderToday(); var ins = document.querySelectorAll('[data-sn]'); if (ins.length) ins[ins.length - 1].focus(); }
     else if (b.dataset.sdel) { data[part] = data[part].filter(function (s) { return s.id !== b.dataset.sdel; }); save(); renderToday(); }
     else if (b.dataset.sd) {
       var s = data[part].filter(function (x) { return x.id === b.dataset.sid; })[0], j = Number(b.dataset.sd); if (!s) return;
-      s.days = s.days || []; var k = s.days.indexOf(j); if (k === -1) s.days.push(j); else s.days.splice(k, 1);
+      s.days = s.days || []; var k = s.days.indexOf(j); if (k === -1) s.days.push(j); else s.days.splice(k, 1); s.u = Date.now();
       save(); b.setAttribute('aria-pressed', String(k === -1));
     }
     else if (b.dataset.pv) { pvR = sres[Number(b.dataset.pv)]; renderPreview(); }
@@ -359,18 +359,18 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       if (!p) { p = { id: uid() }; data.prods.push(p); }
       p.n = n; p.brand = $('pb').value.trim(); p.t = $('pt').value; p.opened = $('po').value; p.pao = $('pp').value ? Number($('pp').value) : ''; p.notes = $('pw').value.trim(); p.ing = picked.ing; p.code = picked.code; p.img = picked.img;
       var pr = $('ppr').value; if (pr !== '') { if (Number(pr) !== Number(p.price)) p.priceAt = ds(new Date()); p.price = Number(pr); if (!p.cur) p.cur = '€'; } else { delete p.price; delete p.priceAt; }
-      p.url = $('pu').value.trim(); if (picked.info) p.info = picked.info;
+      p.url = $('pu').value.trim(); if (picked.info) p.info = picked.info; p.u = Date.now();
       save(); closeProd(); render();
     }
   });
   document.addEventListener('change', function (e) {
     var t = e.target;
-    if (t.dataset.sp !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sp; })[0]; if (s) { s.prod = t.value; var p = prodById(t.value); if (p && !s.n.trim()) { s.n = p.n; } save(); renderToday(); } }
+    if (t.dataset.sp !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sp; })[0]; if (s) { s.prod = t.value; s.u = Date.now(); var p = prodById(t.value); if (p && !s.n.trim()) { s.n = p.n; } save(); renderToday(); } }
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
     if (t.id === 'sq') { sq = t.value; clearTimeout(searchTimer); if (sq.trim().length < 3) { searchSeq++; sres = []; sbusy = false; smsg = ''; renderSres(); } else searchTimer = setTimeout(function () { runSearch(sq, 1); }, 450); }
-    if (t.dataset.sn !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sn; })[0]; if (s) { s.n = t.value; save(); } }
+    if (t.dataset.sn !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sn; })[0]; if (s) { s.n = t.value; s.u = Date.now(); save(); } }
   });
   document.addEventListener('error', function (e) {   // a photo that will not load falls back to the type icon
     var im = e.target; if (!im || im.tagName !== 'IMG') return;
@@ -397,5 +397,6 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   runImport();
 })();
 </script>
+<script type="module" src="sync.js?v=6"></script>
 </body>
 </html>
