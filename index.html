@@ -428,6 +428,11 @@ img { max-width: 100%; }
       <span class="atxt"><span class="aname">Movies, Series &amp; Books</span><span class="ameta" id="wmeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </a>
+    <a class="app" href="skincare.html">
+      <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"></rect><path d="M10 9V5h4v4M9 3h6"></path></svg></span>
+      <span class="atxt"><span class="aname">Skincare</span><span class="ameta" id="smeta"></span></span>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
     <button class="app" data-app="notes">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h7M9 17h5"></path></svg></span>
       <span class="atxt"><span class="aname">Notes</span><span class="ameta" id="nmeta"></span></span>
@@ -1377,6 +1382,11 @@ img { max-width: 100%; }
     var mvd = lsGet(MKEY, null), wp = 0, ww = 0, br = 0;
     if (mvd && Array.isArray(mvd.items)) mvd.items.forEach(function (i) { if (i.k === 'b') { if (i.s === 'p') br++; } else if (i.k === 's' && i.s === 'p') wp++; else if (i.s === 'w') ww++; });
     document.getElementById('wmeta').textContent = [wp ? wp + ' watching' : '', br ? br + ' reading' : ''].filter(Boolean).join(' · ');
+    var sc = lsGet('skincare-v1', null), st = 0, sd = 0;   // today's skincare steps done
+    if (sc && sc.log) ['am', 'pm'].forEach(function (p) {
+      (sc[p] || []).forEach(function (s) { if (s.n && (!s.days || !s.days.length || s.days.indexOf(now.getDay()) !== -1)) { st++; if ((sc.log[tds] || []).indexOf(s.id) !== -1) sd++; } });
+    });
+    document.getElementById('smeta').textContent = st ? sd + ' of ' + st + ' steps today' : '';
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
   function setApp(a) {
