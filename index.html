@@ -430,7 +430,7 @@ img { max-width: 100%; }
     </a>
     <a class="app" href="skincare.html">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"></rect><path d="M10 9V5h4v4M9 3h6"></path></svg></span>
-      <span class="atxt"><span class="aname">Skincare</span><span class="ameta" id="smeta"></span></span>
+      <span class="atxt"><span class="aname">Skincare<span class="sk" id="snight"></span></span><span class="ameta" id="smeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </a>
     <button class="app" data-app="notes">
@@ -1394,7 +1394,7 @@ img { max-width: 100%; }
     if (mvd && Array.isArray(mvd.items)) mvd.items.forEach(function (i) { if (i.k === 'b') { if (i.s === 'p') br++; } else if (i.k === 's' && i.s === 'p') wp++; else if (i.s === 'w') ww++; });
     document.getElementById('wmeta').textContent = [wp ? wp + ' watching' : '', br ? br + ' reading' : ''].filter(Boolean).join(' · ');
     var sc = lsGet('skincare-v1', null), st = 0, sd = 0;   // today's skincare steps done
-    var cyc = sc && sc.cyc && Array.isArray(sc.cyc.slots) && sc.cyc.slots.length ? sc.cyc : null, night = null;   // tonight's night of the cycle (Hydration, Retinol, …)
+    var cyc = sc && sc.cyc && Array.isArray(sc.cyc.slots) ? (sc.cyc.slots.length ? sc.cyc : null) : sc ? { slots: [{ id: 'c1', n: 'Hydration' }, { id: 'c2', n: 'Retinol' }], idx: 0, log: {} } : null, night = null;   // tonight's night of the cycle (Hydration, Retinol, …); the default one until it is first saved
     if (cyc) { var lid = cyc.log && cyc.log[tds]; night = cyc.slots.filter(function (c) { return c.id === lid; })[0] || cyc.slots[(cyc.idx || 0) % cyc.slots.length]; }
     if (sc && sc.log) ['am', 'pm'].forEach(function (p) {
       (sc[p] || []).forEach(function (s) {
@@ -1402,7 +1402,8 @@ img { max-width: 100%; }
         if (s.n && on) { st++; if ((sc.log[tds] || []).indexOf(s.id) !== -1) sd++; }
       });
     });
-    document.getElementById('smeta').textContent = (night && night.n ? 'Tonight: ' + night.n + (st ? ' · ' : '') : '') + (st ? sd + ' of ' + st + ' steps today' : '');
+    document.getElementById('snight').textContent = night && night.n ? night.n : '';   // next to the name: which night it is
+    document.getElementById('smeta').textContent = st ? sd + ' of ' + st + ' steps' + (night && night.n ? ' tonight' : ' today') : '';
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
   function setApp(a) {

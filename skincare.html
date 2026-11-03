@@ -625,6 +625,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   $('vm').addEventListener('click', function (e) { if (e.target === $('vm')) { pvR = null; $('vm').hidden = true; } });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('cm').hidden) $('cm').hidden = true; else if (!$('pm').hidden) closeProd(); else if (!$('vm').hidden) { pvR = null; $('vm').hidden = true; } } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); render(); } });
+  try { var rawNow = JSON.parse(localStorage.getItem(LS)); if (!rawNow || !rawNow.cyc) save(); } catch (e) {}   // store the night cycle once, so the home card can show tonight's night
   render();
   /* import from a shop page: skincare.html#import=<JSON>  (name, brand, type, img, price, cur, url, info, ing) opens the form filled in */
   function runImport() {
