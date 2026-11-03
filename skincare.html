@@ -150,6 +150,12 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 .cprice { display: flex; gap: 6px; }
 .cprice input { flex: 1; min-width: 0; }
 .cprice .btn { flex: none; padding: 10px 14px; font-size: 13px; }
+.cyc { background: var(--paper); border-radius: 20px; padding: 12px 16px 14px; margin-bottom: 10px; box-shadow: 0 10px 26px -18px var(--shadow); display: flex; flex-direction: column; gap: 6px; }
+.cyc .ct { font: 500 11px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.cyc .cn { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
+.cdone { width: 100%; margin-top: 10px; padding: 14px; }
+.gh { margin: 14px 4px 2px; font: 600 14px var(--font); color: var(--accent); }
+.row .l1 .del:disabled { opacity: .3; }
 .tags { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
@@ -205,8 +211,22 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   function load() {
     var d = null; try { d = JSON.parse(localStorage.getItem(LS)); } catch (e) {}
     if (!d || typeof d !== 'object') d = {};
-    return { am: Array.isArray(d.am) ? d.am : [], pm: Array.isArray(d.pm) ? d.pm : [], prods: Array.isArray(d.prods) ? d.prods : [], log: d.log && typeof d.log === 'object' ? d.log : {} };
+    return { am: Array.isArray(d.am) ? d.am : [], pm: Array.isArray(d.pm) ? d.pm : [], prods: Array.isArray(d.prods) ? d.prods : [], log: d.log && typeof d.log === 'object' ? d.log : {}, cyc: normCyc(d.cyc) };
   }
+  /* the night cycle: nights come one after the other (Hydration, Retinol, …) and move on only when you tap Done.
+     idx = tonight's night; log = which night was done on each date; u = last change (the newer copy wins when syncing) */
+  function normCyc(c) {
+    if (c && Array.isArray(c.slots)) return { slots: c.slots, idx: Number(c.idx) || 0, log: c.log && typeof c.log === 'object' ? c.log : {}, u: c.u || 0 };
+    return { slots: [{ id: 'c1', n: 'Hydration' }, { id: 'c2', n: 'Retinol' }], idx: 0, log: {}, u: 0 };
+  }
+  function slotById(id) { return data.cyc.slots.filter(function (s) { return s.id === id; })[0]; }
+  function slotFor(dateStr) {   // the night that applies to a date: the one done then, or tonight's for today
+    var c = data.cyc; if (!c.slots.length) return null;
+    if (c.log[dateStr] && slotById(c.log[dateStr])) return slotById(c.log[dateStr]);
+    return dateStr === ds(new Date()) ? c.slots[c.idx % c.slots.length] : null;
+  }
+  function stepShown(s, slot) { return !data.cyc.slots.length || !s.slot || (slot && s.slot === slot.id); }   // a step with no night belongs to every night
+  function touchCyc() { data.cyc.u = Date.now(); }
   function save() { try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {} }
   function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -223,19 +243,50 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     $('dlab').innerHTML = (diff === 0 ? 'Today' : diff === -1 ? 'Yesterday' : diff === 1 ? 'Tomorrow' : DAYS[day.getDay()]) + '<small>' + DAYS[day.getDay()] + ', ' + day.getDate() + ' ' + MON[day.getMonth()] + ' ' + day.getFullYear() + '</small>';
     [].forEach.call(document.querySelectorAll('.seg button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === part)); });
     $('editb').classList.toggle('on', editing);
-    var list = data[part], box = $('steps');
-    if (editing) { box.innerHTML = editHTML(list) + '<button class="addb" data-add="1">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'; $('plab').parentNode.hidden = true; return; }
+    var list = data[part], box = $('steps'), cyc = part === 'pm' && data.cyc.slots.length;
+    if (editing) {
+      box.innerHTML = (part === 'pm' ? cycleEditHTML() + pmGroupsHTML() : editHTML(list) + '<button class="addb" data-add="">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'); $('plab').parentNode.hidden = true; return;
+    }
     $('plab').parentNode.hidden = false;
-    var k = ds(day), done = logFor(k), today = list.filter(function (s) { return s.n.trim() && sched(s, day); });
+    var k = ds(day), done = logFor(k), slot = cyc ? slotFor(k) : null;
+    var today = list.filter(function (s) { return s.n.trim() && (cyc ? stepShown(s, slot) : sched(s, day)); });
+    var head = '', foot = '';
+    if (cyc) {
+      var isToday = k === ds(new Date()), finished = !!data.cyc.log[k], nextIdx = (data.cyc.idx + 1) % data.cyc.slots.length;
+      head = '<div class="cyc"><span class="ct">' + (isToday ? 'Tonight' : 'That night') + '</span><span class="cn">' + (slot ? esc(slot.n || 'Night') : 'Not recorded') + '</span>' +
+        (isToday && !finished && data.cyc.slots.length > 1 ? '<div class="chipsrow">' + data.cyc.slots.map(function (c, i) { return '<button type="button" data-cs="' + c.id + '" aria-pressed="' + (i === data.cyc.idx % data.cyc.slots.length) + '">' + esc(c.n || 'Night') + '</button>'; }).join('') + '</div>' : '') + '</div>';
+      if (isToday) foot = finished ? '<button class="addb" data-cundo="1">Tonight is done ✓ · tap to undo</button>' : '<button class="btn cdone" data-cdone="1">✓ Done for tonight · next: ' + esc(data.cyc.slots[nextIdx].n || 'Night') + '</button>';
+    }
     var n = today.filter(function (s) { return done.indexOf(s.id) !== -1; }).length;
     $('plab').textContent = today.length ? n + ' / ' + today.length : '';
     $('pbar').style.width = today.length ? Math.round(n / today.length * 100) + '%' : '0';
-    if (!list.length) box.innerHTML = '<div class="empty">No steps yet.<br>Tap ✎ to build your ' + (part === 'am' ? 'morning' : 'night') + ' routine.</div>';
-    else if (!today.length) box.innerHTML = '<div class="empty">Nothing planned for this ' + (part === 'am' ? 'morning' : 'night') + '. 🌿</div>';
-    else box.innerHTML = today.map(function (s) {
+    if (!list.length) box.innerHTML = head + '<div class="empty">No steps yet.<br>Tap ✎ to build your ' + (part === 'am' ? 'morning' : 'night') + ' routine.</div>' + foot;
+    else if (!today.length) box.innerHTML = head + '<div class="empty">' + (cyc && slot ? 'No steps for ' + esc(slot.n) + ' yet.<br>Tap ✎ to add them.' : 'Nothing planned for this ' + (part === 'am' ? 'morning' : 'night') + '. 🌿') + '</div>' + foot;
+    else box.innerHTML = head + today.map(function (s) {
       var p = s.prod ? prodById(s.prod) : null, on = done.indexOf(s.id) !== -1;
       return '<button class="step" data-sid="' + s.id + '" aria-pressed="' + on + '"><span class="box"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span><span class="nm">' + esc(s.n) + '</span>' + (p ? '<span class="sub">' + esc(p.n) + (p.brand ? ' · ' + esc(p.brand) : '') + '</span>' : '') + '</span></button>';
-    }).join('');
+    }).join('') + foot;
+  }
+  function cycleEditHTML() {
+    var c = data.cyc;
+    return '<div class="row"><b>Night cycle</b><p class="hint" style="margin:0">Nights follow one another in this order. The cycle moves on when you tap "Done for tonight", so a skipped night is not lost. Add or remove nights any time.</p>' +
+      c.slots.map(function (s, i) {
+        return '<div class="l1"><input type="text" data-cn="' + s.id + '" value="' + esc(s.n) + '" placeholder="Night name" aria-label="Night name"><button class="del" data-cmv="' + s.id + '" data-d="-1" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>↑</button><button class="del" data-cmv="' + s.id + '" data-d="1" aria-label="Move down"' + (i === c.slots.length - 1 ? ' disabled' : '') + '>↓</button><button class="del" data-cdel="' + s.id + '" aria-label="Remove night">✕</button></div>';
+      }).join('') + '<button class="addb" data-cadd="1">+ Add a night to the cycle</button></div>';
+  }
+  function stepRowHTML(s, grouped) {
+    var opts = '<option value="">No product</option>' + data.prods.map(function (p) { return '<option value="' + p.id + '"' + (p.id === s.prod ? ' selected' : '') + '>' + esc(p.n) + '</option>'; }).join('');
+    var nights = '<option value=""' + (!s.slot ? ' selected' : '') + '>Every night</option>' + data.cyc.slots.map(function (c) { return '<option value="' + c.id + '"' + (c.id === s.slot ? ' selected' : '') + '>' + esc(c.n || 'Night') + ' only</option>'; }).join('') + (s.slot && !slotById(s.slot) ? '<option value="' + esc(s.slot) + '" selected>(removed night: hidden)</option>' : '');
+    return '<div class="row"><div class="l1"><input type="text" data-sn="' + s.id + '" value="' + esc(s.n) + '" aria-label="Step name"><button class="del" data-sdel="' + s.id + '" aria-label="Delete step">✕</button></div><select data-sp="' + s.id + '" aria-label="Product">' + opts + '</select><select data-ss="' + s.id + '" aria-label="Which night">' + nights + '</select></div>';
+  }
+  function pmGroupsHTML() {   // night steps grouped by night, each group with its own "add step"
+    var groups = [{ id: '', n: 'Every night' }].concat(data.cyc.slots.map(function (c) { return { id: c.id, n: (c.n || 'Night') + ' night' }; }));
+    var known = {}; groups.forEach(function (g) { known[g.id] = 1; });
+    var orphans = data.pm.filter(function (s) { return s.slot && !known[s.slot]; });
+    return groups.map(function (g) {
+      var steps = data.pm.filter(function (s) { return (s.slot || '') === g.id; });
+      return '<h3 class="gh">' + esc(g.n) + '</h3><div class="list">' + steps.map(stepRowHTML).join('') + '</div><button class="addb" data-add="' + g.id + '">+ Add step to ' + esc(g.n.toLowerCase()) + '</button>';
+    }).join('') + (orphans.length ? '<h3 class="gh">No night (hidden)</h3><div class="list">' + orphans.map(stepRowHTML).join('') + '</div>' : '');
   }
   function editHTML(list) {
     return '<div class="list">' + list.map(function (s) {
@@ -496,7 +547,19 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       if (!l.length) delete data.log[ds(day)];
       save(); renderToday();
     }
-    else if (b.dataset.add) { data[part].push({ id: uid(), n: '', prod: '', days: [], u: Date.now() }); save(); renderToday(); var ins = document.querySelectorAll('[data-sn]'); if (ins.length) ins[ins.length - 1].focus(); }
+    else if (b.hasAttribute('data-add')) { var ns = { id: uid(), n: '', prod: '', days: [], u: Date.now() }; if (part === 'pm' && b.dataset.add) ns.slot = b.dataset.add; data[part].push(ns); save(); renderToday(); var inp = document.querySelector('[data-sn="' + ns.id + '"]'); if (inp) inp.focus(); }
+    else if (b.dataset.cs) { var cc = data.cyc; if (!cc.log[ds(new Date())]) { cc.idx = Math.max(0, cc.slots.findIndex(function (x) { return x.id === b.dataset.cs; })); touchCyc(); save(); renderToday(); } }
+    else if (b.dataset.cdone) { var c1 = data.cyc, td = ds(new Date()), sl = slotFor(td); if (sl && !c1.log[td]) { c1.log[td] = sl.id; c1.idx = (c1.idx + 1) % c1.slots.length; touchCyc(); save(); renderToday(); } }
+    else if (b.dataset.cundo) { var c2 = data.cyc, td2 = ds(new Date()), id2 = c2.log[td2]; if (id2) { var ix2 = c2.slots.findIndex(function (x) { return x.id === id2; }); if (ix2 !== -1) c2.idx = ix2; delete c2.log[td2]; touchCyc(); save(); renderToday(); } }
+    else if (b.dataset.cadd) { data.cyc.slots.push({ id: 'c' + uid(), n: '' }); touchCyc(); save(); renderToday(); var cn = document.querySelectorAll('[data-cn]'); if (cn.length) cn[cn.length - 1].focus(); }
+    else if (b.dataset.cdel) {
+      var c3 = data.cyc, cur3 = c3.slots[c3.idx % (c3.slots.length || 1)], k3 = c3.slots.findIndex(function (x) { return x.id === b.dataset.cdel; });
+      if (k3 !== -1) { c3.slots.splice(k3, 1); var nx = cur3 && cur3.id !== b.dataset.cdel ? c3.slots.findIndex(function (x) { return x.id === cur3.id; }) : Math.min(k3, c3.slots.length - 1); c3.idx = Math.max(0, nx); touchCyc(); save(); renderToday(); }
+    }
+    else if (b.dataset.cmv) {
+      var c4 = data.cyc, cur4 = c4.slots[c4.idx % (c4.slots.length || 1)], k4 = c4.slots.findIndex(function (x) { return x.id === b.dataset.cmv; }), to = k4 + Number(b.dataset.d);
+      if (k4 !== -1 && to >= 0 && to < c4.slots.length) { var tmp = c4.slots[k4]; c4.slots[k4] = c4.slots[to]; c4.slots[to] = tmp; c4.idx = Math.max(0, c4.slots.findIndex(function (x) { return cur4 && x.id === cur4.id; })); touchCyc(); save(); renderToday(); }
+    }
     else if (b.dataset.sdel) { data[part] = data[part].filter(function (s) { return s.id !== b.dataset.sdel; }); save(); renderToday(); }
     else if (b.dataset.sd) {
       var s = data[part].filter(function (x) { return x.id === b.dataset.sid; })[0], j = Number(b.dataset.sd); if (!s) return;
@@ -537,16 +600,19 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   document.addEventListener('change', function (e) {
     var t = e.target;
     if (t.id === 'fi') return;   // typed live by the input handler
+    if (t.dataset.cn !== undefined) { renderToday(); return; }   // a night was renamed: refresh the headings
     if (t.dataset.op) { setOffer(t.dataset.op, 'price', t.value); return; }
     if (t.dataset.os) { setOffer(t.dataset.os, 'ship', t.value); return; }
     if (t.dataset.ou) { setOffer(t.dataset.ou, 'url', t.value); return; }
     if (t.dataset.f && t.closest('.fpanel')) { flt[t.dataset.f] = t.value; renderFilters(); renderPlist(); return; }
+    if (t.dataset.ss !== undefined) { var st = data.pm.filter(function (x) { return x.id === t.dataset.ss; })[0]; if (st) { st.slot = t.value; st.u = Date.now(); save(); renderToday(); } return; }
     if (t.dataset.sp !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sp; })[0]; if (s) { s.prod = t.value; s.u = Date.now(); var p = prodById(t.value); if (p && !s.n.trim()) { s.n = p.n; } save(); renderToday(); } }
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
     if (t.id === 'fi') { flt.ing = t.value; renderPlist(); return; }
     if (t.id === 'sq') { sq = t.value; clearTimeout(searchTimer); if (sq.trim().length < 3) { searchSeq++; sres = []; sbusy = false; smsg = ''; renderSres(); } else searchTimer = setTimeout(function () { runSearch(sq, 1); }, 450); }
+    if (t.dataset.cn !== undefined) { var sl2 = slotById(t.dataset.cn); if (sl2) { sl2.n = t.value; touchCyc(); save(); } return; }
     if (t.dataset.sn !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sn; })[0]; if (s) { s.n = t.value; s.u = Date.now(); save(); } }
   });
   document.addEventListener('error', function (e) {   // a photo that will not load falls back to the type icon
@@ -581,6 +647,6 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   runImport();
 })();
 </script>
-<script type="module" src="sync.js?v=7"></script>
+<script type="module" src="sync.js?v=8"></script>
 </body>
 </html>

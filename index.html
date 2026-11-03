@@ -1394,10 +1394,15 @@ img { max-width: 100%; }
     if (mvd && Array.isArray(mvd.items)) mvd.items.forEach(function (i) { if (i.k === 'b') { if (i.s === 'p') br++; } else if (i.k === 's' && i.s === 'p') wp++; else if (i.s === 'w') ww++; });
     document.getElementById('wmeta').textContent = [wp ? wp + ' watching' : '', br ? br + ' reading' : ''].filter(Boolean).join(' · ');
     var sc = lsGet('skincare-v1', null), st = 0, sd = 0;   // today's skincare steps done
+    var cyc = sc && sc.cyc && Array.isArray(sc.cyc.slots) && sc.cyc.slots.length ? sc.cyc : null, night = null;   // tonight's night of the cycle (Hydration, Retinol, …)
+    if (cyc) { var lid = cyc.log && cyc.log[tds]; night = cyc.slots.filter(function (c) { return c.id === lid; })[0] || cyc.slots[(cyc.idx || 0) % cyc.slots.length]; }
     if (sc && sc.log) ['am', 'pm'].forEach(function (p) {
-      (sc[p] || []).forEach(function (s) { if (s.n && (!s.days || !s.days.length || s.days.indexOf(now.getDay()) !== -1)) { st++; if ((sc.log[tds] || []).indexOf(s.id) !== -1) sd++; } });
+      (sc[p] || []).forEach(function (s) {
+        var on = p === 'pm' && cyc ? (!s.slot || (night && s.slot === night.id)) : (!s.days || !s.days.length || s.days.indexOf(now.getDay()) !== -1);
+        if (s.n && on) { st++; if ((sc.log[tds] || []).indexOf(s.id) !== -1) sd++; }
+      });
     });
-    document.getElementById('smeta').textContent = st ? sd + ' of ' + st + ' steps today' : '';
+    document.getElementById('smeta').textContent = (night && night.n ? 'Tonight: ' + night.n + (st ? ' · ' : '') : '') + (st ? sd + ' of ' + st + ' steps today' : '');
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
   function setApp(a) {
@@ -1501,7 +1506,7 @@ img { max-width: 100%; }
   document.addEventListener('click', function (e) { pairs.forEach(function (x) { if (!x[1].hidden && !x[1].contains(e.target)) closeAll(); }); });
 })();
 </script>
-<script type="module" src="sync.js?v=7"></script>
+<script type="module" src="sync.js?v=8"></script>
 
 </body>
 </html>

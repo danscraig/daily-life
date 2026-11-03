@@ -31,7 +31,9 @@ function setMeta(m) { try { rawSet.call(localStorage, META, JSON.stringify(m)); 
 /* skincare: { am: [steps], pm: [steps], prods: [products], log: { 'YYYY-MM-DD': [step ids done] } }, always with the same key order */
 function normSk(o) {
   o = (o && typeof o === 'object') ? o : {};
-  return { am: Array.isArray(o.am) ? o.am : [], pm: Array.isArray(o.pm) ? o.pm : [], prods: Array.isArray(o.prods) ? o.prods : [], log: (o.log && typeof o.log === 'object') ? o.log : {} };
+  var out = { am: Array.isArray(o.am) ? o.am : [], pm: Array.isArray(o.pm) ? o.pm : [], prods: Array.isArray(o.prods) ? o.prods : [], log: (o.log && typeof o.log === 'object') ? o.log : {} };
+  if (o.cyc && typeof o.cyc === 'object') out.cyc = o.cyc;   // the night cycle (Hydration, Retinol, …): kept as one piece, the newer copy wins
+  return out;
 }
 function skEmpty(s) { return !s.am.length && !s.pm.length && !s.prods.length && !Object.keys(s.log).length; }
 
@@ -44,6 +46,7 @@ function fromCloud(c, local) {
   function p(s, fb) { try { var v = JSON.parse(s); return v == null ? fb : v; } catch (e) { return fb; } }
   // a copy saved before the calendar (or skincare) existed lacks those fields: keep the ones on this device
   var cs = c.skincare === undefined ? null : normSk(p(c.skincare, null));
+  if (cs && !cs.cyc && local.skincare && local.skincare.cyc) cs.cyc = local.skincare.cyc;   // a copy saved before the night cycle existed: keep this device's
   // an empty cloud skincare never wipes what this device has: it goes up instead (see sync)
   return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs };
 }
@@ -99,7 +102,10 @@ function unionSk(a, b) {   // steps and products by id (the newer edit wins); a 
     (b.log[k] || []).forEach(function (id) { if (x.indexOf(id) === -1) x.push(id); });
     log[k] = x;
   });
-  return { am: unionList(a.am, b.am, true), pm: unionList(a.pm, b.pm, true), prods: unionList(a.prods, b.prods, true), log: log };
+  var out = { am: unionList(a.am, b.am, true), pm: unionList(a.pm, b.pm, true), prods: unionList(a.prods, b.prods, true), log: log };
+  var ca = a.cyc, cb = b.cyc, cyc = !ca ? cb : !cb ? ca : ((cb.u || 0) > (ca.u || 0) ? cb : ca);
+  if (cyc) out.cyc = cyc;
+  return out;
 }
 
 /* talking to the cloud */
