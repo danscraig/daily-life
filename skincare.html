@@ -238,7 +238,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   }
   /* filters on the shelf: all the chosen ones must match; ingredients are comma separated, "-alcohol" means without */
   var SKIN = ['Combination', 'Normal', 'Oily', 'Dry', 'Sensitive'];
-  var CONC = ['Anti-aging / wrinkles', 'Brightening / dark spots', 'Dryness / hydration', 'Acne / blemishes', 'Redness / soothing', 'Pores / oil control', 'Dullness', 'Sun protection'];
+  var CONC = ['Anti-aging / wrinkles', 'Brightening / dark spots', 'Dryness / hydration', 'Acne / blemishes', 'Redness / soothing', 'Pores / oil control', 'Blackheads', 'Dullness', 'Sun protection'];
   var USES = [['day', 'Day'], ['night', 'Night'], ['both', 'Day & night']];
   var flt = { t: '', use: '', skin: '', conc: '', ing: '' }, fopen = false;
   function opts(list, cur, any) { return '<option value="">' + any + '</option>' + list.map(function (x) { var v = Array.isArray(x) ? x[0] : x, l = Array.isArray(x) ? x[1] : x; return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join(''); }
@@ -446,7 +446,13 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     if (!d || typeof d !== 'object' || !String(d.n || '').trim()) return;
     var pre = { n: String(d.n).slice(0, 200), brand: String(d.brand || '').slice(0, 80), t: TYPES.some(function (x) { return x[0] === d.t; }) ? d.t : guessType([], d.n), img: /^https:\/\//.test(d.img || '') ? d.img : '', url: /^https?:\/\//.test(d.url || '') ? d.url : '', info: String(d.info || '').slice(0, 2000), ing: String(d.ing || '').slice(0, 4000), use: ['day', 'night', 'both'].indexOf(d.use) !== -1 ? d.use : '', skin: Array.isArray(d.skin) ? d.skin.map(String).slice(0, 8) : [], conc: Array.isArray(d.conc) ? d.conc.map(String).slice(0, 12) : [] };
     if (isFinite(Number(d.price)) && d.price !== '' && d.price != null) { pre.price = Number(d.price); pre.cur = String(d.cur || '€').slice(0, 3); pre.priceAt = ds(new Date()); }
-    view = 'prods'; render();
+    view = 'prods';
+    if (d.auto === true) {   // add straight to the shelf (no form); an item with the same link or name is not added twice
+      var dup = data.prods.some(function (x) { return (pre.url && x.url === pre.url) || ((x.n + '|' + (x.brand || '')).toLowerCase() === (pre.n + '|' + pre.brand).toLowerCase()); });
+      if (!dup) { pre.id = uid(); pre.opened = ''; pre.pao = ''; pre.notes = ''; pre.u = Date.now(); data.prods.push(pre); save(); }
+      render(); return;
+    }
+    render();
     openProd('', { prefill: pre, title: 'Import from shop', hint: 'Check the details, add when you opened it and how many months it lasts, then Save.', focus: 'po' });
   }
   window.addEventListener('hashchange', runImport);
