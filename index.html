@@ -430,7 +430,7 @@ img { max-width: 100%; }
     </a>
     <a class="app" href="skincare.html">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"></rect><path d="M10 9V5h4v4M9 3h6"></path></svg></span>
-      <span class="atxt"><span class="aname">Skincare<span class="sk" id="snight"></span></span><span class="ameta" id="smeta"></span></span>
+      <span class="atxt"><span class="aname">Skincare</span><span class="ameta" id="smeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </a>
     <button class="app" data-app="notes">
@@ -1402,8 +1402,7 @@ img { max-width: 100%; }
         if (s.n && on) { st++; if ((sc.log[tds] || []).indexOf(s.id) !== -1) sd++; }
       });
     });
-    document.getElementById('snight').textContent = night && night.n ? night.n : '';   // next to the name: which night it is
-    document.getElementById('smeta').textContent = st ? sd + ' of ' + st + ' steps' + (night && night.n ? ' tonight' : ' today') : '';
+    document.getElementById('smeta').textContent = [night && night.n ? 'Tonight: ' + night.n : '', st ? sd + ' of ' + st + ' steps' : ''].filter(Boolean).join(' · ');   // under the name, like the other cards
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
   function setApp(a) {
