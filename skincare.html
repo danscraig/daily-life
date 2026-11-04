@@ -154,6 +154,9 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 .cyc .ct { font: 500 11px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
 .cyc .cn { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
 .cdone { width: 100%; margin-top: 10px; padding: 14px; }
+.pbtn { flex: none; width: 52px; height: 52px; border-radius: 14px; background: var(--bg); display: grid; place-items: center; font-size: 22px; overflow: hidden; }
+.plink { text-align: left; font-size: 13px; color: var(--mute); }
+.none-btn { width: 100%; padding: 12px; border-radius: 16px; border: 1px dashed var(--line); color: var(--mute); margin-top: 12px; }
 .gh { margin: 14px 4px 2px; font: 600 14px var(--font); color: var(--accent); }
 .row .l1 .del:disabled { opacity: .3; }
 .tags { display: block; font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -188,6 +191,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 
 <div class="modal" id="pm" hidden><div class="sheet" id="psheet"></div></div>
 <div class="modal" id="vm" hidden><div class="sheet" id="vsheet"></div></div>
+<div class="modal" id="sm" hidden><div class="sheet" id="ssheet"></div></div>
 <div class="modal" id="cm" hidden><div class="sheet" id="csheet"></div></div>
 
 <nav class="navbar" aria-label="Sections"><div class="tabbar">
@@ -245,7 +249,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     $('editb').classList.toggle('on', editing);
     var list = data[part], box = $('steps'), cyc = part === 'pm' && data.cyc.slots.length;
     if (editing) {
-      box.innerHTML = (part === 'pm' ? cycleEditHTML() + pmGroupsHTML() : editHTML(list) + '<button class="addb" data-add="">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'); $('plab').parentNode.hidden = true; return;
+      box.innerHTML = (part === 'pm' ? pmGroupsHTML() + cycleEditHTML() : editHTML(list) + '<button class="addb" data-add="">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'); $('plab').parentNode.hidden = true; return;
     }
     $('plab').parentNode.hidden = false;
     var k = ds(day), done = logFor(k), slot = cyc ? slotFor(k) : null;
@@ -274,26 +278,53 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
         return '<div class="l1"><input type="text" data-cn="' + s.id + '" value="' + esc(s.n) + '" placeholder="Night name" aria-label="Night name"><button class="del" data-cmv="' + s.id + '" data-d="-1" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>↑</button><button class="del" data-cmv="' + s.id + '" data-d="1" aria-label="Move down"' + (i === c.slots.length - 1 ? ' disabled' : '') + '>↓</button><button class="del" data-cdel="' + s.id + '" aria-label="Remove night">✕</button></div>';
       }).join('') + '<button class="addb" data-cadd="1">+ Add a night to the cycle</button></div>';
   }
-  function stepRowHTML(s, grouped) {
-    var opts = '<option value="">No product</option>' + data.prods.map(function (p) { return '<option value="' + p.id + '"' + (p.id === s.prod ? ' selected' : '') + '>' + esc(p.n) + '</option>'; }).join('');
-    var nights = '<option value=""' + (!s.slot ? ' selected' : '') + '>Every night</option>' + data.cyc.slots.map(function (c) { return '<option value="' + c.id + '"' + (c.id === s.slot ? ' selected' : '') + '>' + esc(c.n || 'Night') + ' only</option>'; }).join('') + (s.slot && !slotById(s.slot) ? '<option value="' + esc(s.slot) + '" selected>(removed night: hidden)</option>' : '');
-    return '<div class="row"><div class="l1"><input type="text" data-sn="' + s.id + '" value="' + esc(s.n) + '" aria-label="Step name"><button class="del" data-sdel="' + s.id + '" aria-label="Delete step">✕</button></div><select data-sp="' + s.id + '" aria-label="Product">' + opts + '</select><select data-ss="' + s.id + '" aria-label="Which night">' + nights + '</select></div>';
+  function stepRowHTML(s, withDays) {   // photo of the product (tap to change it) + step name + delete
+    var p = s.prod ? prodById(s.prod) : null;
+    var days = withDays ? '<div class="days">' + DJ.map(function (j, i) { return '<button data-sd="' + j + '" data-sid="' + s.id + '" aria-pressed="' + (!!s.days && s.days.indexOf(j) !== -1) + '">' + DN[i] + '</button>'; }).join('') + '</div>' : '';
+    return '<div class="row"><div class="l1"><button class="pbtn" data-pkopen="' + s.id + '" data-ico="' + typeIcon(p ? p.t : '') + '" aria-label="Change product">' + (p && p.img ? '<img src="' + esc(p.img) + '" alt="">' : typeIcon(p ? p.t : '')) + '</button><input type="text" data-sn="' + s.id + '" value="' + esc(s.n) + '" placeholder="Step name" aria-label="Step name"><button class="del" data-sdel="' + s.id + '" aria-label="Delete step">✕</button></div>' +
+      '<button class="plink" data-pkopen="' + s.id + '">' + (p ? esc(p.n) + (p.brand ? ' · ' + esc(p.brand) : '') + ' · change' : 'No product · tap to choose') + '</button>' + days + '</div>';
   }
   function pmGroupsHTML() {   // night steps grouped by night, each group with its own "add step"
     var groups = [{ id: '', n: 'Every night' }].concat(data.cyc.slots.map(function (c) { return { id: c.id, n: (c.n || 'Night') + ' night' }; }));
     var known = {}; groups.forEach(function (g) { known[g.id] = 1; });
     var orphans = data.pm.filter(function (s) { return s.slot && !known[s.slot]; });
-    return groups.map(function (g) {
+    return '<p class="hint">Steps under “Every night” are done on all nights. Steps under a night are done only on that night.</p>' + groups.map(function (g) {
       var steps = data.pm.filter(function (s) { return (s.slot || '') === g.id; });
-      return '<h3 class="gh">' + esc(g.n) + '</h3><div class="list">' + steps.map(stepRowHTML).join('') + '</div><button class="addb" data-add="' + g.id + '">+ Add step to ' + esc(g.n.toLowerCase()) + '</button>';
-    }).join('') + (orphans.length ? '<h3 class="gh">No night (hidden)</h3><div class="list">' + orphans.map(stepRowHTML).join('') + '</div>' : '');
+      return '<h3 class="gh">' + esc(g.n) + '</h3><div class="list">' + steps.map(function (s) { return stepRowHTML(s); }).join('') + '</div><button class="addb" data-add="' + g.id + '">+ Add a product to ' + esc(g.n.toLowerCase()) + '</button>';
+    }).join('') + (orphans.length ? '<h3 class="gh">No night (hidden)</h3><div class="list">' + orphans.map(function (s) { return stepRowHTML(s); }).join('') + '</div>' : '');
   }
   function editHTML(list) {
-    return '<div class="list">' + list.map(function (s) {
-      var opts = '<option value="">No product</option>' + data.prods.map(function (p) { return '<option value="' + p.id + '"' + (p.id === s.prod ? ' selected' : '') + '>' + esc(p.n) + '</option>'; }).join('');
-      var days = '<div class="days">' + DJ.map(function (j, i) { return '<button data-sd="' + j + '" data-sid="' + s.id + '" aria-pressed="' + (!!s.days && s.days.indexOf(j) !== -1) + '">' + DN[i] + '</button>'; }).join('') + '</div>';
-      return '<div class="row"><div class="l1"><input type="text" data-sn="' + s.id + '" value="' + esc(s.n) + '" aria-label="Step name"><button class="del" data-sdel="' + s.id + '" aria-label="Delete step">✕</button></div><select data-sp="' + s.id + '" aria-label="Product">' + opts + '</select>' + days + '</div>';
+    return '<div class="list">' + list.map(function (s) { return stepRowHTML(s, true); }).join('') + '</div>';
+  }
+
+  /* product picker for a routine step: shelf search with photos */
+  var pk = null;
+  function pickResHTML() {
+    var q = pk.q.trim().toLowerCase();
+    var l = data.prods.filter(function (p) { return !q || (p.n + ' ' + (p.brand || '') + ' ' + (p.t || '')).toLowerCase().indexOf(q) !== -1; });
+    if (!data.prods.length) return '<p class="empty">Your shelf is empty. Add products first (Products or Search tab).</p>';
+    if (!l.length) return '<p class="empty">No product matches.</p>';
+    return '<div class="grid">' + l.map(function (p) {
+      return '<button class="tile" data-pk="' + p.id + '"><span class="tp" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '<span>' + (p.img ? '' : esc(typeIcon(p.t) + ' ' + p.n)) + '</span></span><b>' + esc(p.n) + '</b><i>' + esc(p.brand || p.t || '') + '</i></button>';
     }).join('') + '</div>';
+  }
+  function openPick(o) {
+    pk = { part: part, slot: o.slot || '', sid: o.sid || '', q: '' };
+    $('ssheet').innerHTML = '<div class="acts" style="margin:0"><button id="pkx">Close</button></div><h2 style="margin:6px 0 10px;font-size:20px">Choose the product</h2><input type="search" id="pkq" placeholder="Search your products" autocomplete="off"><div id="pkres">' + pickResHTML() + '</div><button class="none-btn" data-pk="">No product (just a step)</button>';
+    $('sm').hidden = false;
+  }
+  function applyPick(id) {
+    var p = id ? prodById(id) : null, s;
+    if (pk.sid) {
+      s = data[pk.part].filter(function (x) { return x.id === pk.sid; })[0];
+      if (s) { var old = s.prod ? prodById(s.prod) : null; if (p && (!s.n.trim() || (old && s.n === old.n))) s.n = p.n; s.prod = id; s.u = Date.now(); }
+    } else {
+      s = { id: uid(), n: p ? p.n : '', prod: id, days: [], u: Date.now() };
+      if (pk.part === 'pm' && pk.slot) s.slot = pk.slot;
+      data[pk.part].push(s);
+    }
+    save(); $('sm').hidden = true; var np = pk; pk = null; renderToday();
+    if (s && !s.n.trim()) { var inp = document.querySelector('[data-sn="' + s.id + '"]'); if (inp) inp.focus(); }
   }
 
   function expiry(p) {
@@ -547,7 +578,10 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       if (!l.length) delete data.log[ds(day)];
       save(); renderToday();
     }
-    else if (b.hasAttribute('data-add')) { var ns = { id: uid(), n: '', prod: '', days: [], u: Date.now() }; if (part === 'pm' && b.dataset.add) ns.slot = b.dataset.add; data[part].push(ns); save(); renderToday(); var inp = document.querySelector('[data-sn="' + ns.id + '"]'); if (inp) inp.focus(); }
+    else if (b.hasAttribute('data-add')) openPick({ slot: part === 'pm' ? b.dataset.add : '' });
+    else if (b.dataset.pkopen) openPick({ sid: b.dataset.pkopen });
+    else if (b.hasAttribute('data-pk')) { if (pk) applyPick(b.dataset.pk); }
+    else if (b.id === 'pkx') { pk = null; $('sm').hidden = true; }
     else if (b.dataset.cs) { var cc = data.cyc; if (!cc.log[ds(new Date())]) { cc.idx = Math.max(0, cc.slots.findIndex(function (x) { return x.id === b.dataset.cs; })); touchCyc(); save(); renderToday(); } }
     else if (b.dataset.cdone) { var c1 = data.cyc, td = ds(new Date()), sl = slotFor(td); if (sl && !c1.log[td]) { c1.log[td] = sl.id; c1.idx = (c1.idx + 1) % c1.slots.length; touchCyc(); save(); renderToday(); } }
     else if (b.dataset.cundo) { var c2 = data.cyc, td2 = ds(new Date()), id2 = c2.log[td2]; if (id2) { var ix2 = c2.slots.findIndex(function (x) { return x.id === id2; }); if (ix2 !== -1) c2.idx = ix2; delete c2.log[td2]; touchCyc(); save(); renderToday(); } }
@@ -605,23 +639,23 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
     if (t.dataset.os) { setOffer(t.dataset.os, 'ship', t.value); return; }
     if (t.dataset.ou) { setOffer(t.dataset.ou, 'url', t.value); return; }
     if (t.dataset.f && t.closest('.fpanel')) { flt[t.dataset.f] = t.value; renderFilters(); renderPlist(); return; }
-    if (t.dataset.ss !== undefined) { var st = data.pm.filter(function (x) { return x.id === t.dataset.ss; })[0]; if (st) { st.slot = t.value; st.u = Date.now(); save(); renderToday(); } return; }
-    if (t.dataset.sp !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sp; })[0]; if (s) { s.prod = t.value; s.u = Date.now(); var p = prodById(t.value); if (p && !s.n.trim()) { s.n = p.n; } save(); renderToday(); } }
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
     if (t.id === 'fi') { flt.ing = t.value; renderPlist(); return; }
+    if (t.id === 'pkq' && pk) { pk.q = t.value; $('pkres').innerHTML = pickResHTML(); return; }
     if (t.id === 'sq') { sq = t.value; clearTimeout(searchTimer); if (sq.trim().length < 3) { searchSeq++; sres = []; sbusy = false; smsg = ''; renderSres(); } else searchTimer = setTimeout(function () { runSearch(sq, 1); }, 450); }
     if (t.dataset.cn !== undefined) { var sl2 = slotById(t.dataset.cn); if (sl2) { sl2.n = t.value; touchCyc(); save(); } return; }
     if (t.dataset.sn !== undefined) { var s = data[part].filter(function (x) { return x.id === t.dataset.sn; })[0]; if (s) { s.n = t.value; s.u = Date.now(); save(); } }
   });
   document.addEventListener('error', function (e) {   // a photo that will not load falls back to the type icon
     var im = e.target; if (!im || im.tagName !== 'IMG') return;
-    var box = im.parentNode; if (box && box.classList.contains('pi')) box.textContent = box.dataset.ico || '🧴';
+    var box = im.parentNode; if (box && (box.classList.contains('pi') || box.classList.contains('pbtn'))) box.textContent = box.dataset.ico || '🧴';
   }, true);
   $('sf').addEventListener('submit', function (e) { e.preventDefault(); sq = $('sq').value; runSearch(sq, 1); $('sq').blur(); });
   $('pm').addEventListener('click', function (e) { if (e.target === $('pm')) closeProd(); });
   $('cm').addEventListener('click', function (e) { if (e.target === $('cm')) $('cm').hidden = true; });
+  $('sm').addEventListener('click', function (e) { if (e.target === $('sm')) { pk = null; $('sm').hidden = true; } });
   $('vm').addEventListener('click', function (e) { if (e.target === $('vm')) { pvR = null; $('vm').hidden = true; } });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('cm').hidden) $('cm').hidden = true; else if (!$('pm').hidden) closeProd(); else if (!$('vm').hidden) { pvR = null; $('vm').hidden = true; } } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); render(); } });
