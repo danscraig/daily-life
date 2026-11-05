@@ -190,6 +190,19 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 .cyc .cn { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
 .cdone { width: 100%; margin-top: 10px; padding: 14px; }
 .pbtn { flex: none; width: 52px; height: 52px; border-radius: 14px; background: var(--bg); display: grid; place-items: center; font-size: 22px; overflow: hidden; }
+.wn { border-radius: 16px; padding: 10px 14px; margin: 0 0 10px; font-size: 14px; background: color-mix(in srgb, var(--warn) 13%, var(--paper)); }
+.wn ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.wn li.lv-avoid { color: var(--bad); }
+.wn li.lv-info { color: var(--mute); }
+.wn.ok { background: color-mix(in srgb, var(--ok) 12%, var(--paper)); color: var(--ok); }
+.wnd { margin: 0 0 10px; }
+.wnd summary { cursor: pointer; padding: 10px 14px; border-radius: 16px; background: color-mix(in srgb, var(--warn) 13%, var(--paper)); font-size: 14px; font-weight: 500; }
+.wnd .wn { margin-top: 6px; }
+.chipscol { flex-direction: column; align-items: stretch; }
+.chipscol button { text-align: left; border-radius: 14px; }
+.sim { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.sim .pcard { padding: 10px 12px; box-shadow: none; border: 1px solid var(--line); }
+.sim .pcard .badge { flex: none; white-space: nowrap; }
 .l2 { display: flex; align-items: center; gap: 8px; }
 .l2 .plink { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mvs { margin-left: auto; display: flex; gap: 6px; flex: none; }
@@ -296,11 +309,11 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     $('editb').classList.toggle('on', editing);
     var list = data[part], box = $('steps'), cyc = part === 'pm' && data.cyc.slots.length;
     if (editing) {
-      box.innerHTML = (part === 'pm' ? cycleTopHTML() + pmGroupsHTML() : editHTML(list) + '<button class="addb" data-add="">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'); $('plab').parentNode.hidden = true; return;
+      box.innerHTML = editWarnHTML() + (part === 'pm' ? cycleTopHTML() + pmGroupsHTML() : editHTML(list) + '<button class="addb" data-add="">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'); $('plab').parentNode.hidden = true; return;
     }
     $('plab').parentNode.hidden = false;
     var k = ds(day), done = logFor(k), slot = cyc ? slotFor(k) : null;
-    var today = list.filter(function (s) { return s.n.trim() && (cyc ? stepShown(s, slot) : sched(s, day)); });
+    var paused = [], today = list.filter(function (s) { return s.n.trim() && (cyc ? stepShown(s, slot) : sched(s, day)); }).filter(function (s) { if (pausedStep(s)) { paused.push(s); return false; } return true; });   // actives are hidden around a professional treatment
     var head = '', foot = '';
     if (cyc) {
       var isToday = k === ds(new Date()), finished = !!data.cyc.log[k], nextIdx = (data.cyc.idx + 1) % data.cyc.slots.length;
@@ -308,6 +321,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
         (isToday && !finished && data.cyc.slots.length > 1 ? '<div class="chipsrow">' + data.cyc.slots.map(function (c, i) { return '<button type="button" data-cs="' + c.id + '" aria-pressed="' + (i === data.cyc.idx % data.cyc.slots.length) + '">' + esc(c.n || 'Night') + '</button>'; }).join('') + '</div>' : '') + '</div>';
       if (isToday) foot = finished ? '<button class="addb" data-cundo="1">Tonight is done ✓ · tap to undo</button>' : '<button class="btn cdone" data-cdone="1">✓ Done for tonight · next: ' + esc(data.cyc.slots[nextIdx].n || 'Night') + '</button>';
     }
+    head += todayWarnHTML(today, paused, part === 'am');
     var n = today.filter(function (s) { return done.indexOf(s.id) !== -1; }).length;
     $('plab').textContent = today.length ? n + ' / ' + today.length : '';
     $('pbar').style.width = today.length ? Math.round(n / today.length * 100) + '%' : '0';
@@ -421,6 +435,124 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     if (s && !s.n.trim()) { var inp = document.querySelector('[data-sn="' + s.id + '"]'); if (inp) inp.focus(); }
   }
 
+  /* similar products, worked out from the ingredient lists: the more of the same (non-filler) ingredients, and the nearer the top of the list, the closer the match.
+     It cannot see concentrations, so a high score means "same formula idea", not proof of an identical product. */
+  var FILLER = ['water', 'glycerin', 'butylene glycol', '1,2-hexanediol', 'ethylhexylglycerin', 'disodium edta', 'phenoxyethanol', 'carbomer', 'xanthan gum', 'dipropylene glycol', 'pentylene glycol', 'propanediol', 'caprylyl glycol', 'citric acid', 'tromethamine', 'hydroxyacetophenone', 'sodium citrate', 'fragrance', 'sodium chloride', 'ethyl hexanediol', 'hydroxyethylcellulose', 'sodium phytate', 'caprylic capric triglyceride', 'methylpropanediol', 'tocopherol', 'titanium dioxide'];
+  var FAMS = [['Retinoid', /\bretinol\b|\bretinal\b|bakuchiol|retinyl/i], ['Exfoliating acid', /glycolic acid|lactobionic|gluconolactone|salicylic|betaine salicylate|mandelic|lactic acid/i], ['Vitamin C', /ascorbic|ascorbyl/i], ['Niacinamide', /niacinamide/i], ['Azelaic acid', /azelaic/i], ['Tranexamic acid', /tranexamic/i], ['Centella', /centella|madecassoside|asiaticoside/i], ['Ceramides', /ceramide/i], ['Snail mucin', /snail/i], ['Copper peptide', /copper tripeptide/i]];
+  function ingModel(p) {
+    var L = String(p.ing || '').replace(/1,\s*2-/g, '1\u00002-').replace(/​/g, '').split(',').map(function (x) {
+      return x.replace('\u0000', ',').toLowerCase().replace(/\(.*?\)/g, '').replace(/[\d.]+\s*%/g, '').replace(/\//g, ' ').replace(/\s+/g, ' ').trim();
+    }).filter(Boolean).map(function (x) {
+      return /^(aqua water eau|aqua water|water aqua eau|water aqua|aqua|purified water)$/.test(x) ? 'water' : /^(hyaluronic acid|sodium hyaluronate|hydrolyzed hyaluronic acid|hydrolyzed sodium hyaluronate)$/.test(x) ? 'hyaluronate' : /^(ci 77891|titanium dioxide)$/.test(x) ? 'titanium dioxide' : /^tocopher/.test(x) || x === 'alpha tocopherol' ? 'tocopherol' : x;
+    });
+    var w = {}, act = {}; L.forEach(function (x, i) { if (!(x in w)) w[x] = 1 / (1 + i * 0.15); if (FILLER.indexOf(x) === -1) act[x] = 1; });
+    return { L: L, w: w, act: act, text: String(p.ing || '') };
+  }
+  function simScore(a, b) {
+    var inter = 0, uni = 0, shared = [], k;
+    var keys = {}; Object.keys(a.act).forEach(function (x) { keys[x] = 1; }); Object.keys(b.act).forEach(function (x) { keys[x] = 1; });
+    for (k in keys) { var x = a.w[k] || 0, y = b.w[k] || 0; inter += Math.min(x, y); uni += Math.max(x, y); if (a.act[k] && b.act[k]) shared.push(k); }
+    return { s: uni ? inter / uni : 0, shared: shared };
+  }
+  function similarTo(p) {
+    var me = ingModel(p), out = [];
+    data.prods.forEach(function (q) { if (q.id === p.id || !q.ing || !q.ing.trim()) return; var r = simScore(me, ingModel(q)); if (r.s >= 0.18) out.push({ p: q, s: r.s, shared: r.shared }); });
+    return out.sort(function (a, b) { return b.s - a.s; }).slice(0, 5);
+  }
+  function simLabel(s) { return s >= 0.6 ? 'Likely dupe' : s >= 0.4 ? 'Very similar' : s >= 0.25 ? 'Similar' : 'Some overlap'; }
+  function famsOf(p) { var t = String(p.ing || '').replace(/​/g, ''); return FAMS.filter(function (f) { return f[1].test(t); }).map(function (f) { return f[0]; }); }
+  function similarHTML(p) {
+    if (!p.ing || !p.ing.trim()) return '';
+    var sim = similarTo(p), fams = famsOf(p), h = '';
+    if (fams.length) h += '<p class="hint" style="margin:0 0 6px">Contains: ' + fams.map(function (f) { var n = data.prods.filter(function (q) { return q.id !== p.id && q.ing && famsOf(q).indexOf(f) !== -1; }).length; return '<b>' + esc(f) + '</b>' + (n ? ' (in ' + n + ' other' + (n === 1 ? '' : 's') + ')' : ''); }).join(' · ') + '</p>';
+    h += sim.length ? '<div class="sim">' + sim.map(function (r) {
+      var q = r.p, sh = r.shared.slice(0, 5).join(', ');
+      return '<button class="pcard" data-pid="' + q.id + '"><span class="pi" data-ico="' + typeIcon(q.t) + '">' + (q.img ? '<img src="' + esc(q.img) + '" alt="" loading="lazy">' : typeIcon(q.t)) + '</span><span class="pt"><span class="pn">' + esc(q.n) + '</span><span class="ps">' + esc([q.brand, q.t].filter(Boolean).join(' · ')) + '</span><span class="tags">In common: ' + esc(sh || 'a few ingredients') + '</span></span><span class="badge ' + (r.s >= 0.6 ? 'bad' : r.s >= 0.4 ? 'warn' : 'ok') + '">' + simLabel(r.s) + ' · ' + Math.round(r.s * 100) + '%</span></button>';
+    }).join('') + '</div><p class="hint">Worked out from the ingredient lists (weighted by position, ignoring filler like water and glycerin). Strength is not on the label, so check before treating two products as the same.</p>' : '<p class="hint">Nothing on your shelf has a similar ingredient list.</p>';
+    return '<details><summary class="hint">Similar products on your shelf</summary>' + h + '</details>';
+  }
+  /* safety checks and conflicts between products in one routine.
+     Rules are general guidance, not medical advice: alternate retinoids and exfoliating acids; pause them around a professional treatment
+     (prescription retinoid about 5-7 days, retinol about 2-3 days, acids about 2-3 days before); no retinoids in pregnancy or on isotretinoin without a doctor;
+     damaged skin barrier means pause actives. Ingredient strength is not on the label, so a flag means "check", not "never". */
+  var STRONG_AC = /^(glycolic acid|lactic acid|mandelic acid|salicylic acid|betaine salicylate|malic acid|tartaric acid)$/, MILD_AC = /^(gluconolactone|lactobionic acid)$/, RET_RX = /\b(retinol|retinal|retinaldehyde|tretinoin|adapalene|hydroxypinacolone retinoate|retinoate)\b/;
+  var confCache = {};
+  function conf(p) {   // which active families a product really contains (acids and vitamin C only count when near the top of the list)
+    var key = p.id + '|' + p.t + '|' + String(p.ing || '').length; if (confCache[key]) return confCache[key];
+    var L = ingModel(p).L, head = L.slice(0, 16), rinse = p.t === 'cleanser';
+    return (confCache[key] = { ret: L.some(function (x) { return RET_RX.test(x); }), strong: !rinse && head.some(function (x) { return STRONG_AC.test(x); }), mild: !rinse && head.some(function (x) { return MILD_AC.test(x); }), vitc: head.some(function (x) { return /^(l )?ascorbic acid$/.test(x); }), bpo: L.some(function (x) { return /benzoyl peroxide/.test(x); }) });
+  }
+  function safeFlags() { var s = skinProf().safe; return s && typeof s === 'object' ? s : {}; }
+  function txWindow() {
+    var t = skinProf().tx; if (!t || !t.date) return null;
+    var c = new Date(t.date + 'T12:00:00'); if (isNaN(c)) return null;
+    var n = t.rx ? 7 : 3, a = new Date(c), b = new Date(c); a.setDate(a.getDate() - n); b.setDate(b.getDate() + n);
+    return { from: a, to: b, n: n, at: c };
+  }
+  function pausedStep(s) {
+    var w = txWindow(); if (!w || day < w.from || day > w.to) return false;
+    var p = s.prod ? prodById(s.prod) : null; if (!p) return false; var c = conf(p); return c.ret || c.strong || c.mild;
+  }
+  function shortName(p) { return String(p.n).replace(/\s+\d+(\.\d+)?\s?(ml|g)\b.*$/i, '').slice(0, 36); }
+  function isSpfStep(s) { var p = s.prod ? prodById(s.prod) : null; return typeOfStep(s) === 'sunscreen' || (p && p.t === 'sunscreen'); }
+  function routineWarnings(steps, am, amHasSpf) {   // [{lv: avoid|caution|info, t: text}]
+    var items = steps.map(function (s) { var p = s.prod ? prodById(s.prod) : null; return p ? { s: s, p: p, c: conf(p) } : null; }).filter(Boolean), W = [];
+    function nm(a) { return a.map(function (i) { return shortName(i.p); }).join(' + '); }
+    var ret = items.filter(function (i) { return i.c.ret; }), st = items.filter(function (i) { return i.c.strong; }), mi = items.filter(function (i) { return i.c.mild; }), vc = items.filter(function (i) { return i.c.vitc; }), bp = items.filter(function (i) { return i.c.bpo; });
+    if (ret.length && st.length) W.push({ lv: 'caution', t: 'Retinoid (' + nm(ret) + ') with an exfoliating acid (' + nm(st) + ') in the same routine. Use them on different nights.' });
+    else if (ret.length && mi.length) W.push({ lv: 'info', t: 'Retinoid (' + nm(ret) + ') with a mild acid (' + nm(mi) + '). Usually tolerated, but start slowly.' });
+    if (st.length > 1) W.push({ lv: 'caution', t: 'Two exfoliating acids in one routine (' + nm(st) + '). Easy to over-exfoliate: keep one per night.' });
+    if (ret.length > 1) W.push({ lv: 'caution', t: 'Two retinoid products in one routine (' + nm(ret) + '). Use one at a time.' });
+    if (bp.length && ret.length) W.push({ lv: 'avoid', t: 'Benzoyl peroxide (' + nm(bp) + ') with a retinoid (' + nm(ret) + '). Keep them apart.' });
+    if (vc.length && ret.length) W.push({ lv: 'caution', t: 'Pure vitamin C (' + nm(vc) + ') with a retinoid (' + nm(ret) + '). Vitamin C in the morning, retinoid at night.' });
+    if (vc.length && st.length) W.push({ lv: 'caution', t: 'Pure vitamin C (' + nm(vc) + ') with an exfoliating acid (' + nm(st) + ') can irritate. Separate them.' });
+    var act = items.filter(function (i) { return i.c.ret || i.c.strong; });
+    if (act.length && am && !steps.some(isSpfStep)) W.push({ lv: 'caution', t: 'Retinoid or acid in the morning (' + nm(act) + ') and no sunscreen step. Add one.' });
+    if (act.length && !am && !amHasSpf) W.push({ lv: 'info', t: 'This routine has a retinoid or acid (' + nm(act) + '). Your morning routine has no sunscreen step: add one.' });
+    var f = safeFlags(), any = items.filter(function (i) { return i.c.ret || i.c.strong || i.c.mild; });
+    if (f.preg && ret.length) W.push({ lv: 'avoid', t: 'You marked pregnant or breastfeeding. Ask your doctor before using retinoids (' + nm(ret) + ').' });
+    if (f.iso && any.length) W.push({ lv: 'avoid', t: 'You marked isotretinoin in the last 6 months. Ask your prescriber before using retinoids or acids (' + nm(any) + ').' });
+    if (f.photo && any.length) W.push({ lv: 'caution', t: 'You take a medication that makes skin sun-sensitive. Retinoids and acids (' + nm(any) + ') need strict sunscreen: check with your doctor.' });
+    if (f.barrier) { var ba = items.filter(function (i) { return i.c.ret || i.c.strong || i.c.mild || i.c.vitc; }); if (ba.length) W.push({ lv: 'caution', t: 'Your skin barrier is marked as damaged. Pause actives (' + nm(ba) + ') until it recovers.' }); }
+    if (f.lesion && any.length) W.push({ lv: 'info', t: 'You marked a cold sore or open lesion: keep retinoids and acids off that area.' });
+    return W;
+  }
+  function warnListHTML(W, title) {
+    return '<div class="wn"><b>' + esc(title) + '</b><ul>' + W.map(function (w) { return '<li class="lv-' + w.lv + '"><span>' + (w.lv === 'avoid' ? '⛔' : w.lv === 'caution' ? '⚠️' : 'ℹ️') + '</span> ' + esc(w.t) + '</li>'; }).join('') + '</ul></div>';
+  }
+  function amSpfExists() { return data.am.some(function (s) { return s.n.trim() && isSpfStep(s); }); }
+  function todayWarnHTML(today, paused, am) {
+    var h = '', w = txWindow();
+    if (paused.length && w) { var back = new Date(w.to); back.setDate(back.getDate() + 1); h += '<div class="wn"><b>⏸ Paused around your treatment</b><ul><li>' + esc(paused.map(function (s) { return s.n; }).join(', ')) + ' hidden until ' + back.getDate() + ' ' + MON[back.getMonth()] + ' (treatment on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + ').</li></ul></div>'; }
+    var W = routineWarnings(today, am, amSpfExists());
+    return h + (W.length ? '<details class="wnd"><summary>⚠️ ' + W.length + ' heads-up' + (W.length === 1 ? '' : 's') + ' for this routine</summary>' + warnListHTML(W, 'Check these') + '</details>' : '');
+  }
+  function editWarnHTML() {   // conflicts across the whole routine: every night of the cycle, or the morning
+    var groups = [];
+    if (part === 'pm') {
+      var slots = data.cyc.slots.length ? data.cyc.slots : [null];
+      slots.forEach(function (sl) { groups.push({ n: sl ? (sl.n || 'Night') + ' night' : 'Night', steps: data.pm.filter(function (s) { return s.n.trim() && (!sl || stepShown(s, sl)); }), am: false }); });
+    } else {
+      groups.push({ n: 'Morning', steps: data.am.filter(function (s) { return s.n.trim(); }), am: true });
+    }
+    var seen = {}, out = '', any = false;
+    groups.forEach(function (g) {
+      var W = routineWarnings(g.steps, g.am, amSpfExists()).filter(function (w) { var k = g.n + w.t; if (seen[k]) return false; seen[k] = 1; return true; });
+      if (W.length) { any = true; out += warnListHTML(W, g.n); }
+    });
+    var hasProd = groups.some(function (g) { return g.steps.some(function (s) { return s.prod; }); });
+    return any ? out : hasProd ? '<div class="wn ok">✓ No conflicts found between the products in this routine.</div>' : '';
+  }
+  function productSafetyHTML(p) {   // the same safety flags, for one product
+    var c = conf(p), f = safeFlags(), W = [], w = txWindow();
+    if (c.ret && f.preg) W.push({ lv: 'avoid', t: 'Contains a retinoid. You marked pregnant or breastfeeding: ask your doctor first.' });
+    if ((c.ret || c.strong || c.mild) && f.iso) W.push({ lv: 'avoid', t: 'Contains a retinoid or acid. You marked isotretinoin in the last 6 months: ask your prescriber first.' });
+    if ((c.ret || c.strong || c.mild) && f.photo) W.push({ lv: 'caution', t: 'Makes skin more sun-sensitive, and so does your medication: strict sunscreen.' });
+    if ((c.ret || c.strong || c.mild || c.vitc) && f.barrier) W.push({ lv: 'caution', t: 'Your barrier is marked as damaged: pause this until it recovers.' });
+    if ((c.ret || c.strong || c.mild) && w && day >= w.from && day <= w.to) W.push({ lv: 'info', t: 'Paused around your treatment on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + '.' });
+    var tags = []; if (c.ret) tags.push('retinoid'); if (c.strong) tags.push('exfoliating acid'); if (c.mild) tags.push('mild acid (PHA)'); if (c.vitc) tags.push('pure vitamin C'); if (c.bpo) tags.push('benzoyl peroxide');
+    return (tags.length ? '<p class="hint" style="margin:0">Strong actives in this product: <b>' + esc(tags.join(', ')) + '</b>.</p>' : '') + (W.length ? warnListHTML(W, 'For your profile') : '');
+  }
   function expiry(p) {
     if (!p.opened || !p.pao) return null;
     var o = new Date(p.opened + 'T12:00:00'); if (isNaN(o)) return null;
@@ -515,13 +647,24 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   function skinProf() { return data.skin || { type: '', conc: [], notes: '', u: 0 }; }
   function touchSkin() { data.skin = skinProf(); data.skin.u = Date.now(); save(); }
   function fmtDate(s) { var d = new Date(s + 'T12:00:00'); return isNaN(d) ? s : d.getDate() + ' ' + MON[d.getMonth()] + ' ' + d.getFullYear(); }
+  var SAFE_Q = [['preg', 'Pregnant or breastfeeding'], ['iso', 'Isotretinoin in the last 6 months'], ['photo', 'Medication that makes skin sun-sensitive (e.g. doxycycline)'], ['barrier', 'Skin barrier damaged right now (sunburn, active breakout, broken skin)'], ['lesion', 'Cold sore or open lesion']];
+  function skinSafetyHTML() {
+    var f = safeFlags(), t = skinProf().tx || {}, w = txWindow(), tw = '';
+    if (w) { var a = new Date(w.from), b = new Date(w.to); tw = '<p class="hint" style="margin:0">Retinoids and exfoliating acids are paused from <b>' + a.getDate() + ' ' + MON[a.getMonth()] + '</b> to <b>' + b.getDate() + ' ' + MON[b.getMonth()] + '</b> (' + w.n + ' days before and after).</p>'; }
+    return '<div class="sk"><h3>Safety check</h3><p class="hint" style="margin:0">Tell the app what applies to you. It will warn you when a product in your routine is a problem. General guidance, not medical advice: ask your doctor or pharmacist when in doubt.</p>' +
+      '<div class="chipsrow chipscol">' + SAFE_Q.map(function (q) { return '<button type="button" data-sf="' + q[0] + '" aria-pressed="' + !!f[q[0]] + '">' + esc(q[1]) + '</button>'; }).join('') + '</div></div>' +
+      '<div class="sk"><h3>Professional treatment</h3><p class="hint" style="margin:0">Peel, laser, microneedling or waxing? Retinoids and exfoliating acids should stop around it. Add the date and they are hidden from your routine for the right days.</p>' +
+      '<div class="two"><div><label for="sktxd">Treatment date</label><input type="date" id="sktxd" value="' + esc(t.date || '') + '"></div><div><label>I use</label><div class="chipsrow"><button type="button" data-txrx="1" aria-pressed="' + !!t.rx + '">Prescription retinoid</button></div></div></div>' + tw +
+      '<p class="hint" style="margin:0">Pause: about 2-3 days either side for retinol and acids you buy without a prescription, 5-7 days for a prescription retinoid (tretinoin, adapalene). Your treatment provider\'s advice comes first.</p>' + (t.date ? '<button class="btn ghost" data-txclr="1">Clear treatment</button>' : '') + '</div>' +
+      '<div class="sk"><h3>When to see a dermatologist</h3><p class="hint" style="margin:0">A routine cannot treat these. Book a dermatologist for a spot or mole that is <b>asymmetric</b>, has an uneven <b>border</b> or several <b>colours</b>, is bigger than <b>6 mm</b>, is <b>changing</b>, bleeds or does not heal. Also for acne that scars, a rash that spreads, or a reaction that keeps getting worse. This app is a helper, not a diagnosis.</p></div>';
+  }
   function renderSkin() {
     var sp = skinProf();
     var h = '<div class="sk"><h3>My skin</h3><p class="hint" style="margin:0">Skin type and concerns. Send me a photo in our chat and I will fill this in for you, or fill it in yourself.</p>' +
       '<div><label for="sktype">Skin type</label><select id="sktype">' + opts(extra(0, SKIN, 'skin'), sp.type, 'Not set') + '</select></div>' +
       '<div><label>Concerns</label><div class="chipsrow">' + extra(0, CONC, 'conc').map(function (v) { return '<button type="button" data-sc="' + esc(v) + '" aria-pressed="' + ((sp.conc || []).indexOf(v) !== -1) + '">' + esc(v) + '</button>'; }).join('') + '</div></div>' +
       '<div><label for="sknote">What I should know (sensitivity, allergies, observations)</label><textarea id="sknote" rows="3" placeholder="e.g. redness on the cheeks, oily T-zone, reacts to fragrance">' + esc(sp.notes || '') + '</textarea></div>' +
-      (sp.u ? '<p class="hint" style="margin:0">Updated ' + esc(fmtDate(ds(new Date(sp.u)))) + '</p>' : '') + '</div>' +
+      (sp.u ? '<p class="hint" style="margin:0">Updated ' + esc(fmtDate(ds(new Date(sp.u)))) + '</p>' : '') + '</div>' + skinSafetyHTML() +
       '<div class="sk"><h3>Face photos</h3><p class="hint" style="margin:0">Stay on this phone only (they are never synced). Use even light, no makeup, same spot each time.</p>' +
       '<label class="filebtn">📷 Take or choose a photo<input type="file" id="skfile" accept="image/*"></label>' + (skMsg ? '<p class="hint" style="margin:0">' + esc(skMsg) + '</p>' : '') + '<div id="skgrid"></div></div>';
     $('v-skin').innerHTML = h;
@@ -668,6 +811,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       '<div class="two"><div><label for="ppr">Price (' + esc(p.cur || '€') + ')</label><div class="cprice"><input type="number" id="ppr" min="0" step="0.01" inputmode="decimal" value="' + esc(p.price) + '">' + (id ? '<button type="button" class="btn ghost" data-cmp="' + id + '">Compare</button>' : '') + '</div></div><div><label for="pu">Shop link</label><input type="text" id="pu" value="' + esc(p.url) + '" placeholder="https://…" autocapitalize="off"></div></div>' +
       (p.info ? '<details><summary class="hint">Details from the shop</summary><p class="hint" id="pinfo" style="white-space:pre-line">' + esc(p.info) + '</p></details>' : '') +
       '<div><label for="pig">Ingredients</label><textarea id="pig" rows="3" placeholder="Water, glycerin, niacinamide…" autocapitalize="off">' + esc(picked.ing) + '</textarea></div>' +
+      (id ? productSafetyHTML(p) + similarHTML(p) : '') +
       '<div><label for="pw">Notes</label><textarea id="pw" rows="2" placeholder="How your skin reacted, where you bought it…">' + esc(p.notes) + '</textarea></div>' +
       '<div class="acts"><button id="pcx">Cancel</button>' + (id ? '<button class="dng" id="pdel">' + 'Delete</button>' : '') + '<button class="pri" id="psv">Save</button></div>';
     $('pm').hidden = false; $('pm').dataset.id = id || '';
@@ -789,6 +933,9 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       save(); b.setAttribute('aria-pressed', String(k === -1));
     }
     else if (b.dataset.sc) { var sp = skinProf(), ci = (sp.conc = sp.conc || []).indexOf(b.dataset.sc); if (ci === -1) sp.conc.push(b.dataset.sc); else sp.conc.splice(ci, 1); data.skin = sp; touchSkin(); b.setAttribute('aria-pressed', String(ci === -1)); }
+    else if (b.dataset.sf) { var sp2 = skinProf(); sp2.safe = Object.assign({}, sp2.safe || {}); sp2.safe[b.dataset.sf] = !sp2.safe[b.dataset.sf]; data.skin = sp2; touchSkin(); b.setAttribute('aria-pressed', String(!!sp2.safe[b.dataset.sf])); }
+    else if (b.dataset.txrx) { var sp3 = skinProf(); sp3.tx = Object.assign({}, sp3.tx || {}); sp3.tx.rx = !sp3.tx.rx; data.skin = sp3; touchSkin(); renderSkin(); }
+    else if (b.dataset.txclr) { var sp4 = skinProf(); delete sp4.tx; data.skin = sp4; touchSkin(); renderSkin(); }
     else if (b.dataset.kp) openPhoto(Number(b.dataset.kp));
     else if (b.id === 'kx') { skCur = null; $('km').hidden = true; }
     else if (b.id === 'kshare' && skCur) {
@@ -841,6 +988,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     var t = e.target;
     if (t.id === 'fi') return;   // typed live by the input handler
     if (t.id === 'sktype') { var sp0 = skinProf(); sp0.type = t.value; data.skin = sp0; touchSkin(); return; }
+    if (t.id === 'sktxd') { var sp5 = skinProf(); sp5.tx = Object.assign({}, sp5.tx || {}); if (t.value) sp5.tx.date = t.value; else delete sp5.tx.date; data.skin = sp5; touchSkin(); renderSkin(); return; }
     if (t.id === 'skfile') { var fl = t.files && t.files[0]; if (fl) addPhoto(fl); return; }
     if (t.dataset.cn !== undefined) { renderToday(); return; }   // a night was renamed: refresh the headings
     if (t.dataset.op) { setOffer(t.dataset.op, 'price', t.value); return; }
@@ -899,4 +1047,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 11 -->
+<!-- build 13 -->
