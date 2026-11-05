@@ -190,6 +190,10 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 .cyc .cn { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
 .cdone { width: 100%; margin-top: 10px; padding: 14px; }
 .pbtn { flex: none; width: 52px; height: 52px; border-radius: 14px; background: var(--bg); display: grid; place-items: center; font-size: 22px; overflow: hidden; }
+.l2 { display: flex; align-items: center; gap: 8px; }
+.l2 .plink { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mvs { margin-left: auto; display: flex; gap: 6px; flex: none; }
+.mvb { width: 38px; height: 34px; border-radius: 12px; background: var(--bg); color: var(--ink); font-size: 16px; }
 .plink { text-align: left; font-size: 13px; color: var(--mute); }
 .none-btn { width: 100%; padding: 12px; border-radius: 16px; border: 1px dashed var(--line); color: var(--mute); margin-top: 12px; }
 .gh { margin: 14px 4px 2px; font: 600 14px var(--font); color: var(--accent); }
@@ -337,11 +341,20 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
         return '<div class="l1"><input type="text" data-cn="' + s.id + '" value="' + esc(s.n) + '" placeholder="Night name" aria-label="Night name"><button class="del" data-cmv="' + s.id + '" data-d="-1" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>↑</button><button class="del" data-cmv="' + s.id + '" data-d="1" aria-label="Move down"' + (i === c.slots.length - 1 ? ' disabled' : '') + '>↓</button><button class="del" data-cdel="' + s.id + '" aria-label="Remove night">✕</button></div>';
       }).join('') + '<button class="addb" data-cadd="1">+ Add a night to the cycle</button></div>';
   }
+  /* a new step goes where it belongs in a routine: cleanser, toner, serum, eye, retinol, mask, then moisturiser (hydration) last, sunscreen after it.
+     So retinol always comes before the moisturiser. The arrows on each step move it from there. */
+  var RANK = { cleanser: 10, toner: 20, serum: 30, eye: 40, retinol: 50, mask: 60, other: 70, moisturiser: 80, sunscreen: 90 };
+  function stepRank(s) { var t = typeOfStep(s); return RANK[t] || 70; }
+  function insertStep(part, s) {
+    var list = data[part], r = stepRank(s), at = list.length;
+    for (var i = 0; i < list.length; i++) { if (stepRank(list[i]) > r) { at = i; break; } }
+    list.splice(at, 0, s);
+  }
   function stepRowHTML(s, withDays) {   // photo of the product (tap to change it) + step name + delete
     var p = s.prod ? prodById(s.prod) : null;
     var days = withDays ? '<div class="days">' + DJ.map(function (j, i) { return '<button data-sd="' + j + '" data-sid="' + s.id + '" aria-pressed="' + (!!s.days && s.days.indexOf(j) !== -1) + '">' + DN[i] + '</button>'; }).join('') + '</div>' : '';
     return '<div class="row"><div class="l1"><button class="pbtn" data-pkopen="' + s.id + '" data-ico="' + typeIcon(p ? p.t : '') + '" aria-label="Change product">' + (p && p.img ? '<img src="' + esc(p.img) + '" alt="">' : typeIcon(p ? p.t : '')) + '</button><input type="text" data-sn="' + s.id + '" value="' + esc(s.n) + '" placeholder="Step name" aria-label="Step name"><button class="del" data-sdel="' + s.id + '" aria-label="Delete step">✕</button></div>' +
-      '<button class="plink" data-pkopen="' + s.id + '">' + (p ? esc(p.n) + (p.brand ? ' · ' + esc(p.brand) : '') + ' · change' : 'No product · tap to choose') + '</button>' + days + '</div>';
+      '<div class="l2"><button class="plink" data-pkopen="' + s.id + '">' + (p ? esc(p.n) + (p.brand ? ' · ' + esc(p.brand) : '') + ' · change' : 'No product · tap to choose') + '</button><span class="mvs"><button class="mvb" data-smv="' + s.id + '" data-d="-1" aria-label="Move earlier">↑</button><button class="mvb" data-smv="' + s.id + '" data-d="1" aria-label="Move later">↓</button></span></div>' + days + '</div>';
   }
   function pmGroupsHTML() {   // night steps grouped by night, each group with its own "add step"
     var groups = [{ id: '', n: 'Every night' }].concat(data.cyc.slots.map(function (c) { return { id: c.id, n: (c.n || 'Night') + ' night' }; }));
@@ -402,7 +415,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     } else {
       s = { id: uid(), n: pk.type && pk.type !== 'other' ? tLabel(pk.type) : (p ? p.n : ''), t: pk.type, prod: id, days: [], u: Date.now() };
       if (pk.part === 'pm' && pk.slot) s.slot = pk.slot;
-      data[pk.part].push(s);
+      insertStep(pk.part, s);
     }
     save(); $('sm').hidden = true; pk = null; renderToday();
     if (s && !s.n.trim()) { var inp = document.querySelector('[data-sn="' + s.id + '"]'); if (inp) inp.focus(); }
@@ -741,6 +754,14 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       save(); renderToday();
     }
     else if (b.dataset.cyct) { cycOpen = !cycOpen; renderToday(); }
+    else if (b.dataset.smv) {   // move a step earlier/later among the steps of the same group (every night, or one night)
+      var ml = data[part], mi = ml.findIndex(function (x) { return x.id === b.dataset.smv; }), md = Number(b.dataset.d), grp = function (x) { return part === 'pm' ? (x.slot || '') : ''; };
+      if (mi !== -1) {
+        for (var mj = mi + md; mj >= 0 && mj < ml.length; mj += md) {
+          if (grp(ml[mj]) === grp(ml[mi])) { var mt = ml[mi]; ml[mi] = ml[mj]; ml[mj] = mt; ml[mi].u = ml[mj].u = Date.now(); save(); renderToday(); break; }
+        }
+      }
+    }
     else if (b.dataset.clr) { var ci2 = b.parentNode.querySelector('input'); if (ci2) { ci2.value = ''; ci2.dispatchEvent(new Event('input', { bubbles: true })); ci2.focus(); } }
     else if (b.dataset.pt && pk) { pk.type = b.dataset.pt; pk.stage = 'prod'; pickSheet(); }
     else if (b.id === 'pkb' && pk) { pk.stage = 'type'; pk.q = ''; pk.all = false; pickSheet(); }
@@ -878,4 +899,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 10 -->
+<!-- build 11 -->
