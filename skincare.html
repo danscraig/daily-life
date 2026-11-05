@@ -110,6 +110,13 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 .badge { flex: none; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: var(--bg); color: var(--mute); white-space: nowrap; }
 .badge.ok { color: var(--ok); } .badge.warn { color: var(--warn); } .badge.bad { color: #fff; background: var(--bad); }
 .navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--paper); border-top: 1px solid var(--line); padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+.sbox { position: relative; }
+.sbox input { padding-right: 48px; }
+.sclr { position: absolute; right: 8px; top: 0; bottom: 0; margin: auto 0; width: 32px; height: 32px; border-radius: 50%; background: var(--bg); color: var(--mute); font-size: 14px; display: grid; place-items: center; }
+.typeg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.typeg button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 6px; border-radius: 16px; background: var(--paper); border: 1px solid var(--line); font-size: 14px; }
+.typeg span { font-size: 24px; }
 .sk { background: var(--paper); border-radius: 20px; padding: 14px; box-shadow: 0 10px 26px -18px var(--shadow); display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .sk h3 { margin: 0; font-size: 16px; }
 .phg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -193,7 +200,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   </section>
 
   <section id="v-search" hidden>
-    <form id="sf" role="search"><input type="search" id="sq" placeholder="Search by name or brand" autocomplete="off" aria-label="Search products"></form>
+    <form id="sf" role="search"><div class="sbox"><input type="search" id="sq" placeholder="Search by name or brand" autocomplete="off" aria-label="Search products"><button type="button" class="sclr" data-clr="1" aria-label="Clear search" hidden>✕</button></div></form>
     <div id="sres"></div>
   </section>
 
@@ -312,31 +319,52 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 
   /* product picker for a routine step: shelf search with photos */
   var pk = null;
+  function tLabel(t) { return t === 'eye' ? 'Eye cream' : t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
+  function typeOfStep(s) {   // what kind of step it is: saved type, the product's type, or a type word in the name
+    if (s.t) return s.t;
+    var p = s.prod ? prodById(s.prod) : null; if (p && p.t) return p.t;
+    var nm = (s.n || '').toLowerCase(), f = TYPES.filter(function (x) { return x[0] !== 'other' && nm.indexOf(x[0]) !== -1; })[0];
+    return f ? f[0] : '';
+  }
   function pickResHTML() {
-    var q = pk.q.trim().toLowerCase();
-    var l = data.prods.filter(function (p) { return !q || (p.n + ' ' + (p.brand || '') + ' ' + (p.t || '')).toLowerCase().indexOf(q) !== -1; });
+    var q = pk.q.trim().toLowerCase(), byType = pk.type && pk.type !== 'other' && !pk.all;
+    var pool = byType ? data.prods.filter(function (p) { return p.t === pk.type; }) : data.prods;
+    var l = pool.filter(function (p) { return !q || (p.n + ' ' + (p.brand || '') + ' ' + (p.t || '')).toLowerCase().indexOf(q) !== -1; });
+    var more = byType && data.prods.length > pool.length ? '<button class="none-btn" data-pkall="1">Show all my products</button>' : '';
     if (!data.prods.length) return '<p class="empty">Your shelf is empty. Add products first (Products or Search tab).</p>';
-    if (!l.length) return '<p class="empty">No product matches.</p>';
+    if (!l.length) return '<p class="empty">' + (byType ? 'No ' + esc(tLabel(pk.type).toLowerCase()) + (q ? ' matches.' : ' on your shelf yet.<br>Add one in the Products or Search tab.') : 'No product matches.') + '</p>' + more;
     return '<div class="grid">' + l.map(function (p) {
       return '<button class="tile" data-pk="' + p.id + '"><span class="tp" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '<span>' + (p.img ? '' : esc(typeIcon(p.t) + ' ' + p.n)) + '</span></span><b>' + esc(p.n) + '</b><i>' + esc(p.brand || p.t || '') + '</i></button>';
-    }).join('') + '</div>';
+    }).join('') + '</div>' + more;
+  }
+  function sbox(inner) { return '<div class="sbox">' + inner + '<button type="button" class="sclr" data-clr="1" aria-label="Clear search" hidden>✕</button></div>'; }
+  function pickSheet() {   // step 1: what kind of step; step 2: which of my products of that kind
+    var h = '';
+    if (pk.stage === 'type') {
+      h = '<div class="acts" style="margin:0"><button id="pkx">Close</button></div><h2 style="margin:6px 0 4px;font-size:20px">What is this step?</h2><p class="hint" style="margin:0 0 6px">Then you choose which of your products you use for it.</p><div class="typeg">' +
+        TYPES.map(function (x) { return '<button data-pt="' + x[0] + '"><span>' + x[1] + '</span>' + esc(tLabel(x[0])) + '</button>'; }).join('') + '</div>';
+    } else {
+      var lab = pk.type && pk.type !== 'other' ? tLabel(pk.type).toLowerCase() : 'product';
+      h = '<div class="acts" style="margin:0">' + (pk.sid ? '' : '<button id="pkb">‹ Steps</button>') + '<button id="pkx">Close</button></div><h2 style="margin:6px 0 10px;font-size:20px">Choose your ' + esc(lab) + '</h2>' + sbox('<input type="search" id="pkq" placeholder="Search your products" autocomplete="off">') + '<div id="pkres">' + pickResHTML() + '</div><button class="none-btn" data-pk="">No product yet (just the step)</button>';
+    }
+    $('ssheet').innerHTML = h; $('sm').hidden = false;
   }
   function openPick(o) {
-    pk = { part: part, slot: o.slot || '', sid: o.sid || '', q: '' };
-    $('ssheet').innerHTML = '<div class="acts" style="margin:0"><button id="pkx">Close</button></div><h2 style="margin:6px 0 10px;font-size:20px">Choose the product</h2><input type="search" id="pkq" placeholder="Search your products" autocomplete="off"><div id="pkres">' + pickResHTML() + '</div><button class="none-btn" data-pk="">No product (just a step)</button>';
-    $('sm').hidden = false;
+    var s = o.sid ? data[part].filter(function (x) { return x.id === o.sid; })[0] : null;
+    pk = { part: part, slot: o.slot || '', sid: o.sid || '', q: '', all: false, type: s ? typeOfStep(s) : '', stage: s ? 'prod' : 'type' };
+    pickSheet();
   }
   function applyPick(id) {
     var p = id ? prodById(id) : null, s;
     if (pk.sid) {
       s = data[pk.part].filter(function (x) { return x.id === pk.sid; })[0];
-      if (s) { var old = s.prod ? prodById(s.prod) : null; if (p && (!s.n.trim() || (old && s.n === old.n))) s.n = p.n; s.prod = id; s.u = Date.now(); }
+      if (s) { var old = s.prod ? prodById(s.prod) : null; if (p && (!s.n.trim() || (old && s.n === old.n))) s.n = p.n; if (!s.t && pk.type) s.t = pk.type; s.prod = id; s.u = Date.now(); }
     } else {
-      s = { id: uid(), n: p ? p.n : '', prod: id, days: [], u: Date.now() };
+      s = { id: uid(), n: pk.type && pk.type !== 'other' ? tLabel(pk.type) : (p ? p.n : ''), t: pk.type, prod: id, days: [], u: Date.now() };
       if (pk.part === 'pm' && pk.slot) s.slot = pk.slot;
       data[pk.part].push(s);
     }
-    save(); $('sm').hidden = true; var np = pk; pk = null; renderToday();
+    save(); $('sm').hidden = true; pk = null; renderToday();
     if (s && !s.n.trim()) { var inp = document.querySelector('[data-sn="' + s.id + '"]'); if (inp) inp.focus(); }
   }
 
@@ -375,8 +403,9 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       '<div><label for="fu">Use</label><select id="fu" data-f="use">' + opts(USES, flt.use, 'Any') + '</select></div>' +
       '<div><label for="fs">Skin type</label><select id="fs" data-f="skin">' + opts(extra(0, SKIN, 'skin'), flt.skin, 'Any') + '</select></div>' +
       '<div><label for="fc">Concern</label><select id="fc" data-f="conc">' + opts(extra(0, CONC, 'conc'), flt.conc, 'Any') + '</select></div>' +
-      '<div class="wide"><label for="fi">Ingredients (e.g. niacinamide, -alcohol)</label><input type="text" id="fi" data-f="ing" value="' + esc(flt.ing) + '" placeholder="niacinamide, hyaluronic" autocapitalize="off" autocomplete="off"></div></div>';
+      '<div class="wide"><label for="fi">Ingredients (e.g. niacinamide, -alcohol)</label>' + sbox('<input type="text" id="fi" data-f="ing" value="' + esc(flt.ing) + '" placeholder="niacinamide, hyaluronic" autocapitalize="off" autocomplete="off">') + '</div></div>';
     $('filters').innerHTML = h;
+    [].forEach.call($('filters').querySelectorAll('.sbox'), function (bx) { var i = bx.querySelector('input'), c = bx.querySelector('.sclr'); if (i && c) c.hidden = !i.value; });
   }
   function renderProds() { renderFilters(); renderPlist(); }
   function renderPlist() {
@@ -660,6 +689,10 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
       if (!l.length) delete data.log[ds(day)];
       save(); renderToday();
     }
+    else if (b.dataset.clr) { var ci2 = b.parentNode.querySelector('input'); if (ci2) { ci2.value = ''; ci2.dispatchEvent(new Event('input', { bubbles: true })); ci2.focus(); } }
+    else if (b.dataset.pt && pk) { pk.type = b.dataset.pt; pk.stage = 'prod'; pickSheet(); }
+    else if (b.id === 'pkb' && pk) { pk.stage = 'type'; pk.q = ''; pk.all = false; pickSheet(); }
+    else if (b.dataset.pkall && pk) { pk.all = true; $('pkres').innerHTML = pickResHTML(); }
     else if (b.hasAttribute('data-add')) openPick({ slot: part === 'pm' ? b.dataset.add : '' });
     else if (b.dataset.pkopen) openPick({ sid: b.dataset.pkopen });
     else if (b.hasAttribute('data-pk')) { if (pk) applyPick(b.dataset.pk); }
@@ -738,6 +771,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
+    var bx = t.closest ? t.closest('.sbox') : null; if (bx) { var cb = bx.querySelector('.sclr'); if (cb) cb.hidden = !t.value; }   // the ✕ shows only when there is text
     if (t.id === 'fi') { flt.ing = t.value; renderPlist(); return; }
     if (t.id === 'sknote') { var sp1 = skinProf(); sp1.notes = t.value; data.skin = sp1; touchSkin(); return; }
     if (t.id === 'kpn' && skCur) { skCur.note = t.value; var rec = { id: skCur.id, date: skCur.date, at: skCur.at, note: skCur.note, blob: skCur.blob }; phWrite('put', rec, function () {}); return; }
