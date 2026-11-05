@@ -70,6 +70,9 @@ input[type="text"], input[type="date"], input[type="number"], select, textarea {
 select { appearance: none; -webkit-appearance: none; padding-right: 36px; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2394829E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; }
 input::placeholder, textarea::placeholder { color: var(--mute); }
 .seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; background: var(--paper); border-radius: 999px; margin: 6px 0 14px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.plv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--paper); border-radius: 999px; margin: 6px 0 12px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.plv button { padding: 10px 4px; border-radius: 999px; font-weight: 500; font-size: 14px; color: var(--mute); }
+.plv button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .seg button { padding: 10px 4px; border-radius: 999px; font-weight: 500; font-size: 14px; color: var(--mute); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .dnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 2px; }
@@ -338,10 +341,11 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   }
   function pickResHTML() {
     var q = pk.q.trim().toLowerCase(), byType = pk.type && pk.type !== 'other' && !pk.all;
-    var pool = byType ? data.prods.filter(function (p) { return p.t === pk.type; }) : data.prods;
+    var base = data.prods.filter(onShelf);   // wish-list products are not on the shelf yet
+    var pool = byType ? base.filter(function (p) { return p.t === pk.type; }) : base;
     var l = pool.filter(function (p) { return !q || (p.n + ' ' + (p.brand || '') + ' ' + (p.t || '')).toLowerCase().indexOf(q) !== -1; });
-    var more = byType && data.prods.length > pool.length ? '<button class="none-btn" data-pkall="1">Show all my products</button>' : '';
-    if (!data.prods.length) return '<p class="empty">Your shelf is empty. Add products first (Products or Search tab).</p>';
+    var more = byType && base.length > pool.length ? '<button class="none-btn" data-pkall="1">Show all my products</button>' : '';
+    if (!base.length) return '<p class="empty">Your shelf is empty. Add products first (Products or Search tab).</p>';
     if (!l.length) return '<p class="empty">' + (byType ? 'No ' + esc(tLabel(pk.type).toLowerCase()) + (q ? ' matches.' : ' on your shelf yet.<br>Add one in the Products or Search tab.') : 'No product matches.') + '</p>' + more;
     return '<div class="grid">' + l.map(function (p) {
       return '<button class="tile" data-pk="' + p.id + '"><span class="tp" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '<span>' + (p.img ? '' : esc(typeIcon(p.t) + ' ' + p.n)) + '</span></span><b>' + esc(p.n) + '</b><i>' + esc(p.brand || p.t || '') + '</i></button>';
@@ -390,13 +394,16 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   var SKIN = ['Combination', 'Normal', 'Oily', 'Dry', 'Sensitive'];
   var CONC = ['Anti-aging / wrinkles', 'Brightening / dark spots', 'Dryness / hydration', 'Acne / blemishes', 'Redness / soothing', 'Pores / oil control', 'Blackheads', 'Dullness', 'Sun protection'];
   var USES = [['day', 'Day'], ['night', 'Night'], ['both', 'Day & night']];
-  var flt = { t: '', use: '', skin: '', conc: '', ing: '' }, fopen = false;
+  var flt = { t: '', use: '', skin: '', conc: '', ing: '' }, fopen = false, plv = 'shelf';   // plv: shelf | wish | all (a product on the wish list is not on the shelf)
+  function onShelf(p) { return !p.wish; }
   function opts(list, cur, any) { return '<option value="">' + any + '</option>' + list.map(function (x) { var v = Array.isArray(x) ? x[0] : x, l = Array.isArray(x) ? x[1] : x; return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join(''); }
   function extra(list, base, key) {   // the fixed choices plus anything already used on a product
     var o = base.slice(); data.prods.forEach(function (p) { (p[key] || []).forEach(function (v) { if (o.indexOf(v) === -1) o.push(v); }); }); return o;
   }
   function filterOn() { return !!(flt.t || flt.use || flt.skin || flt.conc || flt.ing.trim()); }
   function matches(p) {
+    if (plv === 'shelf' && p.wish) return false;
+    if (plv === 'wish' && !p.wish) return false;
     if (flt.t && p.t !== flt.t) return false;
     if (flt.use && !(p.use === flt.use || p.use === 'both')) return false;
     if (flt.skin && (p.skin || []).indexOf(flt.skin) === -1) return false;
@@ -407,7 +414,9 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     });
   }
   function renderFilters() {
-    var h = '<div class="fbar"><button class="btn ghost" data-fopen="1">' + (fopen ? 'Hide filters' : 'Filters' + (filterOn() ? ' •' : '')) + '</button><span class="cnt" id="fcnt"></span>' + (filterOn() ? '<button class="btn ghost" data-fclear="1">Clear</button>' : '') + '<button class="btn ghost" data-upall="1" title="Refresh the live prices">↻ Prices</button></div>' + (upMsg ? '<p class="hint" id="upmsg">' + esc(upMsg) + '</p>' : '');
+    var nw = data.prods.filter(function (p) { return p.wish; }).length, ns = data.prods.length - nw;
+    var h = '<div class="plv" role="group" aria-label="Show">' + [['shelf', 'My shelf (' + ns + ')'], ['wish', '♡ Wish list (' + nw + ')'], ['all', 'All']].map(function (x) { return '<button data-pl="' + x[0] + '" aria-pressed="' + (plv === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="fbar"><button class="btn ghost" data-fopen="1">' + (fopen ? 'Hide filters' : 'Filters' + (filterOn() ? ' •' : '')) + '</button><span class="cnt" id="fcnt"></span>' + (filterOn() ? '<button class="btn ghost" data-fclear="1">Clear</button>' : '') + '<button class="btn ghost" data-upall="1" title="Refresh the live prices">↻ Prices</button></div>' + (upMsg ? '<p class="hint" id="upmsg">' + esc(upMsg) + '</p>' : '');
     if (fopen) h += '<div class="fpanel">' +
       '<div><label for="ft">Type</label><select id="ft" data-f="t">' + opts(TYPES.map(function (x) { return x[0]; }), flt.t, 'Any') + '</select></div>' +
       '<div><label for="fu">Use</label><select id="fu" data-f="use">' + opts(USES, flt.use, 'Any') + '</select></div>' +
@@ -419,14 +428,14 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   }
   function renderProds() { renderFilters(); renderPlist(); }
   function renderPlist() {
-    var all = data.prods, list = all.filter(matches).sort(function (a, b) { var x = expiry(a), y = expiry(b); return (x ? x.left : 1e9) - (y ? y.left : 1e9); });
+    var all = data.prods.filter(function (p) { return plv === 'all' || ((plv === 'wish') === !!p.wish); }), list = all.filter(matches).sort(function (a, b) { var x = expiry(a), y = expiry(b); return (x ? x.left : 1e9) - (y ? y.left : 1e9); });
     var c = $('fcnt'); if (c) c.textContent = filterOn() ? list.length + ' of ' + all.length : all.length + (all.length === 1 ? ' product' : ' products');
     if (!list.length && all.length) { $('plist').innerHTML = '<div class="empty">No product matches these filters.</div>'; return; }
     $('plist').innerHTML = list.length ? list.map(function (p) {
       var x = expiry(p), b = '';
       if (x) b = x.left < 0 ? '<span class="badge bad">Expired</span>' : x.left <= 30 ? '<span class="badge warn">' + x.left + ' d left</span>' : '<span class="badge ok">until ' + MON[x.date.getMonth()] + ' ' + x.date.getFullYear() + '</span>';
-      return '<button class="pcard" data-pid="' + p.id + '"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span class="pt"><span class="pn">' + esc(p.n) + '</span><span class="ps">' + esc([p.brand, p.t, p.use ? (USES.filter(function (u) { return u[0] === p.use; })[0] || [0, ''])[1] : '', p.price != null && p.price !== '' ? (p.cur === 'USD' ? 'US$' : '€') + Number(p.price).toFixed(2) : ''].filter(Boolean).join(' · ')) + '</span>' + ((p.skin || []).length || (p.conc || []).length ? '<span class="tags">' + esc((p.skin || []).concat(p.conc || []).join(' · ')) + '</span>' : '') + '</span>' + b + '</button>';
-    }).join('') : '<div class="empty">Your shelf is empty.<br>Add the products you use.</div>';
+      return '<button class="pcard" data-pid="' + p.id + '"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span class="pt"><span class="pn">' + esc(p.n) + '</span><span class="ps">' + esc([p.wish ? '♡ Wish list' : (p.stock !== undefined && p.stock !== '' && p.stock !== null ? 'Stock ' + p.stock : ''), p.brand, p.t, p.use ?(USES.filter(function (u) { return u[0] === p.use; })[0] || [0, ''])[1] : '', p.price != null && p.price !== '' ? (p.cur === 'USD' ? 'US$' : '€') + Number(p.price).toFixed(2) : ''].filter(Boolean).join(' · ')) + '</span>' + ((p.skin || []).length || (p.conc || []).length ? '<span class="tags">' + esc((p.skin || []).concat(p.conc || []).join(' · ')) + '</span>' : '') + '</span>' + b + '</button>';
+    }).join('') : (plv === 'wish' ? '<div class="empty">Your wish list is empty.<br>Open a product and turn on ♡ Wish list.</div>' : '<div class="empty">Your shelf is empty.<br>Add the products you use.</div>');
   }
   function render() {
     $('v-today').hidden = view !== 'today'; $('v-prods').hidden = view !== 'prods'; $('v-search').hidden = view !== 'search'; $('v-skin').hidden = view !== 'skin'; $('editb').hidden = view !== 'today';
@@ -514,6 +523,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     { id: 'oliveyoung', n: 'Olive Young Global', cur: 'EUR', fee: null, free: null, days: '', host: 'global.oliveyoung.com', q: G + 'global.oliveyoung.com', note: 'Free shipping over about US$60 in most regions; Portugal is not listed, check at checkout' },
     { id: 'beautybay', n: 'Beauty Bay', cur: 'EUR', fee: 8, free: 145, days: '3–5 working days after dispatch', host: 'beautybay.com', q: G + 'beautybay.com', note: 'Tracked delivery, from the product page with a Portugal address' },
     { id: 'cultbeauty', n: 'Cult Beauty', cur: 'EUR', fee: null, free: null, days: '', host: 'cultbeauty.com', q: G + 'cultbeauty.com', note: 'Says there are no additional charges on delivery for the EU' },
+    { id: 'notino', n: 'Notino', cur: 'EUR', fee: 5.95, free: 45, days: '', host: 'notino.pt', q: G + 'notino.pt', note: 'Free delivery over 45 € on mainland Portugal (Correos Express); 5,95 € below that; islands 29,99 €' },
     { id: 'lookfantastic', n: 'Lookfantastic', cur: 'EUR', fee: null, free: null, days: '', host: 'lookfantastic.pt', q: G + 'lookfantastic.pt', note: 'Check delivery cost at checkout' },
     { id: 'bperfect', n: 'BPerfect (EU)', cur: 'EUR', fee: null, free: null, days: '', host: 'eu.bperfectcosmetics.com', q: G + 'eu.bperfectcosmetics.com', note: 'EU site mentions free shipping over 40 €; not confirmed for Portugal' }
   ];  var fx = { USD: 0.86, at: 0, live: false };
@@ -603,13 +613,15 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   function openProd(id, opt) {
     opt = opt || {};
     var p = id ? prodById(id) : Object.assign({ n: opt.name || '', brand: '', t: '', opened: '', pao: '', notes: '' }, opt.prefill || {});
-    picked = { ing: p.ing || '', code: p.code || '', img: p.img || '', info: p.info || '', skin: (p.skin || []).slice(), conc: (p.conc || []).slice() };
+    picked = { ing: p.ing || '', code: p.code || '', img: p.img || '', info: p.info || '', skin: (p.skin || []).slice(), conc: (p.conc || []).slice(), wish: !!p.wish };
     function chips(key, base) { return '<div class="chipsrow" data-chips="' + key + '">' + extra(0, base, key).map(function (v) { return '<button type="button" data-chip="' + key + '" data-cv="' + esc(v) + '" aria-pressed="' + (picked[key].indexOf(v) !== -1) + '">' + esc(v) + '</button>'; }).join('') + '</div>'; }
     $('psheet').innerHTML = '<h2>' + (opt.title || (id ? 'Edit product' : 'New product')) + '</h2>' + (opt.hint ? '<p class="hint">' + opt.hint + '</p>' : '') +
       '<div class="pimgrow" id="pimg"' + (picked.img ? '' : ' hidden') + '><span class="pi">' + (picked.img ? '<img src="' + esc(picked.img) + '" alt="">' : '') + '</span><button id="pimgx">Remove photo</button></div>' +
       '<div><label for="pn">Name</label><input type="text" id="pn" value="' + esc(p.n) + '" placeholder="e.g. Gentle cleanser"></div>' +
       '<div class="two"><div><label for="pb">Brand</label><input type="text" id="pb" value="' + esc(p.brand) + '"></div><div><label for="pt">Type</label><select id="pt"><option value="">Choose…</option>' + TYPES.map(function (x) { return '<option' + (x[0] === p.t ? ' selected' : '') + '>' + x[0] + '</option>'; }).join('') + '</select></div></div>' +
       '<div><label for="pus">Use</label><select id="pus"><option value="">Not set</option>' + USES.map(function (u) { return '<option value="' + u[0] + '"' + (u[0] === p.use ? ' selected' : '') + '>' + u[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="two"><div><label for="pst">In stock (units)</label><input type="number" id="pst" min="0" max="99" inputmode="numeric" value="' + esc(p.stock === undefined || p.stock === null ? '' : p.stock) + '" placeholder="0"></div><div><label>Wish list</label><div class="chipsrow"><button type="button" data-wish="1" aria-pressed="' + picked.wish + '">♡ I want this</button></div></div></div>' +
+      '<p class="hint">A stock of 1 or more takes the product off the wish list and puts it on your shelf.</p>' +
       '<div><label>Skin type</label>' + chips('skin', SKIN) + '</div>' +
       '<div><label>Skin concerns</label>' + chips('conc', CONC) + '</div>' +
       '<div class="two"><div><label for="po">Opened on</label><input type="date" id="po" value="' + esc(p.opened) + '"></div><div><label for="pp">Good for (months)</label><input type="number" id="pp" min="1" max="60" inputmode="numeric" value="' + esc(p.pao) + '" placeholder="12"></div></div>' +
@@ -677,13 +689,15 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     $('vsheet').innerHTML = '<div class="acts" style="margin:0"><button id="pvx">Close</button></div>' +
       '<div class="dhead"><span class="pst">' + (r.img ? '<img src="' + esc(r.img) + '" alt="" onerror="this.remove()">' : 'No photo') + '</span><div><h2>' + esc(r.t) + '</h2><span class="meta">' + esc([r.brand, r.type].filter(Boolean).join(' · ')) + '</span></div></div>' +
       (r.ing ? '<details open><summary class="hint">Ingredients</summary><p class="ov">' + esc(r.ing) + '</p></details>' : '<p class="hint">No ingredients listed in the database.</p>') +
-      (have ? '<p class="hint">On your shelf already.</p><div class="acts"><button class="pri" id="pvopen" data-id="' + have.id + '">Open</button></div>' : '<div class="acts"><button class="pri" id="pvadd">Add to my products</button></div>');
+      (have ? '<p class="hint">On your shelf already.</p><div class="acts"><button class="pri" id="pvopen" data-id="' + have.id + '">Open</button></div>' : '<div class="acts"><button class="pri" id="pvadd">Add to my products</button><button id="pvwish">♡ Wish list</button></div>');
     $('vm').hidden = false;
   }
-  function addFromResult() {
+  function addFromResult(wish) {
     var r = pvR; if (!r || haveItem(r)) return;
     var p = { id: uid(), n: r.t, brand: r.brand, t: r.type, opened: '', pao: '', notes: '', ing: r.ing, code: r.code, img: r.img, u: Date.now() };
+    if (wish) p.wish = true;
     data.prods.push(p); save(); pvR = null; $('vm').hidden = true; renderSres();
+    if (wish) return;
     openProd(p.id, { title: 'Added to your products', hint: 'Add when you opened it and how many months it lasts.', focus: 'po' });
   }
 
@@ -747,7 +761,10 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     else if (b.dataset.manual) openProd('', { name: sq.trim() });
     else if (b.id === 'pvx') { pvR = null; $('vm').hidden = true; }
     else if (b.id === 'pvadd') addFromResult();
+    else if (b.id === 'pvwish') addFromResult(true);
     else if (b.id === 'pvopen') { var oid = b.dataset.id; pvR = null; $('vm').hidden = true; openProd(oid); }
+    else if (b.dataset.wish) { picked.wish = !picked.wish; b.setAttribute('aria-pressed', String(picked.wish)); }
+    else if (b.dataset.pl) { plv = b.dataset.pl; renderFilters(); renderPlist(); }
     else if (b.dataset.chip) { var arr = picked[b.dataset.chip], v = b.dataset.cv, ix = arr.indexOf(v); if (ix === -1) arr.push(v); else arr.splice(ix, 1); b.setAttribute('aria-pressed', String(ix === -1)); }
     else if (b.dataset.fopen) { fopen = !fopen; renderFilters(); renderPlist(); }
     else if (b.dataset.fclear) { flt = { t: '', use: '', skin: '', conc: '', ing: '' }; renderFilters(); renderPlist(); }
@@ -765,7 +782,10 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       if (!p) { p = { id: uid() }; data.prods.push(p); }
       p.n = n; p.brand = $('pb').value.trim(); p.t = $('pt').value; p.opened = $('po').value; p.pao = $('pp').value ? Number($('pp').value) : ''; p.notes = $('pw').value.trim(); p.ing = $('pig').value.trim(); p.code = picked.code; p.img = picked.img; p.use = $('pus').value; p.skin = picked.skin; p.conc = picked.conc;
       var pr = $('ppr').value; if (pr !== '') { if (Number(pr) !== Number(p.price)) p.priceAt = ds(new Date()); p.price = Number(pr); if (!p.cur) p.cur = '€'; } else { delete p.price; delete p.priceAt; }
-      p.url = $('pu').value.trim(); if (picked.info) p.info = picked.info; p.u = Date.now();
+      p.url = $('pu').value.trim(); if (picked.info) p.info = picked.info;
+      var stv = $('pst').value; if (stv !== '') p.stock = Math.max(0, Math.min(99, Math.round(Number(stv)) || 0)); else delete p.stock;
+      if (p.stock > 0) p.wish = false; else if (picked.wish) p.wish = true; else delete p.wish;
+      p.u = Date.now();
       save(); closeProd(); render();
     }
   });
@@ -829,4 +849,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 6 -->
+<!-- build 8 -->
