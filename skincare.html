@@ -289,7 +289,14 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     if (c.log[dateStr] && slotById(c.log[dateStr])) return slotById(c.log[dateStr]);
     return dateStr === ds(new Date()) ? c.slots[c.idx % c.slots.length] : null;
   }
-  function stepShown(s, slot) { return !data.cyc.slots.length || !s.slot || (slot && s.slot === slot.id); }   // a step with no night belongs to every night
+  function stepShown(s, slot, k) { return (!data.cyc.slots.length || !s.slot || (slot && s.slot === slot.id)) && nthOk(s, slot, k); }   // a step with no night belongs to every night
+  /* a step of one night can come up only every 2nd time that night arrives (s.nth = 2, s.off = 0), or only the other times (s.off = 1).
+     The count is the number of earlier dates on which that night was done. Without a date (warnings, editing) the step always counts. */
+  function nthOk(s, slot, k) {
+    if (!s.nth || s.nth < 2 || !s.slot || !slot || !k) return true;
+    var c = 0, L = data.cyc.log; Object.keys(L).forEach(function (d) { if (L[d] === slot.id && d < k) c++; });
+    return c % s.nth === (s.off || 0);
+  }
   function touchCyc() { data.cyc.u = Date.now(); }
   function save() { try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {} }
   function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -313,7 +320,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     }
     $('plab').parentNode.hidden = false;
     var k = ds(day), done = logFor(k), slot = cyc ? slotFor(k) : null;
-    var paused = [], today = list.filter(function (s) { return s.n.trim() && (cyc ? stepShown(s, slot) : sched(s, day)); }).filter(function (s) { if (pausedStep(s)) { paused.push(s); return false; } return true; });   // actives are hidden around a professional treatment
+    var paused = [], today = list.filter(function (s) { return s.n.trim() && (cyc ? stepShown(s, slot, k) : sched(s, day)); }).filter(function (s) { if (pausedStep(s)) { paused.push(s); return false; } return true; });   // actives are hidden around a professional treatment
     var head = '', foot = '';
     if (cyc) {
       var isToday = k === ds(new Date()), finished = !!data.cyc.log[k], nextIdx = (data.cyc.idx + 1) % data.cyc.slots.length;
@@ -368,7 +375,8 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     var p = s.prod ? prodById(s.prod) : null;
     var days = withDays ? '<div class="days">' + DJ.map(function (j, i) { return '<button data-sd="' + j + '" data-sid="' + s.id + '" aria-pressed="' + (!!s.days && s.days.indexOf(j) !== -1) + '">' + DN[i] + '</button>'; }).join('') + '</div>' : '';
     return '<div class="row"><div class="l1"><button class="pbtn" data-pkopen="' + s.id + '" data-ico="' + typeIcon(p ? p.t : '') + '" aria-label="Change product">' + (p && p.img ? '<img src="' + esc(p.img) + '" alt="">' : typeIcon(p ? p.t : '')) + '</button><input type="text" data-sn="' + s.id + '" value="' + esc(s.n) + '" placeholder="Step name" aria-label="Step name"><button class="del" data-sdel="' + s.id + '" aria-label="Delete step">✕</button></div>' +
-      '<div class="l2"><button class="plink" data-pkopen="' + s.id + '">' + (p ? esc(p.n) + (p.brand ? ' · ' + esc(p.brand) : '') + ' · change' : 'No product · tap to choose') + '</button><span class="mvs"><button class="mvb" data-smv="' + s.id + '" data-d="-1" aria-label="Move earlier">↑</button><button class="mvb" data-smv="' + s.id + '" data-d="1" aria-label="Move later">↓</button></span></div>' + days + '</div>';
+      '<div class="l2"><button class="plink" data-pkopen="' + s.id + '">' + (p ? esc(p.n) + (p.brand ? ' · ' + esc(p.brand) : '') + ' · change' : 'No product · tap to choose') + '</button><span class="mvs"><button class="mvb" data-smv="' + s.id + '" data-d="-1" aria-label="Move earlier">↑</button><button class="mvb" data-smv="' + s.id + '" data-d="1" aria-label="Move later">↓</button></span></div>' +
+      (s.slot && !withDays ? '<select data-nth="' + s.id + '" aria-label="How often this step comes up"><option value=""' + (!s.nth ? ' selected' : '') + '>Every time this night comes up</option><option value="2:0"' + (s.nth === 2 && !s.off ? ' selected' : '') + '>Every 2nd time (1st, 3rd, 5th…)</option><option value="2:1"' + (s.nth === 2 && s.off === 1 ? ' selected' : '') + '>The other times (2nd, 4th, 6th…)</option></select>' : '') + days + '</div>';
   }
   function pmGroupsHTML() {   // night steps grouped by night, each group with its own "add step"
     var groups = [{ id: '', n: 'Every night' }].concat(data.cyc.slots.map(function (c) { return { id: c.id, n: (c.n || 'Night') + ' night' }; }));
@@ -706,6 +714,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     { id: 'beautybay', n: 'Beauty Bay', cur: 'EUR', fee: 8, free: 145, days: '3–5 working days after dispatch', host: 'beautybay.com', q: G + 'beautybay.com', note: 'Tracked delivery, from the product page with a Portugal address' },
     { id: 'cultbeauty', n: 'Cult Beauty', cur: 'EUR', fee: null, free: null, days: '', host: 'cultbeauty.com', q: G + 'cultbeauty.com', note: 'Says there are no additional charges on delivery for the EU' },
     { id: 'notino', n: 'Notino', cur: 'EUR', fee: 5.95, free: 45, days: '', host: 'notino.pt', q: G + 'notino.pt', note: 'Free delivery over 45 € on mainland Portugal (Correos Express); 5,95 € below that; islands 29,99 €' },
+    { id: 'koreanskincare', n: 'Korean Skincare PT', cur: 'EUR', fee: 3.95, free: 40, days: '4 working days', host: 'koreanskincare.pt', q: 'https://koreanskincare.pt/search?q={q}', note: 'Ships from warehouses in Europe; orders before 22:45 leave the same day' },
     { id: 'lookfantastic', n: 'Lookfantastic', cur: 'EUR', fee: null, free: null, days: '', host: 'lookfantastic.pt', q: G + 'lookfantastic.pt', note: 'Check delivery cost at checkout' },
     { id: 'bperfect', n: 'BPerfect (EU)', cur: 'EUR', fee: null, free: null, days: '', host: 'eu.bperfectcosmetics.com', q: G + 'eu.bperfectcosmetics.com', note: 'EU site mentions free shipping over 40 €; not confirmed for Portugal' }
   ];  var fx = { USD: 0.86, at: 0, live: false };
@@ -988,6 +997,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     var t = e.target;
     if (t.id === 'fi') return;   // typed live by the input handler
     if (t.id === 'sktype') { var sp0 = skinProf(); sp0.type = t.value; data.skin = sp0; touchSkin(); return; }
+    if (t.dataset.nth !== undefined) { var ns = data.pm.filter(function (x) { return x.id === t.dataset.nth; })[0]; if (ns) { var pr = t.value.split(':'); if (t.value) { ns.nth = Number(pr[0]); ns.off = Number(pr[1]); } else { delete ns.nth; delete ns.off; } ns.u = Date.now(); save(); renderToday(); } return; }
     if (t.id === 'sktxd') { var sp5 = skinProf(); sp5.tx = Object.assign({}, sp5.tx || {}); if (t.value) sp5.tx.date = t.value; else delete sp5.tx.date; data.skin = sp5; touchSkin(); renderSkin(); return; }
     if (t.id === 'skfile') { var fl = t.files && t.files[0]; if (fl) addPhoto(fl); return; }
     if (t.dataset.cn !== undefined) { renderToday(); return; }   // a night was renamed: refresh the headings
@@ -1047,4 +1057,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 13 -->
+<!-- build 15 -->
