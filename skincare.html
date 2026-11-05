@@ -111,6 +111,7 @@ input::placeholder, textarea::placeholder { color: var(--mute); }
 .badge.ok { color: var(--ok); } .badge.warn { color: var(--warn); } .badge.bad { color: #fff; background: var(--bad); }
 .navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--paper); border-top: 1px solid var(--line); padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
 input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+.cycb { width: 100%; text-align: left; border-radius: 16px; }
 .sbox { position: relative; }
 .sbox input { padding-right: 48px; }
 .sclr { position: absolute; right: 8px; top: 0; bottom: 0; margin: auto 0; width: 32px; height: 32px; border-radius: 50%; background: var(--bg); color: var(--mute); font-size: 14px; display: grid; place-items: center; }
@@ -224,7 +225,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 (function () {
   'use strict';
   var LS = 'skincare-v1';
-  var TYPES = [['cleanser', '🫧'], ['toner', '💧'], ['serum', '🧪'], ['moisturiser', '🧴'], ['sunscreen', '☀️'], ['treatment', '✨'], ['mask', '🎭'], ['eye', '👁️'], ['other', '🧼']];
+  var TYPES = [['cleanser', '🫧'], ['toner', '💧'], ['serum', '🧪'], ['moisturiser', '🧴'], ['sunscreen', '☀️'], ['retinol', '🌙'], ['mask', '🎭'], ['eye', '👁️'], ['other', '🧼']];
   var DN = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];   // Monday first; stored as JS getDay() values below
   var DJ = [1, 2, 3, 4, 5, 6, 0];
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -235,6 +236,10 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   function load() {
     var d = null; try { d = JSON.parse(localStorage.getItem(LS)); } catch (e) {}
     if (!d || typeof d !== 'object') d = {};
+    var moved = false;   // the old "treatment" type is now "retinol"
+    (Array.isArray(d.prods) ? d.prods : []).forEach(function (p) { if (p && p.t === 'treatment') { p.t = 'retinol'; p.u = Date.now(); moved = true; } });
+    (['am', 'pm']).forEach(function (k) { (Array.isArray(d[k]) ? d[k] : []).forEach(function (s) { if (s && s.t === 'treatment') { s.t = 'retinol'; s.u = Date.now(); moved = true; } }); });
+    if (moved) { try { localStorage.setItem(LS, JSON.stringify(d)); } catch (e) {} }
     return { am: Array.isArray(d.am) ? d.am : [], pm: Array.isArray(d.pm) ? d.pm : [], prods: Array.isArray(d.prods) ? d.prods : [], log: d.log && typeof d.log === 'object' ? d.log : {}, cyc: normCyc(d.cyc), skin: d.skin && typeof d.skin === 'object' ? d.skin : null };
   }
   /* the night cycle: nights come one after the other (Hydration, Retinol, …) and move on only when you tap Done.
@@ -269,7 +274,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     $('editb').classList.toggle('on', editing);
     var list = data[part], box = $('steps'), cyc = part === 'pm' && data.cyc.slots.length;
     if (editing) {
-      box.innerHTML = (part === 'pm' ? pmGroupsHTML() + cycleEditHTML() : editHTML(list) + '<button class="addb" data-add="">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'); $('plab').parentNode.hidden = true; return;
+      box.innerHTML = (part === 'pm' ? cycleTopHTML() + pmGroupsHTML() : editHTML(list) + '<button class="addb" data-add="">+ Add step</button><p class="hint">Pick the days a step is used (none selected = every day).</p>'); $('plab').parentNode.hidden = true; return;
     }
     $('plab').parentNode.hidden = false;
     var k = ds(day), done = logFor(k), slot = cyc ? slotFor(k) : null;
@@ -290,6 +295,11 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       var p = s.prod ? prodById(s.prod) : null, on = done.indexOf(s.id) !== -1;
       return '<button class="step" data-sid="' + s.id + '" aria-pressed="' + on + '"><span class="box"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span><span class="nm">' + esc(s.n) + '</span>' + (p ? '<span class="sub">' + esc(p.n) + (p.brand ? ' · ' + esc(p.brand) : '') + '</span>' : '') + '</span></button>';
     }).join('') + foot;
+  }
+  var cycOpen = false;
+  function cycleTopHTML() {   // the night cycle sits behind one button at the top, out of the way
+    var names = data.cyc.slots.map(function (s) { return s.n || 'Night'; }).join(' → ');
+    return '<button class="btn ghost cycb" data-cyct="1" aria-expanded="' + cycOpen + '">🌙 Night cycle' + (names ? ': ' + esc(names) : '') + ' ' + (cycOpen ? '▴' : '▾') + '</button>' + (cycOpen ? cycleEditHTML() : '');
   }
   function cycleEditHTML() {
     var c = data.cyc;
@@ -689,6 +699,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       if (!l.length) delete data.log[ds(day)];
       save(); renderToday();
     }
+    else if (b.dataset.cyct) { cycOpen = !cycOpen; renderToday(); }
     else if (b.dataset.clr) { var ci2 = b.parentNode.querySelector('input'); if (ci2) { ci2.value = ''; ci2.dispatchEvent(new Event('input', { bubbles: true })); ci2.focus(); } }
     else if (b.dataset.pt && pk) { pk.type = b.dataset.pt; pk.stage = 'prod'; pickSheet(); }
     else if (b.id === 'pkb' && pk) { pk.stage = 'type'; pk.q = ''; pk.all = false; pickSheet(); }
@@ -818,4 +829,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 4 -->
+<!-- build 6 -->
