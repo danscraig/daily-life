@@ -44,8 +44,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
 .ibtn[hidden] { display: none; }
 /* gentle motion: a small press */
-button { transition: transform .12s ease, background-color .15s ease; }
-button:active:not(:disabled) { transform: scale(.96); }
+button { transition: transform 140ms var(--ease-out), background-color 150ms ease, color 150ms ease; }
+button:active:not(:disabled) { transform: scale(.97); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
 .ibtn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--paper); box-shadow: 0 8px 20px -12px var(--shadow); color: var(--ink); }
@@ -146,6 +146,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .rate { display: flex; gap: 4px; }
 .rate button { font-size: 30px; line-height: 1; padding: 2px; color: var(--line); }
 .rate button.on { color: var(--accent); }
+
+/* motion polish: strong ease-out curves, press feedback, panels that arrive instead of appearing */
+:root { --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1); }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheetin { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.modal:not([hidden]) { animation: fadein 160ms var(--ease-out); }
+.modal:not([hidden]) .sheet { animation: sheetin 220ms var(--ease-out); }
 </style>
 </head>
 <body>

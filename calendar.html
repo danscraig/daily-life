@@ -52,10 +52,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .pill { min-height: 44px; }
 .vsel { height: 44px; }
 /* gentle motion: a small press, and sheets that slide in */
-button { transition: transform .12s ease, background-color .15s ease; }
-button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.96); }
+button { transition: transform 140ms var(--ease-out), background-color 150ms ease, color 150ms ease; }
+button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.97); }
 @keyframes cpopc { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
-.undo:not([hidden]) { animation: cpopc .2s ease-out; }
+.undo:not([hidden]) { animation: cpopc 200ms var(--ease-out); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .vsel { flex: 1; min-width: 0; height: 40px; padding: 0 40px 0 20px; border: 0; border-radius: 999px; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2394829E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 18px center; box-shadow: 0 10px 26px -18px var(--shadow); color: var(--accent); font: 500 15px var(--font); -webkit-appearance: none; appearance: none; text-align: center; text-align-last: center; }
 .seg { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--paper); border-radius: 999px; box-shadow: 0 10px 26px -18px var(--shadow); }
@@ -165,8 +165,8 @@ body.editing .fab { display: none; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .two > div { min-width: 0; }
 .tog { display: flex; align-items: center; justify-content: space-between; margin: 14px 4px 0; font-weight: 500; }
-.sw { position: relative; width: 50px; height: 30px; border-radius: 999px; background: var(--line); transition: background .15s; }
-.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+.sw { position: relative; width: 50px; height: 30px; border-radius: 999px; background: var(--line); transition: background-color 150ms var(--ease-out); }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform 180ms var(--ease-out); box-shadow: 0 2px 6px rgba(0,0,0,.2); }
 .sw[aria-pressed="true"] { background: var(--accent); }
 .sw[aria-pressed="true"]::after { transform: translateX(20px); }
 .cols { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 4px 0; }
@@ -179,6 +179,16 @@ body.editing .fab { display: none; }
 .undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(101, 64, 111, .6); max-width: calc(100vw - 110px); }
 .undo button { min-height: 40px; padding: 0 18px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; font-size: 14px; }
 .hint { font-size: 12.5px; color: var(--mute); margin: 8px 4px 0; }
+
+/* motion polish: strong ease-out curves, press feedback, panels that arrive instead of appearing */
+:root { --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1); }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheetin { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.modal:not([hidden]) { animation: fadein 160ms var(--ease-out); }
+.modal:not([hidden]) .sheet { animation: sheetin 220ms var(--ease-out); }
+.modal.dock:not([hidden]) { animation: none; }
+@keyframes dockin { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+.modal.dock:not([hidden]) .sheet { animation: dockin 220ms var(--ease-out); }
 </style>
 </head>
 <body>
