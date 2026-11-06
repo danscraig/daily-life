@@ -145,7 +145,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 .phbig { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 16px; background: var(--paper); }
 .filebtn { display: block; text-align: center; padding: 13px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; cursor: pointer; }
 .filebtn input { display: none; }
-.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 640px; margin: 0 auto; }
+.tabbar { display: grid; grid-template-columns: repeat(5, 1fr); max-width: 640px; margin: 0 auto; }
 .tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; font-size: 12px; font-weight: 500; color: var(--mute); }
 .tabbar button[aria-pressed="true"] { color: var(--accent); }
 .tabbar button[aria-pressed="true"]::before { content: ""; position: absolute; top: -1px; left: 50%; width: 36px; height: 3px; margin-left: -18px; border-radius: 0 0 3px 3px; background: var(--accent); }
@@ -200,6 +200,17 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 .wnd .wn { margin-top: 6px; }
 .chipscol { flex-direction: column; align-items: stretch; }
 .chipscol button { text-align: left; border-radius: 14px; }
+.ipair { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.ipair button.ilnk { text-align: left; font-weight: 600; font-size: 14px; color: var(--ink); background: var(--bg); border-radius: 12px; padding: 6px 10px; }
+.ipair .pl { color: var(--mute); }
+.ihead { margin: 16px 4px 6px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+.ilist { display: flex; flex-direction: column; gap: 8px; }
+.irow .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.irow .badge { flex: none; white-space: nowrap; }
+.iuse { background: var(--paper); border-radius: 20px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.iuse summary { cursor: pointer; padding: 12px 14px; font-weight: 600; font-size: 15px; list-style: none; }
+.iuse summary small { display: block; font-weight: 400; font-size: 12.5px; color: var(--mute); margin-top: 2px; }
+.iuse ol { margin: 0; padding: 0 14px 12px 34px; display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
 .sim { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .sim .pcard { padding: 10px 12px; box-shadow: none; border: 1px solid var(--line); }
 .sim .pcard .badge { flex: none; white-space: nowrap; }
@@ -241,6 +252,8 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   </section>
 
   <section id="v-skin" hidden></section>
+
+  <section id="v-info" hidden></section>
 </div>
 
 <div class="modal" id="pm" hidden><div class="sheet" id="psheet"></div></div>
@@ -254,6 +267,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   <button data-v="prods" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg>Products</button>
   <button data-v="search" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search</button>
   <button data-v="skin" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r=".6"/><circle cx="15" cy="10" r=".6"/><path d="M9 15c1.7 1.3 4.3 1.3 6 0"/></svg>Skin</button>
+  <button data-v="info" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".7"/></svg>Info</button>
 </div></nav>
 
 <script>
@@ -617,9 +631,106 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     }).join('') : (plv === 'wish' ? '<div class="empty">Your wish list is empty.<br>Open a product and turn on ♡ Wish list.</div>' : '<div class="empty">Your shelf is empty.<br>Add the products you use.</div>');
   }
   function render() {
-    $('v-today').hidden = view !== 'today'; $('v-prods').hidden = view !== 'prods'; $('v-search').hidden = view !== 'search'; $('v-skin').hidden = view !== 'skin'; $('editb').hidden = view !== 'today';
+    $('v-today').hidden = view !== 'today'; $('v-prods').hidden = view !== 'prods'; $('v-search').hidden = view !== 'search'; $('v-skin').hidden = view !== 'skin'; $('v-info').hidden = view !== 'info'; $('editb').hidden = view !== 'today';
     [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
-    if (view === 'today') renderToday(); else if (view === 'prods') renderProds(); else if (view === 'skin') renderSkin(); else renderSres();
+    if (view === 'today') renderToday(); else if (view === 'prods') renderProds(); else if (view === 'skin') renderSkin(); else if (view === 'info') renderInfo(); else renderSres();
+  }
+
+  /* info tab: dupes, products that should not be used together, and how to apply each product. Worked out from the ingredient lists and the routine. General guidance, not medical advice. */
+  var iv = 'dupes';
+  function routineGroups() {
+    var g = [{ n: 'Morning', ids: data.am.filter(function (s) { return s.n.trim() && s.prod; }).map(function (s) { return s.prod; }) }];
+    (data.cyc.slots.length ? data.cyc.slots : [null]).forEach(function (sl) { g.push({ n: sl ? (sl.n || 'Night') + ' night' : 'Night', ids: data.pm.filter(function (s) { return s.n.trim() && s.prod && (!sl || stepShown(s, sl)); }).map(function (s) { return s.prod; }) }); });
+    return g;
+  }
+  function pairName(p) { return '<button type="button" class="ilnk" data-pid="' + p.id + '">' + (p.wish ? '♡ ' : '') + esc(shortName(p)) + '</button>'; }
+  function infoDupes() {
+    var ps = data.prods.filter(function (p) { return p.ing && p.ing.trim(); }), ms = ps.map(ingModel), out = [];
+    for (var i = 0; i < ps.length; i++) for (var j = i + 1; j < ps.length; j++) { var r = simScore(ms[i], ms[j]); if (r.s >= 0.25) out.push({ a: ps[i], b: ps[j], s: r.s, sh: r.shared }); }
+    out.sort(function (x, y) { return y.s - x.s; });
+    var strong = out.filter(function (o) { return o.s >= 0.4; }), soft = out.filter(function (o) { return o.s < 0.4; });
+    function row(o) { return '<div class="row irow"><div class="top"><div class="ipair">' + pairName(o.a) + '<span class="pl">≈</span>' + pairName(o.b) + '</div><span class="badge ' + (o.s >= 0.6 ? 'bad' : o.s >= 0.4 ? 'warn' : 'ok') + '">' + simLabel(o.s) + ' · ' + Math.round(o.s * 100) + '%</span></div><p class="hint" style="margin:0">In common: ' + esc(o.sh.slice(0, 6).join(', ') || 'a few ingredients') + '</p></div>'; }
+    var noIng = data.prods.length - ps.length;
+    return '<p class="hint">Products whose ingredient lists are alike, so you may not need both. Strength is not on the label: check before treating two as the same.</p>' +
+      (strong.length ? '<div class="ilist">' + strong.map(row).join('') + '</div>' : '<div class="empty">No likely dupes on your list.</div>') +
+      (soft.length ? '<details style="margin-top:10px"><summary class="hint">Somewhat similar (' + soft.length + ')</summary><div class="ilist" style="margin-top:6px">' + soft.map(row).join('') + '</div></details>' : '') +
+      (noIng ? '<p class="hint">' + noIng + ' product' + (noIng === 1 ? ' has' : 's have') + ' no ingredient list and could not be compared.</p>' : '');
+  }
+  function pairIssue(a, b) {   // [level, label] for the strongest clash between two products, or null
+    var x = conf(a), y = conf(b);
+    if ((x.bpo && y.ret) || (y.bpo && x.ret)) return ['avoid', 'Benzoyl peroxide + retinoid'];
+    if ((x.ret && y.strong) || (y.ret && x.strong)) return ['caution', 'Retinoid + exfoliating acid'];
+    if (x.ret && y.ret) return ['caution', 'Two retinoids'];
+    if (x.strong && y.strong) return ['caution', 'Two exfoliating acids'];
+    if ((x.vitc && (y.ret || y.strong)) || (y.vitc && (x.ret || x.strong))) return ['caution', 'Pure vitamin C + retinoid or acid'];
+    return null;
+  }
+  function infoMix() {
+    var ps = data.prods, G = routineGroups(), out = [];
+    for (var i = 0; i < ps.length; i++) for (var j = i + 1; j < ps.length; j++) {
+      var iss = pairIssue(ps[i], ps[j]); if (!iss) continue;
+      var tog = G.filter(function (g) { return g.ids.indexOf(ps[i].id) !== -1 && g.ids.indexOf(ps[j].id) !== -1; }).map(function (g) { return g.n; });
+      out.push({ a: ps[i], b: ps[j], iss: iss, tog: tog });
+    }
+    var bad = out.filter(function (o) { return o.tog.length; }), apart = out.filter(function (o) { return !o.tog.length; });
+    function row(o) {
+      var lv = o.iss[0];
+      return '<div class="row irow"><div class="top"><div class="ipair">' + pairName(o.a) + '<span class="pl">+</span>' + pairName(o.b) + '</div><span class="badge ' + (o.tog.length ? (lv === 'avoid' ? 'bad' : 'warn') : 'ok') + '">' + (o.tog.length ? (lv === 'avoid' ? '⛔' : '⚠️') : '✓') + '</span></div><p class="hint" style="margin:0"><b>' + esc(o.iss[1]) + '.</b> ' + (o.tog.length ? 'Together in: ' + esc(o.tog.join(', ')) + '.' : 'Never in the same routine: fine as it is.') + '</p></div>';
+    }
+    var rules = [['Retinoid (retinol, retinal) + exfoliating acid (glycolic, lactic, salicylic…)', 'Different nights. Both together can over-dry and irritate.'], ['Two exfoliating acids', 'One per night. Easy to over-exfoliate.'], ['Two retinoids', 'One at a time.'], ['Benzoyl peroxide + retinoid', 'Keep them apart (different times of day).'], ['Pure vitamin C (L-ascorbic acid) + retinoid or acid', 'Vitamin C in the morning, the other at night.'], ['Retinoid or acid without sunscreen the next day', 'Always finish the morning with sunscreen.'], ['Copper peptides + strong acids or pure vitamin C', 'Better on different routines.']];
+    return '<p class="hint">Pairs of your products that clash, and whether your routine really puts them together. Only the first group needs action.</p>' +
+      '<h3 class="ihead">Used together in your routine</h3>' + (bad.length ? '<div class="ilist">' + bad.map(row).join('') + '</div>' : '<div class="wn ok">✓ None of your routines puts clashing products together.</div>') +
+      (apart.length ? '<details style="margin-top:10px"><summary class="hint">Clashing pairs you keep apart (' + apart.length + ')</summary><div class="ilist" style="margin-top:6px">' + apart.map(row).join('') + '</div></details>' : '') +
+      '<h3 class="ihead">The general rules</h3><div class="row"><ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px">' + rules.map(function (r) { return '<li style="font-size:14px"><b>' + esc(r[0]) + '</b><br><span class="hint" style="margin:0">' + esc(r[1]) + '</span></li>'; }).join('') + '</ul></div>' +
+      '<p class="hint">Fine together: niacinamide with almost anything, hyaluronic acid with anything, ceramides and centella with anything. When you are unsure, add one new active at a time and patch-test it.</p>';
+  }
+  function howTo(p) {
+    var c = conf(p), t = p.t, nm = (p.n + ' ' + (p.brand || '')).toLowerCase(), ing = String(p.ing || '').toLowerCase(), L;
+    var isRet = c.ret && !/bakuchiol/.test(nm);
+    if (t === 'cleanser') {
+      if (/cleansing oil|oil cleanser|cleansing balm/.test(nm)) L = ['Use 2-3 pumps on DRY skin with dry hands.', 'Massage for 1 minute to melt sunscreen and makeup.', 'Add a little water until it turns milky, then rinse well.', 'Follow with a water-based cleanser (double cleanse). Evening only.'];
+      else if (/micellar/.test(nm)) L = ['Soak a cotton pad and hold it on the eye for 10 seconds.', 'Wipe gently, do not rub.', 'Rinse or follow with a cleanser if your skin is sensitive.'];
+      else if (/gommage|peeling|scrub/.test(nm)) L = ['Apply on dry skin, away from the eyes.', 'Rub in light circles until it rolls into small flakes, then rinse.', 'At most 1-2 times a week, never on a retinoid or acid night.'];
+      else L = ['Wet your face with lukewarm water.', 'Massage a small amount for 30-60 seconds.', 'Rinse well and pat dry, do not rub.'];
+    } else if (t === 'toner') {
+      L = c.strong ? ['Exfoliating toner: evening, on clean dry skin.', 'Apply with a cotton pad or clean hands, avoid the eye area.', 'Start 2 times a week, build up only if skin stays calm.', 'Not on the same night as a retinoid. Sunscreen the next morning.'] : ['On clean, slightly damp skin.', 'Pat in with clean hands (or a cotton pad), do not rub.', 'Layer a second time if the skin feels tight.'];
+    } else if (t === 'sunscreen') {
+      L = ['Last step of the morning, after moisturiser.', 'Use about two finger-lengths for face and neck (about a quarter teaspoon for the face).', 'Apply 15 minutes before going out; reapply every 2 hours in direct sun.', 'Every day, also when cloudy or indoors near a window.'];
+    } else if (t === 'eye') {
+      L = ['Rice-grain amount for both eyes.', 'Dab with your ring finger along the bone under the eye, never on the lash line.', 'After serums, before the moisturiser.'];
+      if (isRet) L.push('Contains a retinoid: night only, and not on the same night as another retinoid or an acid. Sunscreen the next morning.');
+    } else if (isRet) {
+      L = ['Night only, on dry skin: wait 1-2 minutes after cleansing or toner.', 'A pea-sized amount for the whole face; avoid eyelids and the corners of nose and mouth.', 'Start 2 times a week and build up slowly.', 'Moisturiser on top, or before it ("sandwich") if skin is sensitive.', 'No acids on the same night. Sunscreen every morning.'];
+    } else if (t === 'mask') {
+      L = /clay|mud|stick/.test(nm) ? ['Clean, dry skin: a thin even layer (the T-zone is enough).', 'Leave about 10 minutes and rinse before it cracks dry.', '1-2 times a week, not on a retinoid or acid night.'] : ['After cleansing, a thin even layer.', 'Leave it on for the time printed on the pack (usually 10-20 minutes).', '1-3 times a week.'];
+    } else if (t === 'moisturiser') {
+      L = ['After serums: the last step at night, and before sunscreen in the morning.', 'A pea- to almond-sized amount; warm between your palms and press in, include the neck.', 'It should feel comfortable, not greasy: use less if it pills.'];
+    } else if (t === 'serum') {
+      if (c.vitc) L = ['Morning, on clean dry skin, before moisturiser and sunscreen.', 'Not at the same time as retinoids or acids.', 'Keep it closed and away from light: it oxidises.'];
+      else if (/azelaic/.test(ing.split(',').slice(0, 12).join(',')) || /azelaic/.test(nm)) L = ['Morning or night: a few drops over the face after toner.', 'A little tingling at first is normal. Start every other day if skin is sensitive.', 'Let it sink in, then moisturiser (and sunscreen in the morning).'];
+      else if (/niacinamide/.test(ing.split(',').slice(0, 8).join(','))) L = ['2-3 drops, pressed in on damp skin after toner.', 'Works with almost everything. If you flush, use less.'];
+      else L = ['2-3 drops (or one pump) on clean skin after toner.', 'Press in with your palms, do not rub.', 'Thinner textures first, thicker ones last.'];
+    } else if (/lip/.test(nm)) L = ['A thick layer on clean lips as the last step at night.', 'Wipe off any extra in the morning.'];
+    else if (/mist/.test(nm)) L = ['Close your eyes and spray from about 20 cm away.', 'Pat in. It adds water but does not replace a moisturiser.'];
+    else L = ['Follow the instructions on the pack.', 'Test a small spot on the jaw for 24 hours before using it on the whole face.'];
+    return L;
+  }
+  function infoUse() {
+    var G = routineGroups(), order = TYPES.map(function (x) { return x[0]; }), ps = data.prods.filter(function (p) { return !p.wish; }), h = '';
+    var label = { cleanser: 'Cleansers', toner: 'Toners', serum: 'Serums', moisturiser: 'Moisturisers', sunscreen: 'Sunscreens', retinol: 'Retinoids', mask: 'Masks', eye: 'Eye care', other: 'Other' };
+    order.forEach(function (t) {
+      var list = ps.filter(function (p) { return (order.indexOf(p.t) === -1 ? 'other' : p.t) === t; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+      if (!list.length) return;
+      h += '<h3 class="ihead">' + label[t] + '</h3><div class="ilist">' + list.map(function (p) {
+        var where = G.filter(function (g) { return g.ids.indexOf(p.id) !== -1; }).map(function (g) { return g.n; });
+        return '<details class="iuse"><summary>' + esc(shortName(p)) + '<small>' + esc((p.brand || '') + (p.brand ? ' · ' : '') + (where.length ? where.join(' · ') : 'Not in a routine yet')) + '</small></summary><ol>' + howTo(p).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ol></details>';
+      }).join('') + '</div>';
+    });
+    return '<p class="hint">Order for any routine: cleanser, toner, essence or serum (thin to thick), eye cream, treatment, moisturiser, and sunscreen as the last step in the morning. Tap a product for how to apply it.</p>' + (h || '<div class="empty">No products on your shelf yet.</div>') + '<p class="hint">General guidance. If the pack says something different, follow the pack.</p>';
+  }
+  function renderInfo() {
+    var body = iv === 'mix' ? infoMix() : iv === 'use' ? infoUse() : infoDupes();
+    $('v-info').innerHTML = '<div class="plv" role="group" aria-label="Info">' + [['dupes', 'Dupes'], ['mix', 'Don\'t mix'], ['use', 'How to apply']].map(function (x) { return '<button data-iv="' + x[0] + '" aria-pressed="' + (iv === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' + body;
   }
 
   /* skin tab: the skin profile (synced, short text) and face photos (this device only, in IndexedDB) */
@@ -896,6 +1007,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
     if (b.dataset.v) { view = b.dataset.v; render(); }
+    else if (b.dataset.iv) { iv = b.dataset.iv; renderInfo(); }
     else if (b.dataset.p && b.closest('.seg')) { part = b.dataset.p; render(); }
     else if (b.id === 'prev' || b.id === 'next') { day.setDate(day.getDate() + (b.id === 'next' ? 1 : -1)); render(); }
     else if (b.id === 'editb') { editing = !editing; render(); }
@@ -1032,6 +1144,20 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('cm').hidden) $('cm').hidden = true; else if (!$('pm').hidden) closeProd(); else if (!$('vm').hidden) { pvR = null; $('vm').hidden = true; } } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); render(); } });
   try { var rawNow = JSON.parse(localStorage.getItem(LS)); if (!rawNow || !rawNow.cyc) save(); } catch (e) {}   // store the night cycle once, so the home card can show tonight's night
+  /* once the morning routine is all ticked, opening the app again lands on the night routine (and a new day starts on the morning) */
+  var openK = ds(new Date());
+  function amDone() {
+    var d0 = new Date(); d0.setHours(12, 0, 0, 0); var l = data.log[ds(d0)] || [];
+    var st = data.am.filter(function (s) { return s.n.trim() && sched(s, d0) && !pausedStep(s); });
+    return st.length > 0 && st.every(function (s) { return l.indexOf(s.id) !== -1; });
+  }
+  function autoNight() { if (!editing && ds(day) === ds(new Date()) && amDone()) part = 'pm'; }
+  autoNight();
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    var k = ds(new Date()); if (k !== openK) { openK = k; day = new Date(); day.setHours(12, 0, 0, 0); part = 'am'; }
+    if (ds(day) === k && !editing) { var was = part; autoNight(); if (part !== was && view === 'today') render(); }
+  });
   render();
   /* import from a shop page: skincare.html#import=<JSON>  (name, brand, type, img, price, cur, url, info, ing) opens the form filled in */
   function runImport() {
@@ -1057,4 +1183,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 15 -->
+<!-- build 16 -->
