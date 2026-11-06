@@ -260,6 +260,8 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   <section id="v-skin" hidden></section>
 
   <section id="v-info" hidden></section>
+
+  <section id="v-add" hidden></section>
 </div>
 
 <div class="modal" id="pm" hidden><div class="sheet" id="psheet"></div></div>
@@ -271,7 +273,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <nav class="navbar" aria-label="Sections"><div class="tabbar">
   <button data-v="today" aria-pressed="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Routine</button>
   <button data-v="prods" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg>Products</button>
-  <button data-v="search" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search</button>
+  <button data-v="add" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Add</button>
   <button data-v="skin" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r=".6"/><circle cx="15" cy="10" r=".6"/><path d="M9 15c1.7 1.3 4.3 1.3 6 0"/></svg>Skin</button>
   <button data-v="info" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".7"/></svg>Info</button>
 </div></nav>
@@ -664,9 +666,29 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     }).join('') : (plv === 'wish' ? '<div class="empty">Your wish list is empty.<br>Open a product and turn on ♡ Wish list.</div>' : '<div class="empty">Your shelf is empty.<br>Add the products you use.</div>');
   }
   function render() {
-    $('v-today').hidden = view !== 'today'; $('v-prods').hidden = view !== 'prods'; $('v-search').hidden = view !== 'search'; $('v-skin').hidden = view !== 'skin'; $('v-info').hidden = view !== 'info'; $('editb').hidden = view !== 'today';
+    $('v-today').hidden = view !== 'today'; $('v-prods').hidden = view !== 'prods'; $('v-search').hidden = view !== 'search'; $('v-skin').hidden = view !== 'skin'; $('v-info').hidden = view !== 'info'; $('v-add').hidden = view !== 'add'; $('editb').hidden = view !== 'today';
     [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
-    if (view === 'today') renderToday(); else if (view === 'prods') renderProds(); else if (view === 'skin') renderSkin(); else if (view === 'info') renderInfo(); else renderSres();
+    if (view === 'today') renderToday(); else if (view === 'prods') renderProds(); else if (view === 'skin') renderSkin(); else if (view === 'info') renderInfo(); else if (view === 'add') renderAdd(); else renderSres();
+  }
+
+  /* add tab: she pastes a product link; it waits in skin.links (synced with the skin profile) until it is added to the products */
+  var linkMsg = '';
+  function sendLink() {
+    var inp = $('lnk'), v = inp ? inp.value.trim() : '';
+    if (!/^https?:\/\/\S+$/i.test(v)) { linkMsg = 'Paste a full link, starting with https://'; renderAdd(); return; }
+    var sk = data.skin = skinProf(); sk.links = sk.links || [];
+    if (sk.links.some(function (x) { return x.url === v; })) { linkMsg = 'That link is already waiting.'; renderAdd(); return; }
+    sk.links.push({ id: uid(), url: v, at: ds(new Date()) }); touchSkin(); linkMsg = 'Link saved. It will be added to your products.'; renderAdd();
+  }
+  function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
+  function renderAdd() {
+    var L = skinProf().links || [];
+    $('v-add').innerHTML = '<div class="sk"><h3>Add a product</h3><p class="hint" style="margin:0">Paste the link of the product page (Stylevana, Notino, Koreanbeauty…). It waits here until it is added to your shelf with its photo, price and ingredients.</p>' +
+      '<form id="lf" style="display:flex;gap:8px"><input type="url" id="lnk" placeholder="https://…" autocapitalize="off" autocomplete="off" aria-label="Product link" style="flex:1"><button type="button" class="btn" data-lsend="1" style="flex:none;width:48px;font-size:22px" aria-label="Send link">+</button></form>' +
+      (linkMsg ? '<p class="hint" style="margin:0">' + esc(linkMsg) + '</p>' : '') + '</div>' +
+      (L.length ? '<h3 class="ihead">Waiting to be added (' + L.length + ')</h3><div class="ilist">' + L.map(function (x) { return '<div class="row irow"><div class="top"><div><b style="font-size:14px">' + esc(hostOf(x.url)) + '</b><p class="hint" style="margin:0;word-break:break-all">' + esc(x.url.length > 90 ? x.url.slice(0, 90) + '…' : x.url) + '</p></div><button class="del" data-ldel="' + x.id + '" aria-label="Remove link">✕</button></div></div>'; }).join('') + '</div>' : '') +
+      '<button class="addb" data-lmanual="1" style="margin-top:12px">Fill in a product by hand</button>';
+    var f = $('lf'); if (f) f.onsubmit = function (e) { e.preventDefault(); sendLink(); };
   }
 
   /* info tab: dupes, products that should not be used together, and how to apply each product. Worked out from the ingredient lists and the routine. General guidance, not medical advice. */
@@ -1048,6 +1070,9 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     var b = e.target.closest('button'); if (!b) return;
     if (b.dataset.v) { view = b.dataset.v; render(); }
     else if (b.dataset.iv) { iv = b.dataset.iv; renderInfo(); }
+    else if (b.dataset.lsend) { sendLink(); }
+    else if (b.dataset.ldel) { var sk = data.skin = skinProf(); sk.links = (sk.links || []).filter(function (x) { return x.id !== b.dataset.ldel; }); touchSkin(); renderAdd(); }
+    else if (b.dataset.lmanual) { openProd(''); }
     else if (b.dataset.p && b.closest('.seg')) { part = b.dataset.p; render(); }
     else if (b.id === 'prev' || b.id === 'next') { day.setDate(day.getDate() + (b.id === 'next' ? 1 : -1)); render(); }
     else if (b.id === 'editb') { editing = !editing; render(); }
@@ -1223,4 +1248,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 18 -->
+<!-- build 19 -->
