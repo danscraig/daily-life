@@ -511,11 +511,38 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     return (confCache[key] = { ret: L.some(function (x) { return RET_RX.test(x); }), strong: !rinse && head.some(function (x) { return STRONG_AC.test(x); }), mild: !rinse && head.some(function (x) { return MILD_AC.test(x); }), vitc: head.some(function (x) { return /^(l )?ascorbic acid$/.test(x); }), bpo: L.some(function (x) { return /benzoyl peroxide/.test(x); }) });
   }
   function safeFlags() { var s = skinProf().safe; return s && typeof s === 'object' ? s : {}; }
-  function txWindow() {
-    var t = skinProf().tx; if (!t || !t.date) return null;
-    var c = new Date(t.date + 'T12:00:00'); if (isNaN(c)) return null;
-    var n = t.rx ? 7 : 3, a = new Date(c), b = new Date(c); a.setDate(a.getDate() - n); b.setDate(b.getDate() + n);
-    return { from: a, to: b, n: n, at: c };
+  /* treatments to pause around: the date typed in the Skin tab, plus every calendar event called "Laser" (read from the calendar's own storage) */
+  var EKEY = 'daily-life-events-v1';
+  function laserEvents() {
+    try { var r = JSON.parse(localStorage.getItem(EKEY)); return (r && Array.isArray(r.items) ? r.items : []).filter(function (e) { return e && e.d && /\blaser\b/i.test(String(e.t || '')); }); } catch (e) { return []; }
+  }
+  function evOccurs(e, k) {   // same rules as calendar.html: does this event fall on that date (YYYY-MM-DD)?
+    if (k < e.d) return false;
+    if (e.un && k > e.un) return false;
+    if (e.ex && e.ex.indexOf(k) !== -1) return false;
+    if (!e.rp) return e.un ? true : k === e.d;
+    var pa = e.d.split('-'), pb = k.split('-'), a = new Date(+pa[0], +pa[1] - 1, +pa[2]), b = new Date(+pb[0], +pb[1] - 1, +pb[2]);
+    var same = b.getDate() === Math.min(a.getDate(), new Date(b.getFullYear(), b.getMonth() + 1, 0).getDate()), gap = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth();
+    if (e.rp === 'd') return true;
+    if (e.rp === 'wd') return b.getDay() >= 1 && b.getDay() <= 5;
+    if (e.rp === 'w') return a.getDay() === b.getDay();
+    if (e.rp === 'm') return same;
+    if (e.rp === '6m') return same && gap % 6 === 0;
+    if (e.rp === 'y') return same && gap % 12 === 0;
+    return false;
+  }
+  function txWindow() {   // the pause window that covers the viewed day, else the next one coming, else the latest one past
+    var t = skinProf().tx || {}, n = t.rx ? 7 : 3, dates = [];
+    if (t.date) dates.push({ d: t.date, src: 'treatment' });
+    var L = laserEvents();
+    if (L.length) for (var i = -8; i <= 120; i++) { var dd = new Date(day); dd.setDate(dd.getDate() + i); var k = ds(dd); if (L.some(function (e) { return evOccurs(e, k); })) dates.push({ d: k, src: 'Laser' }); }
+    var ws = dates.map(function (x) {
+      var c = new Date(x.d + 'T12:00:00'); if (isNaN(c)) return null;
+      var a = new Date(c), b = new Date(c); a.setDate(a.getDate() - n); b.setDate(b.getDate() + n);
+      return { from: a, to: b, n: n, at: c, src: x.src };
+    }).filter(Boolean).sort(function (p, q) { return p.at - q.at; });
+    if (!ws.length) return null;
+    return ws.filter(function (w) { return day >= w.from && day <= w.to; })[0] || ws.filter(function (w) { return w.at >= day; })[0] || ws[ws.length - 1];
   }
   function pausedStep(s) {
     var w = txWindow(); if (!w || day < w.from || day > w.to) return false;
@@ -551,7 +578,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   function amSpfExists() { return data.am.some(function (s) { return s.n.trim() && isSpfStep(s); }); }
   function todayWarnHTML(today, paused, am) {
     var h = '', w = txWindow();
-    if (paused.length && w) { var back = new Date(w.to); back.setDate(back.getDate() + 1); h += '<div class="wn"><b>⏸ Paused around your treatment</b><ul><li>' + esc(paused.map(function (s) { return s.n; }).join(', ')) + ' hidden until ' + back.getDate() + ' ' + MON[back.getMonth()] + ' (treatment on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + ').</li></ul></div>'; }
+    if (paused.length && w) { var back = new Date(w.to); back.setDate(back.getDate() + 1); h += '<div class="wn"><b>⏸ Paused around your treatment</b><ul><li>' + esc(paused.map(function (s) { return s.n; }).join(', ')) + ' hidden until ' + back.getDate() + ' ' + MON[back.getMonth()] + ' (' + (w.src === 'Laser' ? 'laser' : 'treatment') + ' on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + ').</li></ul></div>'; }
     var W = routineWarnings(today, am, amSpfExists());
     return h + (W.length ? '<details class="wnd"><summary>⚠️ ' + W.length + ' heads-up' + (W.length === 1 ? '' : 's') + ' for this routine</summary>' + warnListHTML(W, 'Check these') + '</details>' : '');
   }
@@ -577,7 +604,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     if ((c.ret || c.strong || c.mild) && f.iso) W.push({ lv: 'avoid', t: 'Contains a retinoid or acid. You marked isotretinoin in the last 6 months: ask your prescriber first.' });
     if ((c.ret || c.strong || c.mild) && f.photo) W.push({ lv: 'caution', t: 'Makes skin more sun-sensitive, and so does your medication: strict sunscreen.' });
     if ((c.ret || c.strong || c.mild || c.vitc) && f.barrier) W.push({ lv: 'caution', t: 'Your barrier is marked as damaged: pause this until it recovers.' });
-    if ((c.ret || c.strong || c.mild) && w && day >= w.from && day <= w.to) W.push({ lv: 'info', t: 'Paused around your treatment on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + '.' });
+    if ((c.ret || c.strong || c.mild) && w && day >= w.from && day <= w.to) W.push({ lv: 'info', t: 'Paused around your ' + (w.src === 'Laser' ? 'laser' : 'treatment') + ' on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + '.' });
     var tags = []; if (c.ret) tags.push('retinoid'); if (c.strong) tags.push('exfoliating acid'); if (c.mild) tags.push('mild acid (PHA)'); if (c.vitc) tags.push('pure vitamin C'); if (c.bpo) tags.push('benzoyl peroxide');
     return (tags.length ? '<p class="hint" style="margin:0">Strong actives in this product: <b>' + esc(tags.join(', ')) + '</b>.</p>' : '') + (W.length ? warnListHTML(W, 'For your profile') : '');
   }
@@ -782,10 +809,10 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   var SAFE_Q = [['preg', 'Pregnant or breastfeeding'], ['iso', 'Isotretinoin in the last 6 months'], ['photo', 'Medication that makes skin sun-sensitive (e.g. doxycycline)'], ['barrier', 'Skin barrier damaged right now (sunburn, active breakout, broken skin)'], ['lesion', 'Cold sore or open lesion']];
   function skinSafetyHTML() {
     var f = safeFlags(), t = skinProf().tx || {}, w = txWindow(), tw = '';
-    if (w) { var a = new Date(w.from), b = new Date(w.to); tw = '<p class="hint" style="margin:0">Retinoids and exfoliating acids are paused from <b>' + a.getDate() + ' ' + MON[a.getMonth()] + '</b> to <b>' + b.getDate() + ' ' + MON[b.getMonth()] + '</b> (' + w.n + ' days before and after).</p>'; }
+    if (w) { var a = new Date(w.from), b = new Date(w.to); tw = '<p class="hint" style="margin:0">Retinoids and exfoliating acids are paused from <b>' + a.getDate() + ' ' + MON[a.getMonth()] + '</b> to <b>' + b.getDate() + ' ' + MON[b.getMonth()] + '</b> (' + w.n + ' days before and after ' + (w.src === 'Laser' ? 'the Laser in your calendar' : 'your treatment') + ' on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + ').</p>'; }
     return '<div class="sk"><h3>Safety check</h3><p class="hint" style="margin:0">Tell the app what applies to you. It will warn you when a product in your routine is a problem. General guidance, not medical advice: ask your doctor or pharmacist when in doubt.</p>' +
       '<div class="chipsrow chipscol">' + SAFE_Q.map(function (q) { return '<button type="button" data-sf="' + q[0] + '" aria-pressed="' + !!f[q[0]] + '">' + esc(q[1]) + '</button>'; }).join('') + '</div></div>' +
-      '<div class="sk"><h3>Professional treatment</h3><p class="hint" style="margin:0">Peel, laser, microneedling or waxing? Retinoids and exfoliating acids should stop around it. Add the date and they are hidden from your routine for the right days.</p>' +
+      '<div class="sk"><h3>Professional treatment</h3><p class="hint" style="margin:0">Peel, laser, microneedling or waxing? Retinoids and exfoliating acids should stop around it. Add the date and they are hidden from your routine for the right days. Any event called "Laser" in your Calendar is picked up automatically.</p>' +
       '<div class="two"><div><label for="sktxd">Treatment date</label><input type="date" id="sktxd" value="' + esc(t.date || '') + '"></div><div><label>I use</label><div class="chipsrow"><button type="button" data-txrx="1" aria-pressed="' + !!t.rx + '">Prescription retinoid</button></div></div></div>' + tw +
       '<p class="hint" style="margin:0">Pause: about 2-3 days either side for retinol and acids you buy without a prescription, 5-7 days for a prescription retinoid (tretinoin, adapalene). Your treatment provider\'s advice comes first.</p>' + (t.date ? '<button class="btn ghost" data-txclr="1">Clear treatment</button>' : '') + '</div>' +
       '<div class="sk"><h3>When to see a dermatologist</h3><p class="hint" style="margin:0">A routine cannot treat these. Book a dermatologist for a spot or mole that is <b>asymmetric</b>, has an uneven <b>border</b> or several <b>colours</b>, is bigger than <b>6 mm</b>, is <b>changing</b>, bleeds or does not heal. Also for acne that scars, a rash that spreads, or a reaction that keeps getting worse. This app is a helper, not a diagnosis.</p></div>';
@@ -1155,7 +1182,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   $('sm').addEventListener('click', function (e) { if (e.target === $('sm')) { pk = null; $('sm').hidden = true; } });
   $('vm').addEventListener('click', function (e) { if (e.target === $('vm')) { pvR = null; $('vm').hidden = true; } });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('cm').hidden) $('cm').hidden = true; else if (!$('pm').hidden) closeProd(); else if (!$('vm').hidden) { pvR = null; $('vm').hidden = true; } } });
-  window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); render(); } });
+  window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); render(); } else if (e.key === EKEY) render(); });
   try { var rawNow = JSON.parse(localStorage.getItem(LS)); if (!rawNow || !rawNow.cyc) save(); } catch (e) {}   // store the night cycle once, so the home card can show tonight's night
   /* once the morning routine is all ticked, opening the app again lands on the night routine (and a new day starts on the morning) */
   var openK = ds(new Date());
@@ -1196,4 +1223,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 17 -->
+<!-- build 18 -->
