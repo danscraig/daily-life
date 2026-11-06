@@ -203,6 +203,12 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 .ipair { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
 .ipair button.ilnk { text-align: left; font-weight: 600; font-size: 14px; color: var(--ink); background: var(--bg); border-radius: 12px; padding: 6px 10px; }
 .ipair .pl { color: var(--mute); }
+.ipair button.ilnk { display: inline-flex; align-items: center; gap: 8px; }
+.ipair button.ilnk.tog { background: color-mix(in srgb, var(--warn) 18%, var(--paper)); }
+.ilnk .pi { flex: none; width: 34px; height: 34px; border-radius: 10px; overflow: hidden; display: grid; place-items: center; font-size: 17px; background: var(--paper); }
+.iuse summary.ilnk { display: flex; align-items: center; gap: 10px; }
+.iuse summary.ilnk::-webkit-details-marker { display: none; }
+.ilnk .pi img { width: 100%; height: 100%; object-fit: cover; }
 .ihead { margin: 16px 4px 6px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
 .ilist { display: flex; flex-direction: column; gap: 8px; }
 .irow .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -643,7 +649,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     (data.cyc.slots.length ? data.cyc.slots : [null]).forEach(function (sl) { g.push({ n: sl ? (sl.n || 'Night') + ' night' : 'Night', ids: data.pm.filter(function (s) { return s.n.trim() && s.prod && (!sl || stepShown(s, sl)); }).map(function (s) { return s.prod; }) }); });
     return g;
   }
-  function pairName(p) { return '<button type="button" class="ilnk" data-pid="' + p.id + '">' + (p.wish ? '♡ ' : '') + esc(shortName(p)) + '</button>'; }
+  function pairName(p, mark) { return '<button type="button" class="ilnk' + (mark ? ' tog' : '') + '" data-pid="' + p.id + '"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span>' + (mark ? '⚠️ ' : '') + (p.wish ? '♡ ' : '') + esc(shortName(p)) + '</span></button>'; }
   function infoDupes() {
     var ps = data.prods.filter(function (p) { return p.ing && p.ing.trim(); }), ms = ps.map(ingModel), out = [];
     for (var i = 0; i < ps.length; i++) for (var j = i + 1; j < ps.length; j++) { var r = simScore(ms[i], ms[j]); if (r.s >= 0.25) out.push({ a: ps[i], b: ps[j], s: r.s, sh: r.shared }); }
@@ -672,15 +678,22 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       var tog = G.filter(function (g) { return g.ids.indexOf(ps[i].id) !== -1 && g.ids.indexOf(ps[j].id) !== -1; }).map(function (g) { return g.n; });
       out.push({ a: ps[i], b: ps[j], iss: iss, tog: tog });
     }
-    var bad = out.filter(function (o) { return o.tog.length; }), apart = out.filter(function (o) { return !o.tog.length; });
-    function row(o) {
-      var lv = o.iss[0];
-      return '<div class="row irow"><div class="top"><div class="ipair">' + pairName(o.a) + '<span class="pl">+</span>' + pairName(o.b) + '</div><span class="badge ' + (o.tog.length ? (lv === 'avoid' ? 'bad' : 'warn') : 'ok') + '">' + (o.tog.length ? (lv === 'avoid' ? '⛔' : '⚠️') : '✓') + '</span></div><p class="hint" style="margin:0"><b>' + esc(o.iss[1]) + '.</b> ' + (o.tog.length ? 'Together in: ' + esc(o.tog.join(', ')) + '.' : 'Never in the same routine: fine as it is.') + '</p></div>';
+    var bad = out.filter(function (o) { return o.tog.length; });
+    var by = {};   // one card per product: the products it must not share a routine with
+    out.forEach(function (o) {
+      [[o.a, o.b], [o.b, o.a]].forEach(function (pr) { var e = by[pr[0].id] || (by[pr[0].id] = { p: pr[0], list: [], tog: 0 }); e.list.push({ q: pr[1], iss: o.iss, tog: o.tog }); if (o.tog.length) e.tog++; });
+    });
+    var cards = Object.keys(by).map(function (k) { return by[k]; }).sort(function (x, y) { return (y.tog - x.tog) || (y.list.length - x.list.length) || x.p.n.localeCompare(y.p.n); });
+    function card(e) {
+      var g = {}, order = []; e.list.forEach(function (r) { if (!g[r.iss[1]]) { g[r.iss[1]] = []; order.push(r.iss[1]); } g[r.iss[1]].push(r); });
+      return '<div class="row irow"><div class="top"><div class="ipair">' + pairName(e.p) + '</div>' + (e.tog ? '<span class="badge warn">⚠️ ' + e.tog + ' together</span>' : '') + '</div>' + order.map(function (lab) {
+        return '<p class="hint" style="margin:4px 0 0"><b>' + esc(lab) + '.</b> Not in the same routine as:</p><div class="ipair">' + g[lab].map(function (r) { return pairName(r.q, r.tog.length); }).join('') + '</div>';
+      }).join('') + '</div>';
     }
     var rules = [['Retinoid (retinol, retinal) + exfoliating acid (glycolic, lactic, salicylic…)', 'Different nights. Both together can over-dry and irritate.'], ['Two exfoliating acids', 'One per night. Easy to over-exfoliate.'], ['Two retinoids', 'One at a time.'], ['Benzoyl peroxide + retinoid', 'Keep them apart (different times of day).'], ['Pure vitamin C (L-ascorbic acid) + retinoid or acid', 'Vitamin C in the morning, the other at night.'], ['Retinoid or acid without sunscreen the next day', 'Always finish the morning with sunscreen.'], ['Copper peptides + strong acids or pure vitamin C', 'Better on different routines.']];
-    return '<p class="hint">Pairs of your products that clash, and whether your routine really puts them together. Only the first group needs action.</p>' +
-      '<h3 class="ihead">Used together in your routine</h3>' + (bad.length ? '<div class="ilist">' + bad.map(row).join('') + '</div>' : '<div class="wn ok">✓ None of your routines puts clashing products together.</div>') +
-      (apart.length ? '<details style="margin-top:10px"><summary class="hint">Clashing pairs you keep apart (' + apart.length + ')</summary><div class="ilist" style="margin-top:6px">' + apart.map(row).join('') + '</div></details>' : '') +
+    return '<p class="hint">Products that should not be used in the same routine as each other. Keep each pair on different nights (or morning and night).</p>' +
+      (bad.length ? '<div class="wn">⚠️ ' + bad.length + ' of these pair' + (bad.length === 1 ? ' is' : 's are') + ' together in your routine right now (marked ⚠️).</div>' : '<div class="wn ok">✓ Your routine keeps all of these apart.</div>') +
+      '<h3 class="ihead">Do not mix</h3>' + (cards.length ? '<div class="ilist">' + cards.map(card).join('') + '</div>' : '<div class="empty">None of your products clash.</div>') +
       '<h3 class="ihead">The general rules</h3><div class="row"><ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px">' + rules.map(function (r) { return '<li style="font-size:14px"><b>' + esc(r[0]) + '</b><br><span class="hint" style="margin:0">' + esc(r[1]) + '</span></li>'; }).join('') + '</ul></div>' +
       '<p class="hint">Fine together: niacinamide with almost anything, hyaluronic acid with anything, ceramides and centella with anything. When you are unsure, add one new active at a time and patch-test it.</p>';
   }
@@ -723,7 +736,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       if (!list.length) return;
       h += '<h3 class="ihead">' + label[t] + '</h3><div class="ilist">' + list.map(function (p) {
         var where = G.filter(function (g) { return g.ids.indexOf(p.id) !== -1; }).map(function (g) { return g.n; });
-        return '<details class="iuse"><summary>' + esc(shortName(p)) + '<small>' + esc((p.brand || '') + (p.brand ? ' · ' : '') + (where.length ? where.join(' · ') : 'Not in a routine yet')) + '</small></summary><ol>' + howTo(p).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ol></details>';
+        return '<details class="iuse"><summary class="ilnk"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span>' + esc(shortName(p)) + '<small>' + esc((p.brand || '') + (p.brand ? ' · ' : '') + (where.length ? where.join(' · ') : 'Not in a routine yet')) + '</small></span></summary><ol>' + howTo(p).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ol></details>';
       }).join('') + '</div>';
     });
     return '<p class="hint">Order for any routine: cleanser, toner, essence or serum (thin to thick), eye cream, treatment, moisturiser, and sunscreen as the last step in the morning. Tap a product for how to apply it.</p>' + (h || '<div class="empty">No products on your shelf yet.</div>') + '<p class="hint">General guidance. If the pack says something different, follow the pack.</p>';
@@ -1183,4 +1196,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 16 -->
+<!-- build 17 -->
