@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
-<meta name="theme-color" content="#ECEBEF">
+<meta name="theme-color" content="#EDEAE5">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -16,20 +16,20 @@
 <style>
 /* Layout: one narrow column, a diary page per calendar day. Each year of that day is a row, newest first. Bottom tab bar switches Day / Calendar / Search. */
 :root {
-  --bg: #ECEBEF;
+  --bg: #EDEAE5;
   --paper: #FFFFFF;
-  --ink: #65406F;
-  --mute: #94829E;
-  --line: #DFDDE4;
-  --accent: #A064B0;
+  --ink: #2A2630;
+  --mute: #6F6874;
+  --line: #DDD8D1;
+  --accent: #4A5159;
   --accent-ink: #FFFFFF;
-  --violet: #EBB6E7;
-  --violet-ink: #4F2A59;
-  --orchid: #EBB6E7;
-  --mark: #EBB6E7;
-  --shadow: rgba(160, 100, 176, .16);
+  --violet: color-mix(in srgb, var(--accent) 26%, #fff);
+  --violet-ink: #2A2630;
+  --orchid: color-mix(in srgb, var(--accent) 26%, #fff);
+  --mark: color-mix(in srgb, var(--accent) 26%, #fff);
+  --shadow: rgba(70, 58, 44, .14);
   --glow1: rgba(255, 255, 255, .55);
-  --glow2: rgba(235, 182, 231, .14);
+  --glow2: color-mix(in srgb, var(--accent) 14%, transparent);
   --font-display: "Outfit", "Helvetica Neue", Arial, sans-serif;
   --font-text: "Outfit", "Helvetica Neue", Arial, sans-serif;
   --font-data: "Outfit", "Helvetica Neue", Arial, sans-serif;
@@ -301,7 +301,7 @@ button:disabled { cursor: default; }
 .nact button { padding: 14px; border-radius: 16px; font: 500 16px var(--font-display); color: var(--ink); background: var(--bg); }
 .nact button.yes { color: #C0392B; }
 /* undo toast, recently deleted, sort menu */
-.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(101, 64, 111, .6); max-width: calc(100vw - 110px); }
+.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(42, 38, 48, .6); max-width: calc(100vw - 110px); }
 .undo button { min-height: 40px; padding: 0 18px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; font-size: 14px; }
 .nsortm { top: calc(70px + env(safe-area-inset-top, 0px)); bottom: auto; right: max(16px, calc((100vw - 640px) / 2 + 16px)); }
 .nmenu button.on { color: var(--accent); font-weight: 600; }
@@ -464,6 +464,9 @@ html.onhome body::before { display: none; }
 .ihbar { flex: none; height: max(env(safe-area-inset-bottom, 0px), 24px); display: grid; place-items: center; background: var(--bg); touch-action: none; cursor: pointer; }
 .ihbar i { display: block; width: 134px; height: 5px; border-radius: 3px; background: #1d1521; opacity: .85; transition: transform 160ms var(--ease-out); }
 .ihbar:active i { transform: scaleX(.9); }
+html[data-ac="check"] { --accent: #4A5159; }
+html[data-ac="diary"] { --accent: #A95F5F; }
+html[data-ac="notes"] { --accent: #9C7A24; }
 </style>
 </head>
 <body>
@@ -1060,7 +1063,7 @@ html.onhome body::before { display: none; }
     var p = noteById(ngp); if (!p) { ngp = ''; return ''; }
     return '<input class="ntitle" id="npn" placeholder="Page name" autocomplete="off" value="' + esc(p.t) + '">';
   }
-  var SW = ['#65406F', '#A064B0', '#D9534F', '#E8923A', '#3E9D6A', '#3E7FD9'];
+  var SW = ['#2A2630', '#52709A', '#D9534F', '#E8923A', '#3E9D6A', '#3E7FD9'];
   function toolbarHTML() {
     return '<div class="sw" id="nsw" hidden>' + SW.map(function (c) { return '<button data-f="c" data-c="' + c + '" style="background:' + c + '" aria-label="' + c + '"></button>'; }).join('') + '</div>' +
       '<div class="tbo" id="tbo" hidden><button data-f="row">+ Row</button><button data-f="cell">+ Col</button><button data-f="deltbl">Del table</button></div>' +
@@ -1267,7 +1270,7 @@ html.onhome body::before { display: none; }
   function ndStart() {
     nd.on = true; clearTimeout(nd.timer);
     var r = nd.card.getBoundingClientRect(), g = nd.card.cloneNode(true);
-    g.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:50;pointer-events:none;opacity:.9;transform:scale(1.03);box-shadow:0 18px 36px -14px rgba(60,30,70,.45)';
+    g.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:50;pointer-events:none;opacity:.9;transform:scale(1.03);box-shadow:0 18px 36px -14px rgba(42,38,48,.45)';
     document.body.appendChild(g); nd.ghost = g; nd.dx = nd.x - r.left; nd.dy = nd.y - r.top; nd.card.style.opacity = '.35';
     try { nd.card.setPointerCapture(nd.pid); } catch (e) {}
     if (navigator.vibrate) navigator.vibrate(12);
@@ -1524,7 +1527,7 @@ html.onhome body::before { display: none; }
   function show(s) {
     if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') flush();
     if (s === 'diary' || s === 'check') setApp(s);
-    document.documentElement.classList.toggle('onhome', s === 'home');
+    document.documentElement.classList.toggle('onhome', s === 'home'); document.documentElement.dataset.ac = s;
     homeEl.hidden = s !== 'home'; jEl.hidden = s !== 'diary' && s !== 'check'; NE.hidden = s !== 'notes';
     if (!jEl.hidden) document.documentElement.style.setProperty('--barh', jEl.querySelector('.bar').offsetHeight + 'px');   // where the day sticks
     if (s === 'notes') { nview = 'list'; ncur = null; ndel = false; ngp = ''; ndelp = false; purgeOld(); renderNotes(); }

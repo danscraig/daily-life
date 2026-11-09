@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
-<meta name="theme-color" content="#ECEBEF">
+<meta name="theme-color" content="#EDEAE5">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -15,15 +15,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
 <style>
 :root {
-  --bg: #ECEBEF;
+  --bg: #EDEAE5;
   --paper: #FFFFFF;
-  --ink: #65406F;
-  --mute: #94829E;
-  --line: #DFDDE4;
-  --accent: #A064B0;
+  --ink: #2A2630;
+  --mute: #6F6874;
+  --line: #DDD8D1;
+  --accent: #D1415A;
   --accent-ink: #FFFFFF;
-  --orchid: #EBB6E7;
-  --shadow: rgba(160, 100, 176, .16);
+  --orchid: color-mix(in srgb, var(--accent) 26%, #fff);
+  --shadow: rgba(70, 58, 44, .14);
   --bad: #C0392B;
   --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
@@ -111,9 +111,9 @@ button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.97); }
 .chip.rp { position: relative; padding-right: 14px; }
 .chip.seg.rp i { padding-right: 0; }
 .te.rp b { padding-right: 11px; }
-.pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(60, 40, 70, .45); pointer-events: auto; }
+.pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(42, 38, 48, .45); pointer-events: auto; }
 .pop[hidden] { display: none; }
-.pop .card { width: 100%; max-width: 340px; background: var(--bg); border-radius: 26px; padding: 20px; box-shadow: 0 24px 50px -16px rgba(101, 64, 111, .6); }
+.pop .card { width: 100%; max-width: 340px; background: var(--bg); border-radius: 26px; padding: 20px; box-shadow: 0 24px 50px -16px rgba(42, 38, 48, .6); }
 .pop p { margin: 0 0 14px; font-weight: 600; font-size: 17px; }
 .leg > div { display: flex; align-items: center; gap: 14px; padding: 9px 4px; font-size: 15px; }
 .leg span { flex: none; width: 18px; height: 18px; border-radius: 50%; }
@@ -125,17 +125,17 @@ button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.97); }
 .gut > div:first-child { visibility: hidden; }
 .col { position: relative; height: calc(var(--hr) * var(--hrs)); border-left: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% var(--hr); }
 .te { position: absolute; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 2px 4px; border-radius: 7px; border: 1px solid var(--paper); color: #fff; font-size: 10.5px; line-height: 1.25; overflow: hidden; text-align: left; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-.te.lift { z-index: 9; opacity: .92; box-shadow: 0 12px 26px -8px rgba(101, 64, 111, .65); border: 2px solid #fff; }
+.te.lift { z-index: 9; opacity: .92; box-shadow: 0 12px 26px -8px rgba(42, 38, 48, .65); border: 2px solid #fff; }
 .te b { display: block; font-weight: 600; }
 .te span { opacity: .9; }
 /* the event being placed: a block you can drag, with the form docked under the grid */
 .ovl { position: absolute; top: 0; left: 38px; right: 0; height: calc(var(--hr) * var(--hrs)); pointer-events: none; z-index: 5; }
-.draft { pointer-events: auto; touch-action: none; cursor: grab; z-index: 5; border: 2px solid #fff; box-shadow: 0 10px 24px -8px rgba(101, 64, 111, .6); user-select: none; -webkit-user-select: none; }
+.draft { pointer-events: auto; touch-action: none; cursor: grab; z-index: 5; border: 2px solid #fff; box-shadow: 0 10px 24px -8px rgba(42, 38, 48, .6); user-select: none; -webkit-user-select: none; }
 .draft:active { cursor: grabbing; }
 .rz { position: absolute; left: 0; right: 0; bottom: 0; height: 20px; cursor: ns-resize; touch-action: none; }
 .rz::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 26px; height: 4px; margin-left: -13px; border-radius: 4px; background: rgba(255, 255, 255, .85); }
 .modal.dock { background: transparent; align-items: flex-end; padding: 0; pointer-events: none; }
-.modal.dock .sheet { pointer-events: auto; max-width: 760px; max-height: 46vh; border-radius: 26px 26px 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -16px rgba(101, 64, 111, .5); }
+.modal.dock .sheet { pointer-events: auto; max-width: 760px; max-height: 46vh; border-radius: 26px 26px 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -16px rgba(42, 38, 48, .5); }
 body.editing { padding-bottom: calc(50vh + env(safe-area-inset-bottom, 0px)); }
 /* week and day: the page stays put; only the time grid scrolls, inside its rounded card */
 body.tgv { height: 100vh; height: 100dvh; overflow: hidden; padding-bottom: 14px; }
@@ -150,10 +150,10 @@ body.editing .fab { display: none; }
 .now { position: absolute; left: 0; right: 0; height: 2px; background: #E0506A; pointer-events: none; z-index: 3; }
 .now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #E0506A; }
 
-.fab { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 32px; line-height: 1; display: grid; place-items: center; padding-bottom: 3px; box-shadow: 0 16px 30px -12px var(--shadow), 0 6px 14px -6px rgba(101, 64, 111, .5); }
+.fab { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 32px; line-height: 1; display: grid; place-items: center; padding-bottom: 3px; box-shadow: 0 16px 30px -12px var(--shadow), 0 6px 14px -6px rgba(42, 38, 48, .5); }
 
 /* editor */
-.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: rgba(60, 40, 70, .4); padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: rgba(42, 38, 48, .4); padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
 .sheet { width: 100%; max-width: 520px; max-height: 100%; overflow-y: auto; background: var(--bg); border-radius: 30px; padding: 18px; }
 .sheet h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
 .fl { display: block; margin: 14px 4px 6px; font: 500 12px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
@@ -176,7 +176,7 @@ body.editing .fab { display: none; }
 .btn { padding: 12px 20px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 14px; }
 .btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
 .btn.danger { background: var(--paper); color: var(--bad); border: 1px solid var(--line); margin-left: auto; }
-.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(101, 64, 111, .6); max-width: calc(100vw - 110px); }
+.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(42, 38, 48, .6); max-width: calc(100vw - 110px); }
 .undo button { min-height: 40px; padding: 0 18px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; font-size: 14px; }
 .hint { font-size: 12.5px; color: var(--mute); margin: 8px 4px 0; }
 
