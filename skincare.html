@@ -237,6 +237,31 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 .modal:not([hidden]) { animation: fadein 160ms var(--ease-out); }
 .modal:not([hidden]) .sheet { animation: sheetin 220ms var(--ease-out); }
 .tabbar button, .plv button, .seg button { transition: transform 140ms var(--ease-out), background-color 180ms var(--ease-out), color 180ms var(--ease-out); }
+
+.askfab { position: fixed; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 19; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; box-shadow: 0 10px 24px -8px var(--shadow), 0 2px 6px rgba(0,0,0,.12); }
+.askfab:active { transform: scale(.94); }
+.qsheet { height: 100%; gap: 8px; }
+.qhead { display: flex; align-items: center; gap: 8px; }
+.qhead h2 { flex: 1; }
+.qhead button { min-width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--mute); padding: 0 10px; display: grid; place-items: center; }
+.qhead button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.qlog { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px; }
+.qm { max-width: 90%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
+.qb { background: var(--paper); align-self: flex-start; border-bottom-left-radius: 6px; }
+.qu { background: var(--accent); color: var(--accent-ink); align-self: flex-end; border-bottom-right-radius: 6px; }
+.qm p { margin: 6px 0 0; }
+.qm p:first-child { margin-top: 0; }
+.qol { margin: 6px 0 0; padding-left: 20px; }
+.qsub { color: var(--mute); font-size: 13px; }
+.qhr { border: 0; border-top: 1px solid var(--line); margin: 10px 0; }
+.qm .ipair { margin-top: 6px; }
+.qpick { margin-top: 8px; }
+#qchips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; flex: none; }
+#qchips button { white-space: nowrap; flex: none; }
+.qform { display: flex; gap: 8px; align-items: center; flex: none; }
+#qmic { width: 46px; height: 46px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); color: var(--accent); display: grid; place-items: center; flex: none; }
+#qmic[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); animation: qpulse 1.2s ease-in-out infinite; }
+@keyframes qpulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 25%, transparent); } }
 </style>
 </head>
 <body>
@@ -285,6 +310,14 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   <button data-v="skin" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9" cy="10" r=".6"/><circle cx="15" cy="10" r=".6"/><path d="M9 15c1.7 1.3 4.3 1.3 6 0"/></svg>Skin</button>
   <button data-v="info" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".7"/></svg>Info</button>
 </div></nav>
+
+<button class="askfab" id="askb" aria-label="Ask a question"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-5 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01"/></svg></button>
+<div class="modal" id="qm" hidden><div class="sheet qsheet" role="dialog" aria-label="Ask">
+  <div class="qhead"><h2>Ask</h2><button type="button" id="qlang" aria-label="Language">PT</button><button type="button" id="qsp" aria-pressed="false" aria-label="Read answers aloud"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></button><button type="button" id="qx" aria-label="Close">✕</button></div>
+  <div class="qlog" id="qlog" aria-live="polite"></div>
+  <div class="chipsrow" id="qchips"></div>
+  <form class="qform" id="qf" autocomplete="off"><button type="button" id="qmic" aria-label="Speak" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg></button><input type="text" id="qin" placeholder="Ask about your skincare" aria-label="Your question"><button class="btn" type="submit" id="qsend">Send</button></form>
+</div></div>
 
 <script>
 (function () {
@@ -1231,6 +1264,278 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     var k = ds(new Date()); if (k !== openK) { openK = k; day = new Date(); day.setHours(12, 0, 0, 0); part = 'am'; }
     if (ds(day) === k && !editing) { var was = part; autoNight(); if (part !== was && view === 'today') render(); }
   });
+  /* ===== Ask: a skincare helper that answers from your own data with fixed rules (no AI, no internet). Portuguese and English.
+     The microphone uses the browser's speech recognition (Chrome / Android / Safari); the answer can be read aloud. ===== */
+  var ASKL = 'skincare-ask-lang', chat = { msgs: [], lang: 'pt', speak: false, last: null, rec: null, on: false, pend: null }, rl = 'pt';
+  try { var cl0 = localStorage.getItem(ASKL); if (cl0 === 'en' || cl0 === 'pt') chat.lang = cl0; } catch (e) {}
+  var MONP = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  function T(pt, en) { return rl === 'pt' ? pt : en; }
+  function nrm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function noon() { var d = new Date(); d.setHours(12, 0, 0, 0); return d; }
+  function fdate(d) { return d.getDate() + ' ' + (rl === 'pt' ? MONP : MON.map(function (m) { return m.toLowerCase(); }))[d.getMonth()]; }
+  function onToday(f) { var keep = day; day = noon(); try { return f(); } finally { day = keep; } }   // the viewed day must not change the answers
+  function shelf() { return data.prods.filter(onShelf); }
+  function chips(list) { return '<div class="ipair">' + list.map(function (p) { return pairName(p); }).join('') + '</div>'; }
+  function whereIs(p) { return routineGroups().filter(function (g) { return g.ids.indexOf(p.id) !== -1; }).map(function (g) { return g.n; }); }
+  var STOPW = {};
+  ('the and with without for of in on my is it this that you are what when where how can should use does have has not any all one two ola oi esta este isto isso dele dela mesma mesmo ver mostra show tell diz eu meu minha uma uns umas com sem para por nos nas dos das que qual quais como posso pode devo usar uso usa hoje noite manha morning tonight today night misturar mix juntar together tenho tem price preco custa quanto much validade expira ingredientes ingredients dupe igual parecido similar produto product quando onde ainda tambem ordem rotina routine tipo ver lista list apply aplicar aplico quero saber dizer skin dry oily sensitive acne pele seca oleosa mista sensivel produtos products ha haver existe exist').split(' ').forEach(function (w) { STOPW[w] = 1; });
+  var GEN = /^(serum|serums|serun|seruns|cleanser|cleansers|toner|toners|sunscreen|sunscreens|cream|creme|cremes|moisturizer|moisturizing|moisturiser|moisturisers|mask|masks|essence|ampoule|gel|lotion|oil|mist|balm|face|facial|skin|spf|protetor|protetores|solar|solares|hidratante|hidratantes|mascara|mascaras|tonico|tonicos|limpeza|olhos|eye)$/;
+  function pscore(p, toks) {
+    var pt = nrm(p.n + ' ' + (p.brand || '')).split(' '), s = 0, hit = [];
+    toks.forEach(function (w) { if (pt.some(function (x) { return x === w || (w.length >= 4 && x.indexOf(w) === 0) || (x.length >= 4 && w.indexOf(x) === 0); })) { s += /^\d+$/.test(w) ? 1 : 2; hit.push(w); } });
+    return { s: s, hit: hit };
+  }
+  function findProds(n) {   // up to two products named in the question; each entry is the list of equally good matches (more than one = ambiguous)
+    var toks = n.split(' ').filter(function (w) { return (w.length >= 3 || /^\d+$/.test(w)) && !STOPW[w] && !GEN.test(w); }), out = [];
+    for (var r = 0; r < 2; r++) {
+      var best = 0, c = [];
+      data.prods.forEach(function (p) { var x = pscore(p, toks); if (x.s > best) { best = x.s; c = [{ p: p, hit: x.hit }]; } else if (x.s === best && x.s > 0 && x.hit.join('|') === c[0].hit.join('|')) c.push({ p: p, hit: x.hit }); });
+      if (best < 2) break;
+      out.push(c.map(function (z) { return z.p; }));
+      var used = []; c.forEach(function (z) { used = used.concat(z.hit); });
+      toks = toks.filter(function (w) { return used.indexOf(w) === -1; });
+    }
+    return out;
+  }
+  var INGW = [[/niacinamid/, /niacinamide/, 'niacinamide', 'niacinamida'], [/hialuron|hyaluron/, /hyaluron/, 'hyaluronic acid', 'ácido hialurónico'], [/salicil|salicyl|\bbha\b/, /salicylic|betaine salicylate/, 'salicylic acid (BHA)', 'ácido salicílico (BHA)'],
+    [/glicolic|glycolic/, /glycolic acid/, 'glycolic acid', 'ácido glicólico'], [/azelai|azelaic/, /azelaic/, 'azelaic acid', 'ácido azelaico'], [/lactic|latico/, /lactic acid/, 'lactic acid', 'ácido lático'], [/mandelic|mandelico/, /mandelic/, 'mandelic acid', 'ácido mandélico'],
+    [/retinol|retinoid|retinal/, RET_RX, 'retinoids', 'retinóides'], [/vitamina c|vitamin c|ascorb/, /ascorbic|ascorbyl/, 'vitamin C', 'vitamina C'], [/ceramid/, /ceramide/, 'ceramides', 'ceramidas'], [/peptid/, /peptide/, 'peptides', 'péptidos'],
+    [/centella|\bcica\b/, /centella|madecassoside|asiaticoside/, 'centella', 'centella'], [/pantenol|panthenol/, /panthenol/, 'panthenol', 'pantenol'], [/bakuchiol/, /bakuchiol/, 'bakuchiol', 'bakuchiol'],
+    [/alcool|alcohol/, /alcohol denat|sd alcohol|ethanol/, 'drying alcohol', 'álcool secante'], [/perfume|fragr|parfum/, /parfum|fragrance/, 'fragrance', 'perfume'], [/esqualano|squalane/, /squalane/, 'squalane', 'esqualano'],
+    [/caracol|snail/, /snail|helix/, 'snail mucin', 'baba de caracol'], [/\bacidos?\b|\bacids?\b|\baha\b|esfolia|exfoliat/, /glycolic acid|lactic acid|mandelic|salicylic|betaine salicylate|malic acid|gluconolactone|lactobionic/, 'exfoliating acids', 'ácidos esfoliantes'], [/propolis/, /propolis/, 'propolis', 'própolis'], [/arbutin/, /arbutin/, 'arbutin', 'arbutina'], [/tranex/, /tranexamic/, 'tranexamic acid', 'ácido tranexâmico'], [/cafeina|caffeine/, /caffeine/, 'caffeine', 'cafeína']];
+  function ingOf(n) { for (var i = 0; i < INGW.length; i++) if (INGW[i][0].test(n)) return { rx: INGW[i][1], en: INGW[i][2], pt: INGW[i][3] }; return null; }
+  function ingName(g) { return rl === 'pt' ? g.pt : g.en; }
+  var TYPEW = [['cleanser', /limpeza|cleanser|cleansing|espuma|demaquilhante|micellar|micelar/, 'cleansers', 'limpezas'], ['toner', /toner|tonico/, 'toners', 'tónicos'], ['serum', /serum|serun|ampola|ampoule|essence/, 'serums', 'séruns'],
+    ['moisturiser', /hidratante|moisturi[sz]er|creme|cream/, 'moisturisers', 'hidratantes'], ['sunscreen', /protetor|protector|solar|spf|sunscreen/, 'sunscreens', 'protetores solares'], ['mask', /mascara|mask/, 'masks', 'máscaras'], ['eye', /olhos|contorno|eye/, 'eye creams', 'cremes de olhos']];
+  function typeOf(n) { for (var i = 0; i < TYPEW.length; i++) if (TYPEW[i][1].test(n)) return TYPEW[i]; return null; }
+  function subjects(n) {   // who is the question about: named products, "it", everything with an ingredient, or everything of a type
+    var f = findProds(n);
+    if (f.length) return { g: f, kind: 'named' };
+    if (/\b(isso|esse|essa|dele|dela|it|this one|that one|o mesmo)\b/.test(n) && chat.last) return { g: [[chat.last]], kind: 'last' };
+    var ig = ingOf(n); if (ig) return { g: shelf().filter(function (p) { return ig.rx.test(String(p.ing || '').toLowerCase()); }).map(function (p) { return [p]; }), kind: 'ing', ig: ig };
+    var tp = typeOf(n); if (tp) return { g: shelf().filter(function (p) { return p.t === tp[0]; }).map(function (p) { return [p]; }), kind: 'type', tp: tp };
+    return { g: [], kind: '' };
+  }
+  function ambiguous(g, fn) {
+    chat.pend = { fn: fn, rl: rl };
+    return T('Qual destes?', 'Which one?') + '<div class="chipsrow qpick">' + g.slice(0, 8).map(function (p) { return '<button type="button" data-qpick="' + p.id + '">' + esc(shortName(p)) + '</button>'; }).join('') + '</div>';
+  }
+  function perProduct(n, fn) {
+    var S = subjects(n);
+    if (!S.g.length) {
+      if (S.kind === 'ing') return T('Não tens nenhum produto com ' + ingName(S.ig) + ' na prateleira.', 'None of your shelf products contain ' + ingName(S.ig) + '.');
+      if (S.kind === 'type') return T('Não tens ' + S.tp[3] + ' na prateleira.', 'You have no ' + S.tp[2] + ' on the shelf.');
+      return T('De que produto falas? Escreve o nome (ou parte dele).', 'Which product do you mean? Type its name (or part of it).');
+    }
+    if (S.kind === 'named' || S.kind === 'last') { var g = S.g[0]; if (g.length > 1) return ambiguous(g, fn); chat.last = g[0]; return fn(g[0]); }
+    var list = S.g.map(function (x) { return x[0]; });
+    if (list.length <= 3) return list.map(fn).join('<hr class="qhr">');
+    return T('Tens ' + list.length + ' assim. Qual?', 'You have ' + list.length + ' like that. Which one?') + '<div class="chipsrow qpick">' + list.slice(0, 10).map(function (p) { return '<button type="button" data-qpick="' + p.id + '">' + esc(shortName(p)) + '</button>'; }).join('') + '</div>' + (chat.pend = { fn: fn, rl: rl }, '');
+  }
+
+  /* what is in a routine today (paused steps left out) */
+  function routineToday(pn) {
+    var k = ds(noon()), slot = pn === 'pm' ? slotFor(k) : null, cyc = pn === 'pm' && data.cyc.slots.length, d0 = noon(), paused = [];
+    var st = data[pn].filter(function (s) { return s.n.trim() && (cyc ? stepShown(s, slot, k) : sched(s, d0)); }).filter(function (s) { if (pausedStep(s)) { paused.push(s); return false; } return true; });
+    return { k: k, slot: slot, steps: st, paused: paused };
+  }
+  function routineHTML(pn) {
+    var R = routineToday(pn), done = data.log[R.k] || [];
+    var h = '<b>' + (pn === 'am' ? T('Manhã de hoje', 'This morning') : T('Esta noite', 'Tonight') + (R.slot ? ' · ' + esc(R.slot.n || 'Night') : '')) + '</b>';
+    if (pn === 'pm' && data.cyc.log[R.k]) h += '<p>' + T('A noite de hoje já está marcada como feita ✓', 'Tonight is already marked as done ✓') + '</p>';
+    if (!R.steps.length) h += '<p>' + T('Sem passos planeados.', 'No steps planned.') + '</p>';
+    else h += '<ol class="qol">' + R.steps.map(function (s) { var p = s.prod ? prodById(s.prod) : null; return '<li>' + (done.indexOf(s.id) !== -1 ? '✓ ' : '') + esc(s.n) + (p ? ' · <span class="qsub">' + esc(shortName(p)) + '</span>' : '') + '</li>'; }).join('') + '</ol>';
+    if (R.paused.length) h += '<p>⏸ ' + T('Em pausa por causa do laser / tratamento: ', 'Paused around your treatment: ') + R.paused.map(function (s) { return esc(s.n); }).join(', ') + '.</p>';
+    return h;
+  }
+  function pauseHTML() {
+    var w = txWindow(), t0 = noon();
+    if (!w) return T('Não tens nenhum laser nem tratamento marcado. Se puseres "Laser" no calendário, o app esconde retinóides e ácidos 3 dias antes e depois (7 se for retinóide de prescrição).', 'No laser or treatment is set. If you add "Laser" to the calendar, the app hides retinoids and acids 3 days before and after (7 for a prescription retinoid).');
+    var what = w.src === 'Laser' ? 'laser' : T('tratamento', 'treatment'), back = new Date(w.to); back.setDate(back.getDate() + 1);
+    if (t0 >= w.from && t0 <= w.to) return '⏸ ' + T('Estás em pausa: retinóides e ácidos escondidos de ' + fdate(w.from) + ' a ' + fdate(w.to) + ' (' + what + ' a ' + fdate(w.at) + '). Voltam a ' + fdate(back) + '.', 'You are in the pause: retinoids and acids are hidden from ' + fdate(w.from) + ' to ' + fdate(w.to) + ' (' + what + ' on ' + fdate(w.at) + '). They come back on ' + fdate(back) + '.');
+    if (w.at >= t0) return T('Próximo ' + what + ': ' + fdate(w.at) + '. A pausa de retinóides e ácidos vai de ' + fdate(w.from) + ' a ' + fdate(w.to) + '.', 'Next ' + what + ': ' + fdate(w.at) + '. The retinoid and acid pause runs from ' + fdate(w.from) + ' to ' + fdate(w.to) + '.');
+    return T('O último ' + what + ' foi a ' + fdate(w.at) + '. Não estás em pausa agora.', 'Your last ' + what + ' was on ' + fdate(w.at) + '. You are not in a pause now.');
+  }
+
+  function canUse(p, n) {
+    var c = conf(p), pn = /manha|morning|de dia/.test(n) ? 'am' : /noite|night/.test(n) ? 'pm' : (c.ret || p.use === 'night') ? 'pm' : (p.use === 'day' || p.t === 'sunscreen') ? 'am' : (new Date().getHours() < 16 ? 'am' : 'pm');
+    var bad = [], w = txWindow(), t0 = noon(), R = routineToday(pn);
+    if (w && t0 >= w.from && t0 <= w.to && (c.ret || c.strong || c.mild)) bad.push(T('estás na pausa do ' + (w.src === 'Laser' ? 'laser' : 'tratamento') + ' (até ' + fdate(w.to) + '): sem retinóides nem ácidos', 'you are in the ' + (w.src === 'Laser' ? 'laser' : 'treatment') + ' pause (until ' + fdate(w.to) + '): no retinoids or acids'));
+    var ex = expiry(p); if (ex && ex.left < 0) bad.push(T('passou da validade há ' + (-ex.left) + ' dias', 'it expired ' + (-ex.left) + ' days ago'));
+    var ids = R.steps.map(function (s) { return s.prod; }).filter(Boolean), inR = ids.indexOf(p.id) !== -1, clash = [];
+    ids.forEach(function (id) { if (id === p.id) return; var q = prodById(id), is = q && pairIssue(p, q); if (is) clash.push('<b>' + esc(shortName(q)) + '</b> (' + esc(is[1]) + ')'); });
+    if (clash.length) bad.push(T('choca com ', 'it clashes with ') + clash.join(', ') + T(' na rotina ' + (pn === 'am' ? 'da manhã' : 'desta noite'), ' in ' + (pn === 'am' ? 'this morning\'s' : 'tonight\'s') + ' routine'));
+    if (pn === 'am' && c.ret) bad.push(T('retinóides são só para a noite', 'retinoids are for the night only'));
+    var tips = [];
+    if (pn === 'pm' && p.t === 'sunscreen') tips.push(T('o protetor solar faz sentido de manhã', 'sunscreen belongs to the morning'));
+    if ((c.ret || c.strong || c.mild) && !bad.length) tips.push(T('ao dia seguinte põe protetor solar', 'wear sunscreen the next morning'));
+    var part = pn === 'am' ? T('de manhã', 'this morning') : T('esta noite', 'tonight');
+    var h = chips([p]);
+    if (bad.length) h += '<p>⚠️ ' + T('Hoje, ' + part + ', não é boa ideia: ', 'Not a good idea ' + part + ': ') + bad.join('; ') + '.</p>';
+    else h += '<p>✅ ' + T('Sim, podes usar ' + part + '. ', 'Yes, you can use it ' + part + '. ') + (inR ? T('Já está na rotina.', 'It is already in the routine.') : T('Não está na rotina de hoje e não choca com nada dela.', 'It is not in today\'s routine and clashes with nothing in it.')) + '</p>';
+    if (tips.length) h += '<p>💡 ' + tips.join('; ') + '.</p>';
+    return h;
+  }
+  function mixOne(p) {
+    var G = routineGroups(), by = {}, order = [];
+    shelf().forEach(function (q) { if (q.id === p.id) return; var is = pairIssue(p, q); if (!is) return; if (!by[is[1]]) { by[is[1]] = []; order.push(is[1]); } by[is[1]].push(q); });
+    var h = chips([p]);
+    if (!order.length) return h + '<p>' + T('Não encontrei nenhum produto da tua prateleira que não possa misturar com este.', 'I found nothing on your shelf that clashes with this one.') + '</p>';
+    h += '<p>' + T('Não misturar na mesma rotina com:', 'Do not use in the same routine as:') + '</p>';
+    order.forEach(function (lab) { h += '<p class="qsub">' + esc(lab) + '</p>' + chips(by[lab]); });
+    var tog = []; G.forEach(function (g) { if (g.ids.indexOf(p.id) === -1) return; shelf().forEach(function (q) { if (q.id !== p.id && g.ids.indexOf(q.id) !== -1 && pairIssue(p, q)) tog.push(shortName(q) + ' (' + g.n + ')'); }); });
+    h += tog.length ? '<p>⚠️ ' + T('Já estão juntos na rotina: ', 'Already together in a routine: ') + esc(tog.join(', ')) + '.</p>' : '<p>✅ ' + T('Nenhum destes está na mesma rotina que este.', 'None of these share a routine with it.') + '</p>';
+    return h;
+  }
+  function mixTwo(a, b) {
+    var is = pairIssue(a, b), tog = routineGroups().filter(function (g) { return g.ids.indexOf(a.id) !== -1 && g.ids.indexOf(b.id) !== -1; }).map(function (g) { return g.n; });
+    var h = chips([a, b]);
+    if (!is) return h + '<p>✅ ' + T('Não há conflito conhecido entre estes dois.', 'No known clash between these two.') + '</p>' + (tog.length ? '<p>' + T('Já os usas juntos em: ', 'You already use them together in: ') + esc(tog.join(', ')) + '.</p>' : '');
+    h += '<p>' + (is[0] === 'avoid' ? '⛔ ' : '⚠️ ') + '<b>' + esc(is[1]) + '</b>. ' + T('Não os uses na mesma rotina; põe-nos em noites diferentes.', 'Do not use them in the same routine; put them on different nights.') + '</p>';
+    h += tog.length ? '<p>⚠️ ' + T('Atenção: neste momento estão juntos em ', 'Careful: they are together right now in ') + esc(tog.join(', ')) + '.</p>' : '<p>✅ ' + T('Pelo menos não estão na mesma rotina agora.', 'At least they are not in the same routine now.') + '</p>';
+    return h;
+  }
+  function expH(p) {
+    var ex = expiry(p), h = chips([p]);
+    if (!ex) return h + '<p>' + T('Não tenho data de abertura / PAO guardada para este. Abre o produto e preenche "opened" e "PAO".', 'No opening date / PAO saved for this one. Open the product and fill in "opened" and "PAO".') + '</p>';
+    return h + '<p>' + (ex.left < 0 ? '⛔ ' + T('Passou da validade há ' + (-ex.left) + ' dias (' + fdate(ex.date) + ').', 'Expired ' + (-ex.left) + ' days ago (' + fdate(ex.date) + ').') : (ex.left <= 30 ? '⚠️ ' : '✅ ') + T('Dura até ' + fdate(ex.date) + ' (faltam ' + ex.left + ' dias).', 'Good until ' + fdate(ex.date) + ' (' + ex.left + ' days left).')) + '</p>';
+  }
+  function expAll() {
+    var l = data.prods.filter(function (p) { return !p.wish && expiry(p); }).map(function (p) { return { p: p, e: expiry(p) }; }).sort(function (a, b) { return a.e.left - b.e.left; });
+    if (!l.length) return T('Nenhum produto tem data de abertura e PAO preenchidos.', 'No product has an opening date and PAO filled in.');
+    var soon = l.filter(function (x) { return x.e.left <= 60; });
+    if (!soon.length) return '✅ ' + T('Nada expira nos próximos 60 dias. O mais próximo:', 'Nothing expires in the next 60 days. Closest:') + chips([l[0].p]) + '<p>' + fdate(l[0].e.date) + '</p>';
+    return '<p>' + T('A acabar ou já fora de validade:', 'Expiring soon or already expired:') + '</p>' + '<ul class="qol">' + soon.slice(0, 8).map(function (x) { return '<li>' + esc(shortName(x.p)) + ' · ' + (x.e.left < 0 ? '⛔ ' + T('há ' + (-x.e.left) + ' dias', (-x.e.left) + ' days ago') : fdate(x.e.date) + ' (' + x.e.left + ' ' + T('dias', 'days') + ')') + '</li>'; }).join('') + '</ul>';
+  }
+  function priceH(p) {
+    var h = chips([p]);
+    if (p.price == null || p.price === '') return h + '<p>' + T('Não tenho preço guardado para este.', 'No price saved for this one.') + '</p>';
+    return h + '<p>' + esc((p.cur || '€') + Number(p.price).toFixed(2)) + (p.priceAt ? ' · ' + T('visto a ', 'seen on ') + esc(fmtDate(p.priceAt)) : '') + (p.offers && p.offers.length ? ' · ' + p.offers.length + ' ' + T('ofertas guardadas (botão Compare no produto)', 'saved offers (Compare button on the product)') : '') + '</p>';
+  }
+  function ingH(p, ig) {
+    var h = chips([p]), M = ingModel(p).L;
+    if (!M.length) return h + '<p>' + T('Este produto não tem ingredientes guardados.', 'This product has no ingredients saved.') + '</p>';
+    if (ig) { var at = -1; M.forEach(function (x, i) { if (at === -1 && ig.rx.test(x)) at = i; }); return h + '<p>' + (at === -1 ? '✖ ' + T('Não contém ' + ingName(ig) + '.', 'It does not contain ' + ingName(ig) + '.') : '✔ ' + T('Contém ' + ingName(ig) + ' (posição ' + (at + 1) + ' de ' + M.length + (at < 6 ? ', ou seja, em quantidade relevante' : '') + ').', 'Contains ' + ingName(ig) + ' (position ' + (at + 1) + ' of ' + M.length + (at < 6 ? ', so a meaningful amount' : '') + ').')) + '</p>'; }
+    var fam = famsOf(p);
+    return h + '<p class="qsub">' + esc(M.slice(0, 14).join(', ')) + (M.length > 14 ? '…' : '') + '</p>' + (fam.length ? '<p>' + T('Famílias activas: ', 'Active families: ') + esc(fam.join(', ')) + '.</p>' : '');
+  }
+  function dupesH(p) {
+    var h = chips([p]);
+    if (!p.ing || !p.ing.trim()) return h + '<p>' + T('Sem ingredientes guardados, não consigo comparar.', 'No ingredients saved, so I cannot compare.') + '</p>';
+    var s = similarTo(p);
+    if (!s.length) return h + '<p>' + T('Nada parecido na tua lista de produtos.', 'Nothing similar among your products.') + '</p>';
+    return h + '<p>' + T('Parecidos nos ingredientes:', 'Similar by ingredients:') + '</p><ul class="qol">' + s.map(function (r) { return '<li>' + esc(shortName(r.p)) + (r.p.wish ? ' ♡' : '') + ' · ' + Math.round(r.s * 100) + '% · <span class="qsub">' + esc(simLabel(r.s)) + '</span></li>'; }).join('') + '</ul>';
+  }
+  function howH(p) { return chips([p]) + '<ol class="qol">' + howTo(p).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' + (rl === 'pt' ? '<p class="qsub">(passos em inglês)</p>' : ''); }
+  function summaryH(p) {
+    var c = conf(p), wh = whereIs(p), ex = expiry(p), fam = famsOf(p), bits = [];
+    bits.push(esc(tLabel(p.t) || '') + (p.use ? ' · ' + (p.use === 'day' ? T('dia', 'day') : p.use === 'night' ? T('noite', 'night') : T('dia e noite', 'day & night')) : '') + (p.wish ? ' · ♡ ' + T('lista de desejos', 'wish list') : ''));
+    bits.push(wh.length ? T('Na rotina: ', 'In routine: ') + esc(wh.join(', ')) : T('Não está em nenhuma rotina.', 'Not in any routine.'));
+    if (fam.length) bits.push(T('Contém: ', 'Contains: ') + esc(fam.join(', ')));
+    if (ex) bits.push(ex.left < 0 ? '⛔ ' + T('fora de validade', 'expired') : T('validade ', 'good until ') + fdate(ex.date));
+    if (p.price != null && p.price !== '') bits.push(esc((p.cur || '€') + Number(p.price).toFixed(2)));
+    return chips([p]) + '<ul class="qol">' + bits.map(function (b) { return '<li>' + b + '</li>'; }).join('') + '</ul><div class="chipsrow qpick">' + [[T('Posso usar hoje?', 'Can I use it today?'), 'can'], [T('Como uso?', 'How do I use it?'), 'how'], [T('Com o que não misturar?', 'What not to mix with?'), 'mix'], [T('Parecidos?', 'Similar ones?'), 'dup']].map(function (x) { return '<button type="button" data-qfor="' + p.id + '" data-qk="' + x[1] + '">' + x[0] + '</button>'; }).join('') + '</div>';
+  }
+  function listH(list, title) { return '<p>' + title + '</p>' + chips(list); }
+  function orderH() {
+    return '<b>' + T('Ordem de aplicação', 'Order of application') + '</b><ol class="qol">' + [T('Limpeza', 'Cleanser'), T('Tónico', 'Toner'), T('Sérum (do mais líquido ao mais espesso)', 'Serum (thinnest to thickest)'), T('Retinóide ou ácido (só à noite, pele seca)', 'Retinoid or acid (night only, dry skin)'), T('Contorno dos olhos', 'Eye cream'), T('Hidratante', 'Moisturiser'), T('Protetor solar (só de manhã, sempre o último)', 'Sunscreen (morning only, always last)')].map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol><p class="qsub">' + T('Máscaras e esfoliantes: 1-2 vezes por semana, nunca numa noite de retinóide ou ácido.', 'Masks and scrubs: 1-2 times a week, never on a retinoid or acid night.') + '</p>';
+  }
+  function clashNow() {
+    var G = routineGroups(), out = [];
+    G.forEach(function (g) { var ps = g.ids.map(prodById).filter(Boolean); for (var i = 0; i < ps.length; i++) for (var j = i + 1; j < ps.length; j++) { var is = pairIssue(ps[i], ps[j]); if (is) out.push(g.n + ': ' + shortName(ps[i]) + ' + ' + shortName(ps[j]) + ' (' + is[1] + ')'); } });
+    return out.length ? '<p>⚠️ ' + T('Na tua rotina há combinações a evitar:', 'Your routine has combinations to avoid:') + '</p><ul class="qol">' + out.slice(0, 8).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '<p>✅ ' + T('Nenhuma das tuas rotinas junta produtos que não se misturam.', 'None of your routines combine products that should not mix.') + '</p>';
+  }
+  function helpH() {
+    return T('Respondo com base nos teus produtos e rotinas, sem internet nem IA. Podes perguntar, por exemplo:', 'I answer from your own products and routines, with no internet or AI. You can ask, for example:') + '<ul class="qol"><li>' + T('O que uso esta noite? · Rotina da manhã', 'What do I use tonight? · Morning routine') + '</li><li>' + T('Posso usar o [produto] hoje?', 'Can I use [product] today?') + '</li><li>' + T('Posso misturar [produto] com [produto]?', 'Can I mix [product] with [product]?') + '</li><li>' + T('Como aplico o [produto]?', 'How do I apply [product]?') + '</li><li>' + T('Que produtos têm niacinamida?', 'Which products contain niacinamide?') + '</li><li>' + T('Quando acaba a pausa do laser? · O que está perto da validade?', 'When does the laser pause end? · What is close to expiring?') + '</li></ul>';
+  }
+
+  function reply(raw) {
+    var n = nrm(raw), ptw = (n.match(/\b(posso|como|qual|quais|quando|hoje|noite|manha|tenho|tem|uso|usar|misturar|ingredientes|preco|validade|rotina|pele|devo|nao|esta|quanto|custa|para|com|ola|bom|obrigad[oa]|aplico|junto|preciso|produtos|que|da|do|de)\b/g) || []).length, enw = (n.match(/\b(can|how|which|when|tonight|today|use|mix|price|expire|expires|routine|what|do|does|should|the|my|with|have|hello|thanks|apply|ingredients|together|is|are|of)\b/g) || []).length;
+    rl = ptw > enw ? 'pt' : enw > ptw ? 'en' : chat.lang;
+    var S, hasQ = function (rx) { return rx.test(n); };
+    if (hasQ(/^(ola|oi|hello|hi|hey|bom dia|boa tarde|boa noite|obrigad|thanks|thank you)\b/) && n.length < 22) return /obrigad|thank/.test(n) ? T('De nada! 💜', 'You are welcome! 💜') : T('Olá! Em que posso ajudar com a tua pele hoje?', 'Hi! What can I help you with today?');
+    if (hasQ(/\b(ajuda|ajudar|help|o que (sabes|podes|consegues)|what can you)\b/)) return helpH();
+    if (hasQ(/mistur|junt|combin|together|\bmix\b|ao mesmo tempo|same night|same time|na mesma|conflit|clash/)) {
+      S = subjects(n);
+      if (S.kind === 'named' && S.g.length >= 2) { if (S.g[0].length > 1) return ambiguous(S.g[0], function (a) { return S.g[1].length > 1 ? chips([a]) + ambiguous(S.g[1], function (b) { return mixTwo(a, b); }) : mixTwo(a, S.g[1][0]); }); if (S.g[1].length > 1) return ambiguous(S.g[1], function (b) { return mixTwo(S.g[0][0], b); }); chat.last = S.g[0][0]; return mixTwo(S.g[0][0], S.g[1][0]); }
+      if (S.g.length) return perProduct(n, mixOne);
+      return clashNow() + '<p class="qsub">' + T('Para um produto em concreto, pergunta: "com o que não misturar o [produto]?"', 'For one product, ask: "what not to mix with [product]?"') + '</p>';
+    }
+    if (hasQ(/\b(posso|can i|devo|should i|pode|is it ok|ok usar|da para|safe)\b/) && ((S = subjects(n)).g.length || !hasQ(/noite|night|manha|morning|rotina|routine/))) return perProduct(n, function (p) { return canUse(p, n); });
+    if (hasQ(/como (uso|usar|aplico|aplicar|se usa|se aplica|devo)|aplic|\bhow (do i|to|should i) (use|apply)\b|\bapply\b|modo de uso|quantas vezes|how often|frequencia|passos/) && (S = subjects(n)).g.length) return perProduct(n, howH);
+    if (hasQ(/dupe|igual|parecid|similar|substitu|alternativ|equivalent|replace/) && (S = subjects(n)).g.length) return perProduct(n, dupesH);
+    if (hasQ(/\b(laser|pausa|pausar|pausado|tratamento|treatment|paused|pause|peeling)\b/)) return pauseHTML();
+    if (hasQ(/validade|expira|expir|caduc|aberto|opened|shelf life/)) { S = subjects(n); return S.g.length ? perProduct(n, expH) : expAll(); }
+    if (hasQ(/preco|custa|quanto|price|cost\b|barato|caro/)) return perProduct(n, priceH);
+    S = subjects(n);
+    if (S.kind === 'ing' && hasQ(/quais|que produtos|which|what products|tem |tenho|have|contem|contain|com |with|lista|list/)) return S.g.length ? listH(S.g.map(function (x) { return x[0]; }), T('Com ' + ingName(S.ig) + ' na prateleira:', 'With ' + ingName(S.ig) + ' on your shelf:')) : T('Nenhum produto da prateleira contém ' + ingName(S.ig) + '.', 'No shelf product contains ' + ingName(S.ig) + '.');
+    if (S.kind === 'named' && hasQ(/ingrediente|composicao|inci|ingredients|contem|contain|\btem\b|\bhas\b|\bhave\b|lista/)) { var ig2 = ingOf(n); return perProduct(n, function (p) { return ingH(p, ig2); }); }
+    if (hasQ(/(amanha|tomorrow)/) && hasQ(/noite|night/)) {
+      var c = data.cyc; if (!c.slots.length) return T('Não tens noites em ciclo definidas.', 'You have no night cycle set.');
+      var nx = c.log[ds(noon())] ? c.slots[c.idx % c.slots.length] : c.slots[(c.idx + 1) % c.slots.length];
+      return T('Amanhã à noite: ', 'Tomorrow night: ') + '<b>' + esc(nx.n || 'Night') + '</b>. ' + T('Quando marcares a noite de hoje como feita, passa a ser a de hoje.', 'Once tonight is marked done, it becomes the current one.');
+    }
+    if (hasQ(/esta noite|hoje a noite|hoje de noite|tonight|que noite|noite de hoje|rotina da noite|night routine|rotina noturna|\bnoite\b|\bnight\b/) && !(S.g.length && S.kind === 'named')) return routineHTML('pm') + clashNote();
+    if (hasQ(/manha|morning|rotina de dia|de dia/) && !(S.g.length && S.kind === 'named')) return routineHTML('am');
+    if (hasQ(/rotina|routine|hoje|today/) && !(S.g.length && S.kind === 'named')) return routineHTML('am') + '<hr class="qhr">' + routineHTML('pm');
+    if (hasQ(/ordem|order|sequencia|sequence|primeiro|layer|camadas/)) return orderH();
+    if (S.kind === 'type' && hasQ(/quais|que |which|what|lista|list|mostra|show|tenho|have/)) return S.g.length ? listH(S.g.map(function (x) { return x[0]; }), T('Na prateleira (' + S.tp[3] + '):', 'On your shelf (' + S.tp[2] + '):')) : T('Não tens ' + S.tp[3] + ' na prateleira.', 'You have no ' + S.tp[2] + ' on the shelf.');
+    if (S.kind === 'named' || S.kind === 'last') return perProduct(n, summaryH);
+    return T('Não percebi bem. ', 'I did not quite get that. ') + helpH();
+  }
+  function clashNote() { var s = routineToday('pm'), ids = s.steps.map(function (x) { return x.prod; }).filter(Boolean).map(prodById).filter(Boolean), bad = []; for (var i = 0; i < ids.length; i++) for (var j = i + 1; j < ids.length; j++) { var is = pairIssue(ids[i], ids[j]); if (is) bad.push(shortName(ids[i]) + ' + ' + shortName(ids[j]) + ' (' + is[1] + ')'); } return bad.length ? '<p>⚠️ ' + esc(bad.join('; ')) + '</p>' : ''; }
+
+  /* the panel */
+  function plain(h) { var d = document.createElement('div'); d.innerHTML = h.replace(/<\/(li|p|div)>/g, '. '); return d.textContent.replace(/\s+/g, ' ').trim(); }
+  function speakIt(h) {
+    if (!chat.speak || !('speechSynthesis' in window)) return;
+    try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(plain(h)); u.lang = rl === 'pt' ? 'pt-PT' : 'en-GB'; speechSynthesis.speak(u); } catch (e) {}
+  }
+  function paintChat() {
+    var log = $('qlog');
+    if (!chat.msgs.length) chat.msgs.push({ u: false, h: (rl = chat.lang, T('Olá! Pergunta-me sobre os teus produtos e rotinas de skincare. Toca no microfone para falar. 🎤', 'Hi! Ask me about your skincare products and routines. Tap the microphone to speak. 🎤')) });
+    log.innerHTML = chat.msgs.map(function (m) { return '<div class="qm ' + (m.u ? 'qu' : 'qb') + '">' + m.h + '</div>'; }).join('');
+    var last = log.lastElementChild; if (last) log.scrollTop = last.classList.contains('qb') && chat.msgs.length > 1 ? Math.max(0, last.offsetTop - 8) : log.scrollHeight;
+    $('qlang').textContent = chat.lang === 'pt' ? 'PT' : 'EN'; $('qsp').setAttribute('aria-pressed', String(chat.speak)); $('qmic').setAttribute('aria-pressed', String(chat.on));
+    $('qchips').innerHTML = (chat.lang === 'pt' ? ['O que uso esta noite?', 'Rotina da manhã', 'Quando acaba a pausa do laser?', 'O que está perto da validade?', 'Há produtos que não posso misturar?', 'Ordem de aplicação'] : ['What do I use tonight?', 'Morning routine', 'When does the laser pause end?', 'What is close to expiring?', 'Any products I should not mix?', 'Order of application']).map(function (q) { return '<button type="button" data-qs="' + esc(q) + '">' + esc(q) + '</button>'; }).join('');
+  }
+  function say(h) { chat.msgs.push({ u: false, h: h }); paintChat(); speakIt(h); }
+  function ask(raw) {
+    raw = String(raw || '').trim(); if (!raw) return;
+    chat.msgs.push({ u: true, h: esc(raw) });
+    var h; try { h = onToday(function () { return reply(raw); }); } catch (e) { h = T('Ups, não consegui responder a isso.', 'Oops, I could not answer that.'); }
+    say(h);
+  }
+  function openAsk() { $('qm').hidden = false; paintChat(); }
+  function closeAsk() { $('qm').hidden = true; if (chat.on && chat.rec) { try { chat.rec.abort(); } catch (e) {} } try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {} }
+  var SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function micToggle() {
+    if (!SRC) { rl = chat.lang; say(T('Este navegador não deixa usar o microfone aqui. Podes escrever a pergunta.', 'This browser does not allow the microphone here. You can type your question.')); return; }
+    if (chat.on && chat.rec) { try { chat.rec.stop(); } catch (e) {} return; }
+    var r = new SRC(), got = ''; r.lang = chat.lang === 'pt' ? 'pt-PT' : 'en-GB'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+    r.onresult = function (ev) { var t = ''; for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript; got = t; $('qin').value = t; };
+    r.onerror = function (ev) { rl = chat.lang; if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') say(T('Sem permissão para o microfone. Autoriza-o nas definições do navegador.', 'No microphone permission. Allow it in the browser settings.')); else if (ev.error === 'no-speech') got = ''; };
+    r.onend = function () { chat.on = false; $('qmic').setAttribute('aria-pressed', 'false'); if (got.trim()) { $('qin').value = ''; ask(got); } };
+    chat.rec = r; chat.on = true; $('qmic').setAttribute('aria-pressed', 'true');
+    try { r.start(); } catch (e) { chat.on = false; $('qmic').setAttribute('aria-pressed', 'false'); }
+  }
+  $('askb').addEventListener('click', openAsk);
+  $('qm').addEventListener('click', function (e) {
+    if (e.target === $('qm')) { closeAsk(); return; }
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'qx') closeAsk();
+    else if (b.id === 'qmic') micToggle();
+    else if (b.id === 'qlang') { chat.lang = chat.lang === 'pt' ? 'en' : 'pt'; try { localStorage.setItem(ASKL, chat.lang); } catch (x) {} paintChat(); }
+    else if (b.id === 'qsp') { chat.speak = !chat.speak; if (!chat.speak) { try { speechSynthesis.cancel(); } catch (x) {} } paintChat(); }
+    else if (b.dataset.qs) ask(b.dataset.qs);
+    else if (b.dataset.qpick && chat.pend) { var pp = prodById(b.dataset.qpick), pd = chat.pend; if (pp) { rl = pd.rl; chat.last = pp; chat.msgs.push({ u: true, h: esc(shortName(pp)) }); var hh = onToday(function () { return pd.fn(pp); }); say(hh); } }
+    else if (b.dataset.qfor) { var p3 = prodById(b.dataset.qfor), k3 = b.dataset.qk; if (p3) { chat.last = p3; chat.msgs.push({ u: true, h: esc(b.textContent) }); var h3 = onToday(function () { return k3 === 'can' ? canUse(p3, '') : k3 === 'how' ? howH(p3) : k3 === 'mix' ? mixOne(p3) : dupesH(p3); }); say(h3); } }
+    else if (b.dataset.pid) closeAsk();   // a product chip: the product sheet opens on top once the chat is closed
+  });
+  $('qf').addEventListener('submit', function (e) { e.preventDefault(); var v = $('qin').value; $('qin').value = ''; ask(v); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('qm').hidden) closeAsk(); });
+  if (!SRC) $('qmic').title = 'Microphone not supported in this browser';
+
   render();
   /* import from a shop page: skincare.html#import=<JSON>  (name, brand, type, img, price, cur, url, info, ing) opens the form filled in */
   function runImport() {
@@ -1256,4 +1561,4 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 <script type="module" src="sync.js?v=9"></script>
 </body>
 </html>
-<!-- build 19 -->
+<!-- build 20 -->
