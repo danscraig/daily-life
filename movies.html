@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
-<meta name="theme-color" content="#EDEAE5">
+<meta name="theme-color" content="#F6EEE6">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -15,15 +15,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
 <style>
 :root {
-  --bg: #EDEAE5;
-  --paper: #FFFFFF;
-  --ink: #2A2630;
-  --mute: #6F6874;
-  --line: #DDD8D1;
-  --accent: #52709A;
+  --bg: #F6EEE6;
+  --paper: #FFFCF8;
+  --ink: #3A322D;
+  --mute: #7A6E65;
+  --line: #E7DDD1;
+  --accent: #5F7E7C;
   --accent-ink: #FFFFFF;
   --orchid: color-mix(in srgb, var(--accent) 26%, #fff);
-  --shadow: rgba(70, 58, 44, .14);
+  --shadow: rgba(90, 70, 50, .14);
   --bad: #C0392B;
   --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
@@ -106,7 +106,7 @@ em.soon, .note.soon { display: block; font-style: normal; font-size: 12.5px; col
 .tile b { font-weight: 500; font-size: 13px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .tile i { font: normal 400 12px var(--font); color: var(--mute); }
 .more { display: block; margin: 18px auto 4px; }
-.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: rgba(42, 38, 48, .4); padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: rgba(58, 50, 45, .4); padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
 .modal[hidden] { display: none; }
 .sheet { width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; background: var(--bg); border-radius: 30px; padding: 18px; }
 .dhead { display: flex; gap: 16px; margin-bottom: 14px; }

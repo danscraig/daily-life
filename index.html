@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
-<meta name="theme-color" content="#EDEAE5">
+<meta name="theme-color" content="#F6EEE6">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -16,18 +16,18 @@
 <style>
 /* Layout: one narrow column, a diary page per calendar day. Each year of that day is a row, newest first. Bottom tab bar switches Day / Calendar / Search. */
 :root {
-  --bg: #EDEAE5;
-  --paper: #FFFFFF;
-  --ink: #2A2630;
-  --mute: #6F6874;
-  --line: #DDD8D1;
-  --accent: #4A5159;
+  --bg: #F6EEE6;
+  --paper: #FFFCF8;
+  --ink: #3A322D;
+  --mute: #7A6E65;
+  --line: #E7DDD1;
+  --accent: #7A7352;
   --accent-ink: #FFFFFF;
   --violet: color-mix(in srgb, var(--accent) 26%, #fff);
-  --violet-ink: #2A2630;
+  --violet-ink: #3A322D;
   --orchid: color-mix(in srgb, var(--accent) 26%, #fff);
   --mark: color-mix(in srgb, var(--accent) 26%, #fff);
-  --shadow: rgba(70, 58, 44, .14);
+  --shadow: rgba(90, 70, 50, .14);
   --glow1: rgba(255, 255, 255, .55);
   --glow2: color-mix(in srgb, var(--accent) 14%, transparent);
   --font-display: "Outfit", "Helvetica Neue", Arial, sans-serif;
@@ -301,7 +301,7 @@ button:disabled { cursor: default; }
 .nact button { padding: 14px; border-radius: 16px; font: 500 16px var(--font-display); color: var(--ink); background: var(--bg); }
 .nact button.yes { color: #C0392B; }
 /* undo toast, recently deleted, sort menu */
-.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(42, 38, 48, .6); max-width: calc(100vw - 110px); }
+.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(58, 50, 45, .6); max-width: calc(100vw - 110px); }
 .undo button { min-height: 40px; padding: 0 18px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; font-size: 14px; }
 .nsortm { top: calc(70px + env(safe-area-inset-top, 0px)); bottom: auto; right: max(16px, calc((100vw - 640px) / 2 + 16px)); }
 .nmenu button.on { color: var(--accent); font-weight: 600; }
@@ -409,28 +409,29 @@ img { max-width: 100%; }
 /* ===== iPhone-style home screen (only while the home page is showing) ===== */
 :root { --ease-ios: cubic-bezier(.32, .72, 0, 1); }
 html.onhome, html.onhome body { overflow: hidden; overscroll-behavior: none; }
-html.onhome body { background: #D9D5CE; padding: 0; position: fixed; inset: 0; width: 100%; height: 100%; }
+html.onhome body { background: #EADFD2; padding: 0; position: fixed; inset: 0; width: 100%; height: 100%; }
 html.onhome body::before { display: none; }
-#home.ios { max-width: 480px; margin: 0 auto; height: 100vh; height: 100dvh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; position: relative; isolation: isolate; color: #2a2630; padding: calc(22px + env(safe-area-inset-top, 0px)) 18px calc(14px + env(safe-area-inset-bottom, 0px)); will-change: transform, opacity; }
+#home.ios { max-width: 480px; margin: 0 auto; height: 100vh; height: 100dvh; overflow: hidden; touch-action: none; display: flex; flex-direction: column; position: relative; isolation: isolate; color: #3A322D; padding: calc(22px + env(safe-area-inset-top, 0px)) 18px calc(14px + env(safe-area-inset-bottom, 0px)); will-change: transform, opacity; }
 #home.ios::before { content: ""; position: fixed; inset: 0; z-index: -1; background:
-  radial-gradient(120% 70% at 12% 8%, rgba(255, 255, 255, .85) 0%, rgba(255, 255, 255, 0) 60%),
-  radial-gradient(90% 60% at 95% 40%, rgba(222, 216, 206, .7) 0%, rgba(222, 216, 206, 0) 65%),
-  radial-gradient(110% 70% at 40% 105%, rgba(150, 142, 132, .5) 0%, rgba(150, 142, 132, 0) 70%),
-  linear-gradient(165deg, #F2EFEA 0%, #DDD8D1 55%, #C8C2B9 100%); }
+  radial-gradient(120% 70% at 12% 8%, rgba(255, 255, 255, .9) 0%, rgba(255, 255, 255, 0) 60%),
+  radial-gradient(90% 55% at 95% 38%, rgba(221, 188, 158, .38) 0%, rgba(221, 188, 158, 0) 65%),
+  radial-gradient(80% 50% at 5% 62%, rgba(223, 174, 164, .28) 0%, rgba(223, 174, 164, 0) 65%),
+  radial-gradient(110% 70% at 45% 108%, rgba(183, 183, 155, .5) 0%, rgba(183, 183, 155, 0) 70%),
+  linear-gradient(165deg, #FBF4EC 0%, #F1E6DA 55%, #E6D8C8 100%); }
 #home.ios .hello { padding: 6px 6px 16px; --acy: 4px; position: relative; }
 #home.ios .hello::before { display: none; }
-#home.ios .hdate { margin: 0; font: 500 13px var(--font-display); letter-spacing: .02em; text-transform: none; color: #5b5560; opacity: 1; text-shadow: 0 1px 8px rgba(255, 255, 255, .6); }
-#home.ios .hello h1 { margin: 2px 0 0; font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; color: #2a2630; text-shadow: 0 1px 12px rgba(255, 255, 255, .6); }
-#home.ios .hello h1 .nm2 { color: #2a2630; }
-#home.ios .syncst { color: #5b5560; opacity: 1; font-size: 12px; min-height: 24px; margin-top: 2px; }
+#home.ios .hdate { margin: 0; font: 500 13px var(--font-display); letter-spacing: .02em; text-transform: none; color: #7A6E65; opacity: 1; text-shadow: 0 1px 8px rgba(255, 255, 255, .6); }
+#home.ios .hello h1 { margin: 2px 0 0; font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; color: #3A322D; text-shadow: 0 1px 12px rgba(255, 255, 255, .6); }
+#home.ios .hello h1 .nm2 { color: #3A322D; }
+#home.ios .syncst { color: #7A6E65; opacity: 1; font-size: 12px; min-height: 24px; margin-top: 2px; }
 #home.ios .syncst::before { box-shadow: 0 0 0 2px rgba(255, 255, 255, .7); }
-#home.ios .acct { background: rgba(255, 255, 255, .6); color: #2a2630; border: 1px solid rgba(255, 255, 255, .85); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: none; width: 40px; height: 40px; top: 4px; }
+#home.ios .acct { background: rgba(255, 255, 255, .6); color: #3A322D; border: 1px solid rgba(255, 255, 255, .85); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: none; width: 40px; height: 40px; top: 4px; }
 #home.ios .acct.setb { right: 48px; }
-#home.ios .acdot { border-color: #fff; background: #2a2630; }
+#home.ios .acdot { border-color: #fff; background: #3A322D; }
 #home.ios .acpanel { color: var(--ink); top: 52px; }
 #home.ios .acpanel .sy { background: #fff; }
 .ihw { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 4px 0 26px; }
-.ihw .wg { position: relative; text-align: left; min-height: clamp(120px, 20dvh, 158px); padding: 14px; border-radius: 26px; display: flex; flex-direction: column; color: #2a2630;
+.ihw .wg { position: relative; text-align: left; min-height: clamp(120px, 20dvh, 158px); padding: 14px; border-radius: 26px; display: flex; flex-direction: column; color: #3A322D;
   background: rgba(255, 255, 255, .58); -webkit-backdrop-filter: blur(22px) saturate(1.2); backdrop-filter: blur(22px) saturate(1.2); border: 1px solid rgba(255, 255, 255, .85); box-shadow: 0 14px 30px -18px rgba(70, 58, 44, .4); transition: transform 140ms var(--ease-out); }
 .ihw .wg:active { transform: scale(.97); }
 .ihw .t { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
@@ -443,7 +444,7 @@ html.onhome body::before { display: none; }
 .ihw .ring .n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 600; }
 .ihw .sub { margin-top: auto; font-size: 13px; opacity: .92; padding-top: 8px; display: block; }
 .igrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 6px; padding: 0 2px; }
-.ic { display: flex; flex-direction: column; align-items: center; gap: 7px; color: #2a2630; transition: transform 140ms var(--ease-out); }
+.ic { display: flex; flex-direction: column; align-items: center; gap: 7px; color: #3A322D; transition: transform 140ms var(--ease-out); }
 .ic:active { transform: scale(.92); }
 .ic .sq { width: 62px; height: 62px; border-radius: 22.5%; display: grid; place-items: center; position: relative; overflow: hidden; box-shadow: 0 8px 16px -8px rgba(60, 48, 36, .5), inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 -1px 0 rgba(0, 0, 0, .08); }
 .ic .sq::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%); pointer-events: none; }
@@ -451,7 +452,7 @@ html.onhome body::before { display: none; }
 .ic .lb { font-size: 11.5px; font-weight: 500; letter-spacing: .01em; text-align: center; line-height: 1.15; text-shadow: 0 1px 6px rgba(255, 255, 255, .7); max-width: 74px; }
 .ic.cal .sq { background: #fff; }
 .ic.cal .sq::after { display: none; }
-.ic .wd { position: absolute; top: 9px; left: 0; right: 0; text-align: center; font-size: 10px; font-weight: 600; color: #E5586E; text-transform: uppercase; letter-spacing: .08em; z-index: 1; }
+.ic .wd { position: absolute; top: 9px; left: 0; right: 0; text-align: center; font-size: 10px; font-weight: 600; color: #BC6F63; text-transform: uppercase; letter-spacing: .08em; z-index: 1; }
 .ic .dn { position: absolute; top: 19px; left: 0; right: 0; text-align: center; font-size: 30px; font-weight: 300; color: #2b2330; z-index: 1; letter-spacing: -.02em; }
 .idock { margin-top: auto; padding: 14px; border-radius: 34px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: rgba(255, 255, 255, .55); -webkit-backdrop-filter: blur(24px) saturate(1.2); backdrop-filter: blur(24px) saturate(1.2); border: 1px solid rgba(255, 255, 255, .85); }
 .idock .ic .lb { display: none; }
@@ -464,9 +465,9 @@ html.onhome body::before { display: none; }
 .ihbar { flex: none; height: max(env(safe-area-inset-bottom, 0px), 24px); display: grid; place-items: center; background: var(--bg); touch-action: none; cursor: pointer; }
 .ihbar i { display: block; width: 134px; height: 5px; border-radius: 3px; background: #1d1521; opacity: .85; transition: transform 160ms var(--ease-out); }
 .ihbar:active i { transform: scaleX(.9); }
-html[data-ac="check"] { --accent: #4A5159; }
-html[data-ac="diary"] { --accent: #A95F5F; }
-html[data-ac="notes"] { --accent: #9C7A24; }
+html[data-ac="check"] { --accent: #7A7352; }
+html[data-ac="diary"] { --accent: #8F7376; }
+html[data-ac="notes"] { --accent: #5B5049; }
 </style>
 </head>
 <body>
@@ -525,16 +526,16 @@ html[data-ac="notes"] { --accent: #9C7A24; }
   </section>
 
   <nav class="igrid" aria-label="Apps">
-    <button class="ic" data-app="check" style="animation-delay:110ms"><span class="sq" style="background:linear-gradient(160deg,#6A727C,#444A52)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="lb">Check-in</span></button>
-    <button class="ic" data-app="diary" style="animation-delay:150ms"><span class="sq" style="background:linear-gradient(160deg,#DDA0A0,#BC7575)"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.6 7.6"/><circle cx="11" cy="11" r="2"/></svg></span><span class="lb">Journal</span></button>
-    <button class="ic" data-open="movies" style="animation-delay:190ms"><span class="sq" style="background:linear-gradient(160deg,#86A0C2,#5F7BA3)"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="12.5" rx="3"/><path d="M10 8.5v5l4.2-2.5z" fill="#fff"/><path d="M8 20.5h8"/></svg></span><span class="lb">Movies &amp; Books</span></button>
+    <button class="ic" data-app="check" style="animation-delay:110ms"><span class="sq" style="background:linear-gradient(160deg,#A8A17E,#7A7352)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="lb">Check-in</span></button>
+    <button class="ic" data-app="diary" style="animation-delay:150ms"><span class="sq" style="background:linear-gradient(160deg,#C0A7A8,#8F7376)"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.6 7.6"/><circle cx="11" cy="11" r="2"/></svg></span><span class="lb">Journal</span></button>
+    <button class="ic" data-open="movies" style="animation-delay:190ms"><span class="sq" style="background:linear-gradient(160deg,#9FB1AF,#5F7E7C)"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="12.5" rx="3"/><path d="M10 8.5v5l4.2-2.5z" fill="#fff"/><path d="M8 20.5h8"/></svg></span><span class="lb">Movies &amp; Books</span></button>
   </nav>
 
   <nav class="idock" aria-label="Favourites">
     <button class="ic cal" data-open="calendar" aria-label="Calendar" style="animation-delay:260ms"><span class="sq"><span class="wd" id="ih_cw"></span><span class="dn" id="ih_cd"></span></span><span class="lb">Calendar</span></button>
-    <button class="ic" data-open="skincare" aria-label="Skincare" style="animation-delay:290ms"><span class="sq" style="background:linear-gradient(160deg,#93BBA3,#6B9C84)"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg></span><span class="lb">Skincare</span></button>
-    <button class="ic" data-open="meals" aria-label="Meals" style="animation-delay:320ms"><span class="sq" style="background:linear-gradient(160deg,#E6AE75,#CF8844)"><svg viewBox="0 0 24 24"><path d="M4 11h16v1a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg></span><span class="lb">Meals</span></button>
-    <button class="ic" data-app="notes" aria-label="Notes" style="animation-delay:350ms"><span class="sq" style="background:linear-gradient(160deg,#E9D189,#D6B455)"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><span class="lb">Notes</span></button>
+    <button class="ic" data-open="skincare" aria-label="Skincare" style="animation-delay:290ms"><span class="sq" style="background:linear-gradient(160deg,#B7B79B,#7F8060)"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg></span><span class="lb">Skincare</span></button>
+    <button class="ic" data-open="meals" aria-label="Meals" style="animation-delay:320ms"><span class="sq" style="background:linear-gradient(160deg,#DDBC9E,#A9703F)"><svg viewBox="0 0 24 24"><path d="M4 11h16v1a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg></span><span class="lb">Meals</span></button>
+    <button class="ic" data-app="notes" aria-label="Notes" style="animation-delay:350ms"><span class="sq" style="background:linear-gradient(160deg,#8B7F76,#5B5049)"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><span class="lb">Notes</span></button>
   </nav>
 </div>
 
@@ -1063,7 +1064,7 @@ html[data-ac="notes"] { --accent: #9C7A24; }
     var p = noteById(ngp); if (!p) { ngp = ''; return ''; }
     return '<input class="ntitle" id="npn" placeholder="Page name" autocomplete="off" value="' + esc(p.t) + '">';
   }
-  var SW = ['#2A2630', '#52709A', '#D9534F', '#E8923A', '#3E9D6A', '#3E7FD9'];
+  var SW = ['#3A322D', '#5F7E7C', '#D9534F', '#E8923A', '#3E9D6A', '#3E7FD9'];
   function toolbarHTML() {
     return '<div class="sw" id="nsw" hidden>' + SW.map(function (c) { return '<button data-f="c" data-c="' + c + '" style="background:' + c + '" aria-label="' + c + '"></button>'; }).join('') + '</div>' +
       '<div class="tbo" id="tbo" hidden><button data-f="row">+ Row</button><button data-f="cell">+ Col</button><button data-f="deltbl">Del table</button></div>' +
@@ -1270,7 +1271,7 @@ html[data-ac="notes"] { --accent: #9C7A24; }
   function ndStart() {
     nd.on = true; clearTimeout(nd.timer);
     var r = nd.card.getBoundingClientRect(), g = nd.card.cloneNode(true);
-    g.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:50;pointer-events:none;opacity:.9;transform:scale(1.03);box-shadow:0 18px 36px -14px rgba(42,38,48,.45)';
+    g.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:50;pointer-events:none;opacity:.9;transform:scale(1.03);box-shadow:0 18px 36px -14px rgba(58,50,45,.45)';
     document.body.appendChild(g); nd.ghost = g; nd.dx = nd.x - r.left; nd.dy = nd.y - r.top; nd.card.style.opacity = '.35';
     try { nd.card.setPointerCapture(nd.pid); } catch (e) {}
     if (navigator.vibrate) navigator.vibrate(12);
@@ -1550,25 +1551,33 @@ html[data-ac="notes"] { --accent: #9C7A24; }
   render = function () { _render(); homeInfo(); lockHome(); if (!NE.hidden && nview === 'list') renderNotes(); };
 
   /* ---- iPhone-style home: widgets, and the apps that open in a window growing out of their icon ---- */
-  var EDGE = 26;   // the swipe-back must start within this many pixels of the left edge
+  var EDGE = 34;   // the swipe-back must start within this many pixels of the left edge
   function topModal(doc) { var m = doc.querySelectorAll('.modal:not([hidden]), .pop:not([hidden])'); return m.length ? m[m.length - 1] : null; }
   function closeTop(doc) {   // an open sheet or popup closes with a tap on its backdrop: do that first
     var m = topModal(doc); if (!m) return false;
     m.dispatchEvent(new (doc.defaultView || window).MouseEvent('click', { bubbles: true })); return true;
   }
+  function edgeBubble(doc) {   // a round "‹" that follows the finger, so you can see the swipe is being picked up
+    var el = doc.__eb; if (el && el.parentNode) return el;
+    el = doc.createElement('div'); el.textContent = '‹'; el.setAttribute('aria-hidden', 'true');
+    el.style.cssText = 'position:fixed;top:50%;left:0;width:46px;height:46px;margin-top:-23px;border-radius:50%;background:rgba(58,50,45,.88);color:#fff;font:600 28px/42px -apple-system,Helvetica,Arial,sans-serif;text-align:center;z-index:2147483647;pointer-events:none;opacity:0;transform:translateX(-60px);box-shadow:0 6px 18px rgba(0,0,0,.25)';
+    (doc.body || doc.documentElement).appendChild(el); doc.__eb = el; return el;
+  }
   function edgeSwipe(doc, onBack) {
-    var sx = 0, sy = 0, st = 0, on = false;
+    var sx = 0, sy = 0, st = 0, lx = 0, on = false;
+    function show(dx) { var el = edgeBubble(doc); el.style.transition = 'none'; el.style.opacity = String(Math.min(1, dx / 60)); el.style.transform = 'translateX(' + (Math.min(dx * 0.7, 62) - 52) + 'px)'; }
+    function hide() { var el = doc.__eb; if (el) { el.style.transition = 'opacity 160ms ease-out, transform 160ms ease-out'; el.style.opacity = '0'; el.style.transform = 'translateX(-60px)'; } }
+    function done(dx, dy) { on = false; hide(); if ((dx > 70 || (dx > 40 && dx / Math.max(1, Date.now() - st) > 0.35)) && dy < dx * 0.8) onBack(); }
     doc.addEventListener('touchstart', function (e) {
       var t = e.touches[0]; on = e.touches.length === 1 && t.clientX <= EDGE;
-      if (on) { sx = t.clientX; sy = t.clientY; st = Date.now(); e.stopPropagation(); }   // the page's own swipes (days, weeks) must not also fire
+      if (on) { sx = lx = t.clientX; sy = t.clientY; st = Date.now(); e.stopPropagation(); }   // the page's own swipes (days, weeks) must not also fire
     }, { passive: true, capture: true });
-    doc.addEventListener('touchmove', function (e) { if (e.touches.length > 1) on = false; }, { passive: true });
-    doc.addEventListener('touchcancel', function () { on = false; }, { passive: true });
-    doc.addEventListener('touchend', function (e) {
-      if (!on) return; on = false;
-      var t = e.changedTouches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
-      if ((dx > 70 || (dx > 40 && dx / Math.max(1, Date.now() - st) > 0.35)) && dy < dx * 0.7) onBack();
+    doc.addEventListener('touchmove', function (e) {
+      if (!on) return; if (e.touches.length > 1) { on = false; hide(); return; }
+      lx = e.touches[0].clientX; var dx = lx - sx; if (dx > 8 && Math.abs(e.touches[0].clientY - sy) < dx * 0.9) show(dx);
     }, { passive: true });
+    doc.addEventListener('touchcancel', function () { if (on) done(lx - sx, Math.abs(0)); }, { passive: true });   // the phone took the gesture over: if it was already a clear swipe, count it
+    doc.addEventListener('touchend', function (e) { if (!on) return; var t = e.changedTouches[0]; done(t.clientX - sx, Math.abs(t.clientY - sy)); }, { passive: true });
   }
   edgeSwipe(document, function () {   // the apps that live in this page (Check-in, Journal, Notes)
     if (!homeEl.hidden || icur) return;
@@ -1594,19 +1603,20 @@ html[data-ac="notes"] { --accent: #9C7A24; }
       });
     });
     var C = 2 * Math.PI * 28, frac = st ? sd / st : 0;
-    document.getElementById('ih_ring').innerHTML = '<svg viewBox="0 0 66 66"><circle cx="33" cy="33" r="28" fill="none" stroke="rgba(42,38,48,.14)" stroke-width="7"/><circle cx="33" cy="33" r="28" fill="none" stroke="#2a2630" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg><span class="n">' + (st ? sd + '/' + st : '–') + '</span>';
+    document.getElementById('ih_ring').innerHTML = '<svg viewBox="0 0 66 66"><circle cx="33" cy="33" r="28" fill="none" stroke="rgba(58,50,45,.14)" stroke-width="7"/><circle cx="33" cy="33" r="28" fill="none" stroke="#3A322D" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg><span class="n">' + (st ? sd + '/' + st : '–') + '</span>';
     document.getElementById('ih_sub').textContent = night && night.n ? 'Tonight: ' + night.n : (st ? 'steps today' : 'Set up your routine');
   }
   var _homeInfo = homeInfo;
   homeInfo = function () { _homeInfo(); paintIos(); };
   paintIos();
   setTimeout(function () { homeEl.classList.remove('intro'); }, 1500);   // the icons rise in once, not every time you come back
+  function loadFrame(url) { try { iframe.contentWindow.location.replace(new URL(url, location.href).href); } catch (e) { iframe.src = url; } }   // replace(), not src: no history entry
   function openIApp(id, from) {
     if (ibusy || icur || !IAPPS[id]) return;
     ibusy = true; icur = id;
     var r = from.getBoundingClientRect();
     iwin.style.transformOrigin = (r.left + r.width / 2) + 'px ' + (r.top + r.height / 2) + 'px';
-    iframe.src = IAPPS[id]; iwin.hidden = false;
+    iwin.hidden = false; loadFrame(IAPPS[id]);
     var a = iwin.animate([{ transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }, { transform: 'scale(1)', opacity: 1, borderRadius: '0px' }], { duration: 380, easing: IEASE, fill: 'forwards' });
     homeEl.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.9)', opacity: .35 }], { duration: 380, easing: IEASE, fill: 'forwards' });
     a.onfinish = function () { ibusy = false; };
@@ -1623,7 +1633,7 @@ html[data-ac="notes"] { --accent: #9C7A24; }
     var a = iwin.animate([{ transform: 'scale(1)', opacity: 1, borderRadius: '0px' }, { transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }], { duration: 300, easing: IEASE, fill: 'forwards' });
     homeEl.animate([{ transform: 'scale(.9)', opacity: .35 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: IEASE, fill: 'forwards' });
     a.onfinish = function () {
-      iwin.hidden = true; iframe.onload = null; iframe.src = 'about:blank'; icur = null; ibusy = false;
+      iwin.hidden = true; iframe.onload = null; loadFrame('about:blank'); icur = null; ibusy = false;
       iwin.getAnimations().concat(homeEl.getAnimations()).forEach(function (x) { x.cancel(); });
       homeInfo();
     };

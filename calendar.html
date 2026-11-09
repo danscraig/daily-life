@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
-<meta name="theme-color" content="#EDEAE5">
+<meta name="theme-color" content="#F6EEE6">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
@@ -15,15 +15,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
 <style>
 :root {
-  --bg: #EDEAE5;
-  --paper: #FFFFFF;
-  --ink: #2A2630;
-  --mute: #6F6874;
-  --line: #DDD8D1;
-  --accent: #D1415A;
+  --bg: #F6EEE6;
+  --paper: #FFFCF8;
+  --ink: #3A322D;
+  --mute: #7A6E65;
+  --line: #E7DDD1;
+  --accent: #BC6F63;
   --accent-ink: #FFFFFF;
   --orchid: color-mix(in srgb, var(--accent) 26%, #fff);
-  --shadow: rgba(70, 58, 44, .14);
+  --shadow: rgba(90, 70, 50, .14);
   --bad: #C0392B;
   --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
   color-scheme: light;
@@ -111,9 +111,9 @@ button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.97); }
 .chip.rp { position: relative; padding-right: 14px; }
 .chip.seg.rp i { padding-right: 0; }
 .te.rp b { padding-right: 11px; }
-.pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(42, 38, 48, .45); pointer-events: auto; }
+.pop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(58, 50, 45, .45); pointer-events: auto; }
 .pop[hidden] { display: none; }
-.pop .card { width: 100%; max-width: 340px; background: var(--bg); border-radius: 26px; padding: 20px; box-shadow: 0 24px 50px -16px rgba(42, 38, 48, .6); }
+.pop .card { width: 100%; max-width: 340px; background: var(--bg); border-radius: 26px; padding: 20px; box-shadow: 0 24px 50px -16px rgba(58, 50, 45, .6); }
 .pop p { margin: 0 0 14px; font-weight: 600; font-size: 17px; }
 .leg > div { display: flex; align-items: center; gap: 14px; padding: 9px 4px; font-size: 15px; }
 .leg span { flex: none; width: 18px; height: 18px; border-radius: 50%; }
@@ -125,17 +125,17 @@ button:active:not(:disabled):not(.te):not(.draft) { transform: scale(.97); }
 .gut > div:first-child { visibility: hidden; }
 .col { position: relative; height: calc(var(--hr) * var(--hrs)); border-left: 1px solid var(--line); background-image: linear-gradient(var(--line) 1px, transparent 1px); background-size: 100% var(--hr); }
 .te { position: absolute; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 2px 4px; border-radius: 7px; border: 1px solid var(--paper); color: #fff; font-size: 10.5px; line-height: 1.25; overflow: hidden; text-align: left; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-.te.lift { z-index: 9; opacity: .92; box-shadow: 0 12px 26px -8px rgba(42, 38, 48, .65); border: 2px solid #fff; }
+.te.lift { z-index: 9; opacity: .92; box-shadow: 0 12px 26px -8px rgba(58, 50, 45, .65); border: 2px solid #fff; }
 .te b { display: block; font-weight: 600; }
 .te span { opacity: .9; }
 /* the event being placed: a block you can drag, with the form docked under the grid */
 .ovl { position: absolute; top: 0; left: 38px; right: 0; height: calc(var(--hr) * var(--hrs)); pointer-events: none; z-index: 5; }
-.draft { pointer-events: auto; touch-action: none; cursor: grab; z-index: 5; border: 2px solid #fff; box-shadow: 0 10px 24px -8px rgba(42, 38, 48, .6); user-select: none; -webkit-user-select: none; }
+.draft { pointer-events: auto; touch-action: none; cursor: grab; z-index: 5; border: 2px solid #fff; box-shadow: 0 10px 24px -8px rgba(58, 50, 45, .6); user-select: none; -webkit-user-select: none; }
 .draft:active { cursor: grabbing; }
 .rz { position: absolute; left: 0; right: 0; bottom: 0; height: 20px; cursor: ns-resize; touch-action: none; }
 .rz::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 26px; height: 4px; margin-left: -13px; border-radius: 4px; background: rgba(255, 255, 255, .85); }
 .modal.dock { background: transparent; align-items: flex-end; padding: 0; pointer-events: none; }
-.modal.dock .sheet { pointer-events: auto; max-width: 760px; max-height: 46vh; border-radius: 26px 26px 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -16px rgba(42, 38, 48, .5); }
+.modal.dock .sheet { pointer-events: auto; max-width: 760px; max-height: 46vh; border-radius: 26px 26px 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -16px 40px -16px rgba(58, 50, 45, .5); }
 body.editing { padding-bottom: calc(50vh + env(safe-area-inset-bottom, 0px)); }
 /* week and day: the page stays put; only the time grid scrolls, inside its rounded card */
 body.tgv { height: 100vh; height: 100dvh; overflow: hidden; padding-bottom: 14px; }
@@ -147,13 +147,13 @@ body.tgv .tgtop { top: 0; }
 body.tgv.editing .tg { padding-bottom: 46vh; }
 html.nolock, html.nolock body { overflow: hidden; }
 body.editing .fab { display: none; }
-.now { position: absolute; left: 0; right: 0; height: 2px; background: #E0506A; pointer-events: none; z-index: 3; }
-.now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #E0506A; }
+.now { position: absolute; left: 0; right: 0; height: 2px; background: var(--accent); pointer-events: none; z-index: 3; }
+.now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 
-.fab { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 32px; line-height: 1; display: grid; place-items: center; padding-bottom: 3px; box-shadow: 0 16px 30px -12px var(--shadow), 0 6px 14px -6px rgba(42, 38, 48, .5); }
+.fab { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 20; width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 32px; line-height: 1; display: grid; place-items: center; padding-bottom: 3px; box-shadow: 0 16px 30px -12px var(--shadow), 0 6px 14px -6px rgba(58, 50, 45, .5); }
 
 /* editor */
-.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: rgba(42, 38, 48, .4); padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: rgba(58, 50, 45, .4); padding: calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
 .sheet { width: 100%; max-width: 520px; max-height: 100%; overflow-y: auto; background: var(--bg); border-radius: 30px; padding: 18px; }
 .sheet h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
 .fl { display: block; margin: 14px 4px 6px; font: 500 12px var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
@@ -176,7 +176,7 @@ body.editing .fab { display: none; }
 .btn { padding: 12px 20px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 14px; }
 .btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
 .btn.danger { background: var(--paper); color: var(--bad); border: 1px solid var(--line); margin-left: auto; }
-.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(42, 38, 48, .6); max-width: calc(100vw - 110px); }
+.undo { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; box-shadow: 0 14px 30px -10px rgba(58, 50, 45, .6); max-width: calc(100vw - 110px); }
 .undo button { min-height: 40px; padding: 0 18px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 600; font-size: 14px; }
 .hint { font-size: 12.5px; color: var(--mute); margin: 8px 4px 0; }
 
@@ -218,7 +218,8 @@ body.editing .fab { display: none; }
   var EKEY = 'daily-life-events-v1';
   var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var COLORS = ['#A064B0', '#D9709C', '#E08A4F', '#C99A2E', '#5BA06E', '#3E9DA3', '#5C80D0', '#7C7590'];
+  var COLORS = ['#8F7376', '#BC6F63', '#5F7E7C', '#A9703F', '#7F8060', '#7A7352', '#C79B6D', '#5B5049'];
+  var OLDCOL = {'#a064b0': '#8F7376', '#d9709c': '#BC6F63', '#e08a4f': '#5F7E7C', '#c99a2e': '#A9703F', '#5ba06e': '#7F8060', '#3e9da3': '#7A7352', '#5c80d0': '#C79B6D', '#7c7590': '#5B5049'};   // events saved with the old purple-era colours show in the new ones (nothing is rewritten until you edit the event)
   var CLABD = ['Personal', 'Birthdays', 'Work & study', 'Appointments', 'Health & sport', 'Travel', 'Family & friends', 'Public holidays'];
   var CLAB = CLABD.slice();   // what each colour is for; she can rename them (kept on this device only, so cloud sync leaves it alone)
   try { var cl = JSON.parse(localStorage.getItem('daily-life-cal-labels')); if (Array.isArray(cl)) cl.forEach(function (x, i) { if (i < CLAB.length && typeof x === 'string' && x.trim()) CLAB[i] = x.trim().slice(0, 30); }); } catch (e) {}
@@ -249,7 +250,7 @@ body.editing .fab { display: none; }
   function weekStart(d) { return addDays(d, -d.getDay()); }   // weeks start on Sunday
   var todayS = ymd(new Date());
 
-  function load() { try { var r = JSON.parse(localStorage.getItem(EKEY)); items = (r && Array.isArray(r.items)) ? r.items : []; } catch (e) { items = []; } }
+  function load() { try { var r = JSON.parse(localStorage.getItem(EKEY)); items = (r && Array.isArray(r.items)) ? r.items : []; items.forEach(function (x) { var k = x && x.c ? String(x.c).toLowerCase() : ''; if (OLDCOL[k]) x.c = OLDCOL[k]; }); } catch (e) { items = []; } }
   function save() { try { localStorage.setItem(EKEY, JSON.stringify({ items: items })); } catch (e) {} }
   function byId(id) {
     if (id.indexOf('hol:') === 0) return hol(id.split(':')[1]).filter(function (x) { return x.id === id; })[0] || null;
