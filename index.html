@@ -462,9 +462,7 @@ html.onhome body::before { display: none; }
 /* an open app: a window that grows out of its icon */
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
 .iwin iframe { flex: 1; width: 100%; border: 0; background: var(--bg); display: block; min-height: 0; }
-.ihbar { flex: none; height: max(env(safe-area-inset-bottom, 0px), 24px); display: grid; place-items: center; background: var(--bg); touch-action: none; cursor: pointer; }
-.ihbar i { display: block; width: 134px; height: 5px; border-radius: 3px; background: #1d1521; opacity: .85; transition: transform 160ms var(--ease-out); }
-.ihbar:active i { transform: scaleX(.9); }
+.ihbar { flex: none; height: env(safe-area-inset-bottom, 0px); background: var(--paper); }
 html[data-ac="check"] { --accent: #7A7352; }
 html[data-ac="diary"] { --accent: #8F7376; }
 html[data-ac="notes"] { --accent: #5B5049; }
@@ -541,7 +539,7 @@ html[data-ac="notes"] { --accent: #5B5049; }
 
 <div class="iwin" id="iwin" hidden>
   <iframe id="iframe" title="App" allow="microphone; clipboard-write"></iframe>
-  <div class="ihbar" id="ihbar" role="button" aria-label="Go home" tabindex="0"><i></i></div>
+  <div class="ihbar" id="ihbar" aria-hidden="true"></div>
 </div>
 
 <div id="app-journal" hidden>
@@ -1640,13 +1638,6 @@ html[data-ac="notes"] { --accent: #5B5049; }
   }
   homeEl.addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openIApp(b.dataset.open, b.querySelector('.sq') || b); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeIApp(); });
-  (function () {
-    var bar = document.getElementById('ihbar'), y0 = 0, t0 = 0, down = false;
-    bar.addEventListener('pointerdown', function (e) { down = true; y0 = e.clientY; t0 = Date.now(); try { bar.setPointerCapture(e.pointerId); } catch (x) {} });
-    bar.addEventListener('pointerup', function (e) { if (!down) return; down = false; var dy = y0 - e.clientY, v = dy / Math.max(1, Date.now() - t0); if (dy > 36 || v > 0.3 || Math.abs(dy) < 6) closeIApp(); });
-    bar.addEventListener('pointercancel', function () { down = false; });
-    bar.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeIApp(); } });
-  })();
 
   /* swipe left or right on the Day tab to change the day (left = next day, right = previous day) */
   (function () {
