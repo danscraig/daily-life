@@ -248,15 +248,22 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
   function linksHTML() {
     var L = links();
-    return '<form class="addrow" id="lf" autocomplete="off"><input type="text" id="lin" inputmode="url" placeholder="Paste a recipe link" aria-label="Recipe link"><button class="btn" type="submit">+</button></form>' +
+    return '<form class="addrow" id="lf" autocomplete="off"><input type="text" id="lin" inputmode="url" placeholder="Paste a recipe link" aria-label="Recipe link"><button class="btn" type="submit">+</button></form>' + (lmsg ? '<p style="margin:-4px 4px 10px;font-size:13px;color:var(--mute)">' + esc(lmsg) + '</p>' : '') +
       (L.length ? '<div class="h" style="margin-top:0">Waiting to become recipes (' + L.length + ')</div>' + L.map(function (x) { return '<div class="item"><span class="tx">' + esc(hostOf(x.url)) + '<small>' + esc(x.url) + '</small></span><button class="x" data-ld="' + x.id + '" aria-label="Remove link">✕</button></div>'; }).join('') + '<div style="height:10px"></div>' : '');
   }
-  function addLink() {
-    var i = $('lin'), v = i.value.trim(); if (!v) return;
+  var lmsg = '';
+  function saveLink(v) {   // 'ok' | 'dup' | 'bad'
+    v = String(v || '').trim(); if (!v) return 'bad';
+    var found = v.match(/https?:\/\/\S+/); if (found) v = found[0];   // a shared text like "Look at this https://…" keeps only the link
     if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
-    try { new URL(v); } catch (e) { i.focus(); return; }
-    if (!links().some(function (x) { return x.url === v; })) { data.extra.push({ id: uid(), k: 'link', url: v, u: Date.now() }); save(); }
-    i.value = ''; renderRec();
+    try { new URL(v); } catch (e) { return 'bad'; }
+    if (links().some(function (x) { return x.url === v; })) return 'dup';
+    data.extra.push({ id: uid(), k: 'link', url: v, u: Date.now() }); save(); return 'ok';
+  }
+  function addLink() {
+    var i = $('lin'), r = saveLink(i.value); if (!i.value.trim()) return;
+    if (r === 'bad') { i.focus(); return; }
+    lmsg = r === 'ok' ? 'Link saved ✓' : 'That link is already waiting'; i.value = ''; renderRec();
   }
   function renderShop() {
     var wkey = ds(wk), chk = data.chk[wkey] || {}, items = weekItems(), end = addDays(wk, 6);
@@ -280,7 +287,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
     var D = b.dataset;
-    if (D.v) { view = D.v; render(); window.scrollTo(0, 0); }
+    if (D.v) { view = D.v; lmsg = ''; render(); window.scrollTo(0, 0); }
     else if (D.wk !== undefined) { wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
     else if (D.s && D.k) openSlot(D.k, D.s);
     else if (D.rpick && slotCtx) { setSlot(slotCtx.k, slotCtx.s, { r: D.rpick }); closeM(); render(); }
@@ -316,6 +323,13 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
   window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); if ($('m').hidden) render(); } });
+  var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
+  if (sh) {
+    var shared = sh[1]; try { shared = decodeURIComponent(shared); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    var sr = saveLink(shared); view = 'rec';
+    lmsg = sr === 'ok' ? 'Link saved ✓' : sr === 'dup' ? 'That link is already waiting' : 'That did not look like a link';
+  }
   render();
 })();
 </script>
