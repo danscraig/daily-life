@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
+<meta name="theme-color" content="#B77BCB">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Daily Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+<style>
+:root {
+  --ink: #65406F; --bg: #ECEBEF; --accent: #A064B0;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-ios: cubic-bezier(.32, .72, 0, 1);
+  --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
+  --icon: 62px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; overscroll-behavior: none; }
+body { background: #3b2547; font-family: var(--font); color: #fff; overflow: hidden; display: grid; place-items: center; -webkit-text-size-adjust: 100%; }
+button, a { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: none; touch-action: manipulation; }
+[hidden] { display: none !important; }
+
+/* the "phone": the whole screen on a real phone, a framed device on a big screen */
+.phone { position: relative; width: 100vw; height: 100dvh; overflow: hidden; isolation: isolate; background: #7B4A93; }
+@media (min-width: 600px) and (min-height: 720px) {
+  .phone { width: 392px; height: min(850px, 94dvh); border-radius: 54px; box-shadow: 0 0 0 11px #17101c, 0 0 0 13px #4a3a55, 0 40px 80px -20px rgba(0,0,0,.6); }
+}
+
+/* wallpaper */
+.wall { position: absolute; inset: 0; background:
+  radial-gradient(120% 70% at 12% 8%, rgba(255, 214, 240, .75) 0%, rgba(255, 214, 240, 0) 60%),
+  radial-gradient(90% 60% at 95% 40%, rgba(150, 120, 235, .55) 0%, rgba(150, 120, 235, 0) 65%),
+  radial-gradient(110% 70% at 40% 105%, rgba(70, 30, 100, .85) 0%, rgba(70, 30, 100, 0) 70%),
+  linear-gradient(165deg, #D9A0E6 0%, #B77BCB 45%, #8450A0 100%); }
+
+/* home screen */
+.home { position: absolute; inset: 0; display: flex; flex-direction: column; padding: calc(22px + env(safe-area-inset-top, 0px)) 18px calc(14px + env(safe-area-inset-bottom, 0px)); transform-origin: 50% 50%; will-change: transform, opacity; }
+.hello { padding: 6px 6px 16px; }
+.hello .d { font-size: 13px; font-weight: 500; letter-spacing: .02em; opacity: .85; text-shadow: 0 1px 8px rgba(60, 20, 80, .3); }
+.hello h1 { margin: 2px 0 0; font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; text-shadow: 0 1px 12px rgba(60, 20, 80, .3); }
+.hello .st { margin-top: 6px; font-size: 12px; opacity: .8; min-height: 16px; }
+
+.widgets { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 4px 0 26px; }
+.wg { position: relative; text-align: left; min-height: 158px; padding: 14px; border-radius: 26px; display: flex; flex-direction: column;
+  background: rgba(255, 255, 255, .26); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5); border: 1px solid rgba(255, 255, 255, .34); box-shadow: 0 14px 30px -18px rgba(50, 15, 70, .55); }
+.wg .t { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .85; display: flex; align-items: center; gap: 6px; }
+.wg .row { margin-top: 10px; font-size: 14px; line-height: 1.25; }
+.wg .row small { display: block; font-size: 11px; opacity: .75; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1px; }
+.wg .row b { font-weight: 500; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wg .none { opacity: .6; }
+.ring { margin: 10px 0 0; position: relative; width: 66px; height: 66px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 600; }
+.wg .sub { margin-top: auto; font-size: 13px; opacity: .92; padding-top: 8px; }
+
+/* icons */
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 6px; padding: 0 2px; }
+.ic { display: flex; flex-direction: column; align-items: center; gap: 7px; transition: transform 140ms var(--ease-out); }
+.ic:active { transform: scale(.92); }
+.ic .sq { width: var(--icon); height: var(--icon); border-radius: 22.5%; display: grid; place-items: center; position: relative; overflow: hidden;
+  box-shadow: 0 8px 16px -8px rgba(40, 10, 60, .55), inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 -1px 0 rgba(0, 0, 0, .08); }
+.ic .sq::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 55%); pointer-events: none; }
+.ic svg { width: 32px; height: 32px; stroke: #fff; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; position: relative; z-index: 1; }
+.ic .lb { font-size: 11.5px; font-weight: 500; letter-spacing: .01em; text-align: center; line-height: 1.15; text-shadow: 0 1px 6px rgba(50, 15, 70, .45); max-width: 74px; }
+.cal .sq { background: #fff; color: #333; }
+.cal .wd { position: absolute; top: 9px; left: 0; right: 0; text-align: center; font-size: 10px; font-weight: 600; color: #E5586E; text-transform: uppercase; letter-spacing: .08em; z-index: 1; }
+.cal .dn { position: absolute; top: 19px; left: 0; right: 0; text-align: center; font-size: 30px; font-weight: 300; color: #2b2330; z-index: 1; letter-spacing: -.02em; }
+.cal .sq::after { display: none; }
+
+.dock { margin-top: auto; padding: 14px 14px; border-radius: 34px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  background: rgba(255, 255, 255, .24); -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgba(255, 255, 255, .3); }
+.dock .ic .lb { display: none; }
+.dock .ic { gap: 0; }
+
+/* entrance of the icons (first paint only) */
+.grid .ic, .dock .ic, .wg { animation: rise 320ms var(--ease-out) backwards; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+
+/* an open app: a window that grows out of its icon */
+.win { position: absolute; inset: 0; z-index: 10; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
+.win iframe { flex: 1; width: 100%; border: 0; background: var(--bg); display: block; min-height: 0; }
+.hbar { flex: none; height: max(env(safe-area-inset-bottom, 0px), 24px); display: grid; place-items: center; background: var(--bg); touch-action: none; cursor: pointer; }
+.hbar i { display: block; width: 134px; height: 5px; border-radius: 3px; background: #1d1521; opacity: .85; transition: transform 160ms var(--ease-out); }
+.hbar:active i { transform: scaleX(.9); }
+@media (min-width: 600px) and (min-height: 720px) { .win { border-radius: 0; } }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="wall"></div>
+
+  <main class="home" id="home">
+    <header class="hello">
+      <div class="d" id="hd"></div>
+      <h1>Hi, Daniela!</h1>
+      <div class="st" id="syncst"></div>
+    </header>
+
+    <section class="widgets" aria-label="Today">
+      <button class="wg" data-open="meals" style="animation-delay:40ms">
+        <span class="t">Today</span>
+        <span class="row"><small>Lunch</small><b id="wl"></b></span>
+        <span class="row"><small>Snack</small><b id="ws"></b></span>
+      </button>
+      <button class="wg" data-open="skincare" style="animation-delay:80ms">
+        <span class="t">Skincare</span>
+        <span class="ring" id="ring"></span>
+        <span class="sub" id="wsub"></span>
+      </button>
+    </section>
+
+    <nav class="grid" aria-label="Apps">
+      <button class="ic" data-open="check" style="animation-delay:110ms"><span class="sq" style="background:linear-gradient(160deg,#B97ACB,#8B4FA3)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="lb">Check-in</span></button>
+      <button class="ic" data-open="diary" style="animation-delay:150ms"><span class="sq" style="background:linear-gradient(160deg,#F09BBA,#D2638D)"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.6 7.6"/><circle cx="11" cy="11" r="2"/></svg></span><span class="lb">Journal</span></button>
+      <button class="ic" data-open="movies" style="animation-delay:190ms"><span class="sq" style="background:linear-gradient(160deg,#7E9BEA,#4F6FCB)"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="12.5" rx="3"/><path d="M10 8.5v5l4.2-2.5z" fill="#fff"/><path d="M8 20.5h8"/></svg></span><span class="lb">Movies &amp; Books</span></button>
+    </nav>
+
+    <nav class="dock" aria-label="Favourites">
+      <button class="ic cal" data-open="calendar" aria-label="Calendar" style="animation-delay:260ms"><span class="sq"><span class="wd" id="cw"></span><span class="dn" id="cd"></span></span><span class="lb">Calendar</span></button>
+      <button class="ic" data-open="skincare" aria-label="Skincare" style="animation-delay:290ms"><span class="sq" style="background:linear-gradient(160deg,#6FD0B2,#3BA583)"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg></span><span class="lb">Skincare</span></button>
+      <button class="ic" data-open="meals" aria-label="Meals" style="animation-delay:320ms"><span class="sq" style="background:linear-gradient(160deg,#F7B26A,#E2823A)"><svg viewBox="0 0 24 24"><path d="M4 11h16v1a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg></span><span class="lb">Meals</span></button>
+      <button class="ic" data-open="notes" aria-label="Notes" style="animation-delay:350ms"><span class="sq" style="background:linear-gradient(160deg,#F8DA72,#EBB63B)"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><span class="lb">Notes</span></button>
+    </nav>
+  </main>
+
+  <div class="win" id="win" hidden>
+    <iframe id="frame" title="App" allow="microphone; clipboard-write"></iframe>
+    <div class="hbar" id="hbar" role="button" aria-label="Go home" tabindex="0"><i></i></div>
+  </div>
+</div>
+<script type="module" src="sync.js?v=10"></script>
+<script>
+(function () {
+  'use strict';
+  var APPS = {
+    check: 'index.html?embed=1#app=check', diary: 'index.html?embed=1#app=diary', notes: 'index.html?embed=1#app=notes',
+    calendar: 'calendar.html', movies: 'movies.html', skincare: 'skincare.html', meals: 'meals.html'
+  };
+  var EASE = 'cubic-bezier(.32,.72,0,1)';
+  var $ = function (id) { return document.getElementById(id); };
+  var phone = $('phone'), home = $('home'), win = $('win'), frame = $('frame'), cur = null, busy = false;
+  var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function lsGet(k, fb) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; } catch (e) { return fb; } }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  /* what the widgets show, read from the same data the apps keep */
+  function paint() {
+    var n = new Date(), k = n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate());
+    $('hd').textContent = DAYS[n.getDay()] + ', ' + n.getDate() + ' ' + MON[n.getMonth()];
+    $('cw').textContent = DAYS[n.getDay()].slice(0, 3); $('cd').textContent = n.getDate();
+    var ml = lsGet('meals-v1', null), mt = ml && ml.plan && ml.plan[k] ? ml.plan[k] : {};
+    function mn(m) { if (!m || m.x) return ''; var r = m.r && ml && Array.isArray(ml.recipes) ? ml.recipes.filter(function (x) { return x.id === m.r; })[0] : null; return r ? r.n : (m.t || ''); }
+    [['wl', mt.l], ['ws', mt.s]].forEach(function (p) { var t = mn(p[1]), el = $(p[0]); el.textContent = t || 'Nothing planned'; el.className = t ? '' : 'none'; });
+    /* skincare: today's steps done, and tonight's night of the cycle */
+    var sc = lsGet('skincare-v1', null), st = 0, sd = 0, night = null;
+    var cyc = sc && sc.cyc && Array.isArray(sc.cyc.slots) && sc.cyc.slots.length ? sc.cyc : null;
+    if (cyc) { var lid = cyc.log && cyc.log[k]; night = cyc.slots.filter(function (c) { return c.id === lid; })[0] || cyc.slots[(cyc.idx || 0) % cyc.slots.length]; }
+    if (sc && sc.log) ['am', 'pm'].forEach(function (p) {
+      (sc[p] || []).forEach(function (s) {
+        var on = p === 'pm' && cyc ? (!s.slot || (night && s.slot === night.id)) : (!s.days || !s.days.length || s.days.indexOf(n.getDay()) !== -1);
+        if (s.n && on) { st++; if ((sc.log[k] || []).indexOf(s.id) !== -1) sd++; }
+      });
+    });
+    var C = 2 * Math.PI * 28, frac = st ? sd / st : 0;
+    $('ring').innerHTML = '<svg viewBox="0 0 66 66"><circle cx="33" cy="33" r="28" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="7"/><circle cx="33" cy="33" r="28" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg><span class="n">' + (st ? sd + '/' + st : '–') + '</span>';
+    $('wsub').textContent = night && night.n ? 'Tonight: ' + night.n : (st ? 'steps today' : 'Set up your routine');
+    var s = window.__dailySync; $('syncst').textContent = s && s.state !== 'out' ? s.text : '';
+  }
+  paint();
+  window.addEventListener('daily-sync', paint);
+  window.addEventListener('storage', paint);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) paint(); });
+
+  /* opening: the window grows out of the icon (transform + opacity only), the home screen steps back */
+  function openApp(id, from) {
+    if (busy || cur || !APPS[id]) return;
+    busy = true; cur = id;
+    var r = from.getBoundingClientRect(), p = phone.getBoundingClientRect();
+    var ox = r.left + r.width / 2 - p.left, oy = r.top + r.height / 2 - p.top;
+    win.style.transformOrigin = ox + 'px ' + oy + 'px';
+    frame.src = APPS[id]; win.hidden = false;
+    var a = win.animate([{ transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }, { transform: 'scale(1)', opacity: 1, borderRadius: '0px' }], { duration: 380, easing: EASE, fill: 'forwards' });
+    home.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.9)', opacity: .35 }], { duration: 380, easing: EASE, fill: 'forwards' });
+    a.onfinish = function () { busy = false; };
+    frame.onload = function () { wire(); };
+  }
+  /* apps open inside the frame: their own "back to Daily Life" link closes the window instead of loading the old home */
+  function wire() {
+    try {
+      var d = frame.contentDocument; if (!d || d.__wired) return; d.__wired = true;
+      d.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href="index.html"]'); if (a) { e.preventDefault(); e.stopPropagation(); closeApp(); } }, true);
+    } catch (e) {}
+  }
+  function closeApp() {
+    if (!cur || busy) return; busy = true;
+    var a = win.animate([{ transform: 'scale(1)', opacity: 1, borderRadius: '0px' }, { transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }], { duration: 300, easing: EASE, fill: 'forwards' });
+    home.animate([{ transform: 'scale(.9)', opacity: .35 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: EASE, fill: 'forwards' });
+    a.onfinish = function () {
+      win.hidden = true; frame.onload = null; frame.src = 'about:blank'; cur = null; busy = false;
+      win.getAnimations().concat(home.getAnimations()).forEach(function (x) { x.cancel(); });
+      paint();
+    };
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b && !win.contains(b)) openApp(b.dataset.open, b.querySelector('.sq') || b); });
+  window.addEventListener('message', function (e) { if (e.origin === location.origin && e.data && e.data.dailyHome) closeApp(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeApp(); });
+
+  /* the home bar at the bottom of an app: tap it, or swipe it up (a quick flick is enough), to go home */
+  (function () {
+    var bar = $('hbar'), y0 = 0, t0 = 0, down = false;
+    bar.addEventListener('pointerdown', function (e) { down = true; y0 = e.clientY; t0 = Date.now(); try { bar.setPointerCapture(e.pointerId); } catch (x) {} });
+    bar.addEventListener('pointerup', function (e) {
+      if (!down) return; down = false;
+      var dy = y0 - e.clientY, v = dy / Math.max(1, Date.now() - t0);
+      if (dy > 36 || v > 0.3 || Math.abs(dy) < 6) closeApp();
+    });
+    bar.addEventListener('pointercancel', function () { down = false; });
+    bar.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeApp(); } });
+  })();
+})();
+</script>
+</body>
+</html>

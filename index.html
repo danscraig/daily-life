@@ -1462,6 +1462,17 @@ img { max-width: 100%; }
   document.getElementById('back').addEventListener('click', function () { show('home'); });
   var _render = render;
   render = function () { _render(); homeInfo(); lockHome(); if (!NE.hidden && nview === 'list') renderNotes(); };
+  /* shown inside the iPhone-style home (ios.html): index.html?embed=1#app=check|diary|notes opens that app straight away,
+     and "back to home" tells the outer page to close the window instead of showing the old home */
+  (function () {
+    if (!/[?&]embed=1\b/.test(location.search)) return;
+    var _show = show;
+    show = function (s) {
+      if (s === 'home') { try { parent.postMessage({ dailyHome: 1 }, location.origin); } catch (e) {} return; }
+      _show(s);
+    };
+    var m = location.hash.match(/^#app=(check|diary|notes)$/); if (m) _show(m[1]);
+  })();
 
   /* swipe left or right on the Day tab to change the day (left = next day, right = previous day) */
   (function () {
