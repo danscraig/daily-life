@@ -1550,6 +1550,31 @@ html[data-ac="notes"] { --accent: #9C7A24; }
   render = function () { _render(); homeInfo(); lockHome(); if (!NE.hidden && nview === 'list') renderNotes(); };
 
   /* ---- iPhone-style home: widgets, and the apps that open in a window growing out of their icon ---- */
+  var EDGE = 26;   // the swipe-back must start within this many pixels of the left edge
+  function topModal(doc) { var m = doc.querySelectorAll('.modal:not([hidden]), .pop:not([hidden])'); return m.length ? m[m.length - 1] : null; }
+  function closeTop(doc) {   // an open sheet or popup closes with a tap on its backdrop: do that first
+    var m = topModal(doc); if (!m) return false;
+    m.dispatchEvent(new (doc.defaultView || window).MouseEvent('click', { bubbles: true })); return true;
+  }
+  function edgeSwipe(doc, onBack) {
+    var sx = 0, sy = 0, st = 0, on = false;
+    doc.addEventListener('touchstart', function (e) {
+      var t = e.touches[0]; on = e.touches.length === 1 && t.clientX <= EDGE;
+      if (on) { sx = t.clientX; sy = t.clientY; st = Date.now(); e.stopPropagation(); }   // the page's own swipes (days, weeks) must not also fire
+    }, { passive: true, capture: true });
+    doc.addEventListener('touchmove', function (e) { if (e.touches.length > 1) on = false; }, { passive: true });
+    doc.addEventListener('touchcancel', function () { on = false; }, { passive: true });
+    doc.addEventListener('touchend', function (e) {
+      if (!on) return; on = false;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+      if ((dx > 70 || (dx > 40 && dx / Math.max(1, Date.now() - st) > 0.35)) && dy < dx * 0.7) onBack();
+    }, { passive: true });
+  }
+  edgeSwipe(document, function () {   // the apps that live in this page (Check-in, Journal, Notes)
+    if (!homeEl.hidden || icur) return;
+    if (closeTop(document)) return;
+    var b = document.getElementById(!NE.hidden ? 'nback' : 'back'); if (b) b.click();
+  });
   var IAPPS = { calendar: 'calendar.html', movies: 'movies.html', skincare: 'skincare.html', meals: 'meals.html' };
   var IEASE = 'cubic-bezier(.32,.72,0,1)', iwin = document.getElementById('iwin'), iframe = document.getElementById('iframe'), icur = null, ibusy = false;
   var IWD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -1588,6 +1613,7 @@ html[data-ac="notes"] { --accent: #9C7A24; }
     iframe.onload = function () {
       try {   // inside the window, the app's own "back to Daily Life" link closes the window instead of loading this page again
         var d = iframe.contentDocument; if (!d || d.__wired) return; d.__wired = true;
+        edgeSwipe(d, function () { if (!closeTop(d)) closeIApp(); });
         d.addEventListener('click', function (e) { var l = e.target.closest && e.target.closest('a[href="index.html"]'); if (l) { e.preventDefault(); e.stopPropagation(); closeIApp(); } }, true);
       } catch (x) {}
     };
@@ -1617,7 +1643,7 @@ html[data-ac="notes"] { --accent: #9C7A24; }
     var sx = 0, sy = 0, st = 0, ok = false;
     document.addEventListener('touchstart', function (e) {
       var t = e.target;
-      ok = !jEl.hidden && view === 'day' && am.hidden && sm.hidden && e.touches.length === 1 && !(t.closest && t.closest('input, select')) && !(document.activeElement && /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName));   // swiping over the text works, unless you are editing it
+      ok = !jEl.hidden && e.touches[0].clientX > EDGE && view === 'day' && am.hidden && sm.hidden && e.touches.length === 1 && !(t.closest && t.closest('input, select')) && !(document.activeElement && /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName));   // swiping over the text works, unless you are editing it
       if (ok) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }
     }, { passive: true });
     document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) ok = false; }, { passive: true });
