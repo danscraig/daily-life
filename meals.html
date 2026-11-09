@@ -128,7 +128,10 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     if (!d || typeof d !== 'object') d = {};
     return { recipes: Array.isArray(d.recipes) ? d.recipes : [], plan: d.plan && typeof d.plan === 'object' ? d.plan : {}, chk: d.chk && typeof d.chk === 'object' ? d.chk : {}, extra: Array.isArray(d.extra) ? d.extra : [] };
   }
-  function save() { try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {} }
+  function save() { try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {} markDirty(); }
+  /* tells the cloud sync that this device has changes to send. Needed because a link shared into the page is saved while the page loads,
+     before sync.js is ready to notice it; without this the sync would take the cloud copy and drop the new link. */
+  function markDirty() { try { var mt = JSON.parse(localStorage.getItem('daily-life-sync-meta') || '{}') || {}; mt.dirty = true; localStorage.setItem('daily-life-sync-meta', JSON.stringify(mt)); } catch (e) {} }
   function uid() { return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function $(id) { return document.getElementById(id); }
