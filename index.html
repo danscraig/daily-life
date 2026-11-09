@@ -479,7 +479,7 @@ html[data-ac="notes"] { --accent: #5B5049; }
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 5</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 6</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -1562,7 +1562,7 @@ html[data-ac="notes"] { --accent: #5B5049; }
     el.style.cssText = 'position:fixed;top:50%;width:46px;height:46px;margin-top:-23px;border-radius:50%;background:rgba(58,50,45,.9);color:#fff;font:600 28px/42px -apple-system,Helvetica,Arial,sans-serif;text-align:center;z-index:2147483647;pointer-events:none;opacity:0;box-shadow:0 6px 18px rgba(0,0,0,.25)';
     (doc.body || doc.documentElement).appendChild(el); doc.__eb = el; return el;
   }
-  /* back: swipe sideways anywhere (left or right) where the screen has no gesture of its own, and from either side edge everywhere else */
+  /* back: swipe to the right anywhere where the screen has no gesture of its own, and from the left edge everywhere else */
   function hscroll(el) {   // is the touch inside something that scrolls sideways?
     for (var n = el; n && n.nodeType === 1; n = n.parentNode) { var cs = (n.ownerDocument.defaultView || window).getComputedStyle(n); if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth + 2) return true; }
     return false;
@@ -1576,7 +1576,7 @@ html[data-ac="notes"] { --accent: #5B5049; }
     doc.addEventListener('touchstart', function (e) {
       var t = e.touches[0]; mode = '';
       if (e.touches.length !== 1) return;
-      if (t.clientX <= EDGE) { mode = 'edge'; side = 1; } else if (t.clientX >= wide() - EDGE) { mode = 'edge'; side = -1; }
+      if (t.clientX <= EDGE) { mode = 'edge'; side = 1; }
       else if (opts && opts.any && opts.any() && !(e.target.closest && e.target.closest('input, textarea, select, [contenteditable], .ncard, .npage')) && !hscroll(e.target)) mode = 'any';
       if (mode) { sx = lx = t.clientX; sy = t.clientY; st = Date.now(); if (mode === 'edge') e.stopPropagation(); }   // an edge swipe is ours alone: the page's own swipes (days, weeks) must not also fire
     }, { passive: true, capture: true });
@@ -1584,14 +1584,14 @@ html[data-ac="notes"] { --accent: #5B5049; }
       if (!mode) return; if (e.touches.length > 1) { mode = ''; hide(); return; }
       lx = e.touches[0].clientX; var dx = lx - sx, dy = Math.abs(e.touches[0].clientY - sy);
       if (mode === 'edge') { var d = dx * side; if (d > 8 && dy < d * 1.1) show(d, side); }
-      else if (Math.abs(dx) > 16 && Math.abs(dx) > dy * 2) show(Math.abs(dx) - 10, dx > 0 ? 1 : -1); else hide();
+      else if (dx > 16 && dx > dy * 2) show(dx - 10, 1); else hide();
     }, { passive: true });
     doc.addEventListener('touchcancel', function () { if (mode === 'edge') edgeDone((lx - sx) * side, 0); else { mode = ''; hide(); } }, { passive: true });   // the phone took the gesture over: if it was already a clear swipe, count it
     doc.addEventListener('touchend', function (e) {
       if (!mode) return; var t = e.changedTouches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
       if (mode === 'edge') { edgeDone(dx * side, dy); return; }
       mode = ''; hide();
-      if (Math.abs(dx) > 80 && Math.abs(dx) > dy * 2.2 && Date.now() - st < 450) onBack();
+      if (dx > 80 && dx > dy * 2.2 && Date.now() - st < 450) onBack();
     }, { passive: true });
   }
   edgeSwipe(document, function () {   // the apps that live in this page (Check-in, Journal, Notes)
@@ -1661,7 +1661,7 @@ html[data-ac="notes"] { --accent: #5B5049; }
     var sx = 0, sy = 0, st = 0, ok = false;
     document.addEventListener('touchstart', function (e) {
       var t = e.target;
-      ok = !jEl.hidden && e.touches[0].clientX > EDGE && e.touches[0].clientX < window.innerWidth - EDGE && view === 'day' && am.hidden && sm.hidden && e.touches.length === 1 && !(t.closest && t.closest('input, select')) && !(document.activeElement && /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName));   // swiping over the text works, unless you are editing it
+      ok = !jEl.hidden && e.touches[0].clientX > EDGE && view === 'day' && am.hidden && sm.hidden && e.touches.length === 1 && !(t.closest && t.closest('input, select')) && !(document.activeElement && /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName));   // swiping over the text works, unless you are editing it
       if (ok) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); }
     }, { passive: true });
     document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) ok = false; }, { passive: true });
