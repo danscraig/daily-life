@@ -445,6 +445,11 @@ img { max-width: 100%; }
       <span class="atxt"><span class="aname">Skincare</span><span class="ameta" id="smeta"></span></span>
       <span class="go" aria-hidden="true">›</span>
     </a>
+    <a class="app" href="meals.html">
+      <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v1a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"></path><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"></path></svg></span>
+      <span class="atxt"><span class="aname">Meals</span><span class="ameta" id="mlmeta"></span></span>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
     <button class="app" data-app="notes">
       <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h7M9 17h5"></path></svg></span>
       <span class="atxt"><span class="aname">Notes</span><span class="ameta" id="nmeta"></span></span>
@@ -1304,6 +1309,7 @@ img { max-width: 100%; }
     try { var mv = JSON.parse(localStorage.getItem(MKEY)); if (mv && Array.isArray(mv.items)) data.movies = mv; } catch (e) {}
     try { var ev = JSON.parse(localStorage.getItem(EKEY)); if (ev && Array.isArray(ev.items)) data.events = ev.items; } catch (e) {}
     try { var sk0 = JSON.parse(localStorage.getItem('skincare-v1')); if (sk0 && typeof sk0 === 'object') data.skincare = sk0; } catch (e) {}
+    try { var ml0 = JSON.parse(localStorage.getItem('meals-v1')); if (ml0 && typeof ml0 === 'object') data.meals = ml0; } catch (e) {}
     var txt = JSON.stringify(data), name = 'daily-life-backup-' + TY + '-' + pad(TM) + '-' + pad(TD) + '.json';
     var dl = null;
     try { if (onClaude) dl = await window.claude.use('downloads'); } catch (e) {}
@@ -1378,6 +1384,14 @@ img { max-width: 100%; }
           Object.keys(rs.log || {}).forEach(function (k) { var a = sk.log[k] = sk.log[k] || []; (rs.log[k] || []).forEach(function (id) { if (a.indexOf(id) === -1) a.push(id); }); });
           localStorage.setItem('skincare-v1', JSON.stringify(sk));
         }
+        if (r.meals && typeof r.meals === 'object') {   // meals: add recipes and planned days this device does not have yet
+          var ml = lsGet('meals-v1', null) || {}, rm = r.meals;
+          ml.recipes = Array.isArray(ml.recipes) ? ml.recipes : []; ml.plan = ml.plan && typeof ml.plan === 'object' ? ml.plan : {}; ml.extra = Array.isArray(ml.extra) ? ml.extra : []; ml.chk = ml.chk && typeof ml.chk === 'object' ? ml.chk : {};
+          (Array.isArray(rm.recipes) ? rm.recipes : []).forEach(function (x) { if (x && x.id && !ml.recipes.some(function (y) { return y.id === x.id; })) ml.recipes.push(x); });
+          Object.keys(rm.plan || {}).forEach(function (k) { var a = ml.plan[k] = ml.plan[k] || {}; Object.keys(rm.plan[k] || {}).forEach(function (s) { if (!a[s]) a[s] = rm.plan[k][s]; }); });
+          (Array.isArray(rm.extra) ? rm.extra : []).forEach(function (x) { if (x && x.id && !ml.extra.some(function (y) { return y.id === x.id; })) ml.extra.push(x); });
+          localStorage.setItem('meals-v1', JSON.stringify(ml));
+        }
         location.reload();
       } catch (err) { lbl.textContent = 'Not a valid backup'; }
     };
@@ -1415,6 +1429,8 @@ img { max-width: 100%; }
       });
     });
     document.getElementById('smeta').textContent = [night && night.n ? 'Tonight: ' + night.n : '', st ? sd + ' of ' + st + ' steps' : ''].filter(Boolean).join(' · ');   // under the name, like the other cards
+    var ml = lsGet('meals-v1', null), mt = ml && ml.plan && ml.plan[tds] ? ml.plan[tds] : {}, mn = function (m) { if (!m) return ''; var r = m.r && Array.isArray(ml.recipes) ? ml.recipes.filter(function (x) { return x.id === m.r; })[0] : null; return r ? r.n : (m.t || ''); };
+    document.getElementById('mlmeta').textContent = [mn(mt.l) ? 'Lunch: ' + mn(mt.l) : '', mn(mt.d) ? 'Dinner: ' + mn(mt.d) : ''].filter(Boolean).join(' · ');
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
   function setApp(a) {

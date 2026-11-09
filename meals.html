@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
+<meta name="theme-color" content="#ECEBEF">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Meals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #ECEBEF; --paper: #FFFFFF; --ink: #65406F; --mute: #94829E; --line: #DFDDE4; --accent: #A064B0; --accent-ink: #FFFFFF; --orchid: #EBB6E7;
+  --shadow: rgba(160, 100, 176, .16); --bad: #C0392B; --ok: #3E9D6A; --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; overscroll-behavior-y: none; }
+html, body, button, a, input, select, label, textarea { touch-action: manipulation; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font); padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(110px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); -webkit-text-size-adjust: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; transition: transform 140ms var(--ease-out), background-color 150ms ease, color 150ms ease; }
+button:active { transform: scale(.97); }
+[hidden] { display: none !important; }
+.wrap { max-width: 640px; margin: 0 auto; }
+.top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
+.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; flex: 1; }
+.ibtn { width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: grid; place-items: center; font-size: 22px; color: var(--ink); text-decoration: none; line-height: 1; }
+input[type="text"], input[type="search"], input[type="number"], textarea { width: 100%; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
+textarea { resize: vertical; min-height: 110px; }
+input::placeholder, textarea::placeholder { color: var(--mute); }
+input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appearance: none; appearance: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { padding: 12px 18px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 14px; }
+.btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.btn.full { width: 100%; padding: 14px; font-size: 15px; }
+.btn.bad { background: var(--bad); }
+.wk { display: flex; align-items: center; gap: 8px; margin: 4px 0 12px; }
+.wk .lab { flex: 1; text-align: center; font-weight: 600; font-size: 17px; }
+.wk .lab small { display: block; font-weight: 400; font-size: 12px; color: var(--mute); }
+.wk button.r { width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); font-size: 20px; }
+.pill { display: inline-block; padding: 6px 12px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 13px; color: var(--mute); }
+.day { background: var(--paper); border-radius: 20px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.day.today { outline: 2px solid var(--orchid); }
+.day h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; }
+.day h3 span { color: var(--mute); font-weight: 400; font-size: 13px; }
+.slot { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 4px; border-top: 1px solid var(--line); min-height: 44px; }
+.slot .sl { flex: none; width: 58px; font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .04em; }
+.slot .st { flex: 1; min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+.slot .st.empty { color: var(--mute); }
+.slot .st small { display: block; color: var(--mute); font-size: 12px; }
+.card { display: block; width: 100%; text-align: left; background: var(--paper); border-radius: 18px; padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.card b { font-weight: 600; display: block; }
+.card small { color: var(--mute); font-size: 13px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.tag { padding: 3px 10px; border-radius: 999px; background: var(--bg); font-size: 12px; color: var(--ink); }
+.chipsrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipsrow button { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 13px; color: var(--mute); }
+.chipsrow button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.empty { text-align: center; color: var(--mute); padding: 30px 10px; }
+.stack { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--paper); border-radius: 16px; padding: 11px 14px; margin-bottom: 6px; }
+.item .box { flex: none; width: 24px; height: 24px; border-radius: 8px; border: 2px solid var(--line); display: grid; place-items: center; color: transparent; }
+.item[aria-pressed="true"] .box { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.item[aria-pressed="true"] .tx { text-decoration: line-through; color: var(--mute); }
+.item .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.item .tx small { display: block; color: var(--mute); font-size: 12px; }
+.item .x { flex: none; width: 30px; height: 30px; border-radius: 50%; color: var(--mute); }
+.h { margin: 18px 4px 8px; font-size: 14px; font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
+.addrow { display: flex; gap: 8px; margin-bottom: 12px; }
+.navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--paper); border-top: 1px solid var(--line); padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.tabbar { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 640px; margin: 0 auto; }
+.tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; font-size: 12px; font-weight: 500; color: var(--mute); }
+.tabbar button[aria-pressed="true"] { color: var(--accent); }
+.tabbar button[aria-pressed="true"]::before { content: ""; position: absolute; top: -1px; left: 50%; width: 36px; height: 3px; margin-left: -18px; border-radius: 0 0 3px 3px; background: var(--accent); }
+.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: color-mix(in srgb, var(--ink) 45%, transparent); padding: calc(16px + env(safe-area-inset-top, 0px)) 12px 16px; }
+.modal:not([hidden]) { animation: fadein 160ms var(--ease-out); }
+.modal:not([hidden]) .sheet { animation: sheetin 220ms var(--ease-out); }
+.sheet { width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; background: var(--bg); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sheet h2 { margin: 0; font-size: 20px; }
+.sheet label { font-size: 13px; color: var(--mute); display: block; margin: 0 0 4px 4px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pick { max-height: 34vh; overflow-y: auto; }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes sheetin { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="ibtn" href="index.html" aria-label="Back to Daily Life">‹</a>
+    <h1>Meals</h1>
+  </header>
+  <section id="v-plan"></section>
+  <section id="v-rec" hidden></section>
+  <section id="v-shop" hidden></section>
+</div>
+
+<div class="modal" id="m" hidden><div class="sheet" id="sh"></div></div>
+
+<nav class="navbar" aria-label="Sections"><div class="tabbar">
+  <button data-v="plan" aria-pressed="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Plan</button>
+  <button data-v="rec" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14a0 0 0 0 1 0 0v1a7 7 0 0 1-7 7 7 7 0 0 1-7-7v-1z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg>Recipes</button>
+  <button data-v="shop" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5h2.5l2 10h9.5l2-7.5H7"/><circle cx="9.5" cy="19" r="1.2"/><circle cx="16.5" cy="19" r="1.2"/></svg>Shopping</button>
+</div></nav>
+
+<script>
+(function () {
+  'use strict';
+  var LS = 'meals-v1';
+  var SL = [['l', 'Lunch'], ['d', 'Dinner'], ['s', 'Snack']];
+  var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var BASE_TAGS = ['quick', 'vegetarian', 'freezes well'];
+  /* data: recipes [{id,n,min,tags[],ing[],steps,u}], plan {'YYYY-MM-DD': {l|d|s: {r: recipe id} or {t: free text}}},
+     chk {'weekMonday': {normalised ingredient: 1}} (ticked on the shopping list), extra [{id,t,done}] (things typed by hand) */
+  var data = load(), view = 'plan', wk = monday(new Date()), rq = '', rtag = '', slotCtx = null, edId = null, edTags = [], sure = false;
+
+  function load() {
+    var d = null; try { d = JSON.parse(localStorage.getItem(LS)); } catch (e) {}
+    if (!d || typeof d !== 'object') d = {};
+    return { recipes: Array.isArray(d.recipes) ? d.recipes : [], plan: d.plan && typeof d.plan === 'object' ? d.plan : {}, chk: d.chk && typeof d.chk === 'object' ? d.chk : {}, extra: Array.isArray(d.extra) ? d.extra : [] };
+  }
+  function save() { try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {} }
+  function uid() { return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function $(id) { return document.getElementById(id); }
+  function ds(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function monday(d) { var x = new Date(d); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function nrm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
+  function recById(id) { return data.recipes.filter(function (r) { return r.id === id; })[0]; }
+  function cleanLines(t) { return String(t || '').split('\n').map(function (l) { return l.replace(/^\s*[-•*]\s*/, '').trim(); }).filter(Boolean); }
+  function slotOf(k, s) { var d = data.plan[k]; return d && d[s] ? d[s] : null; }
+  function slotText(m) {   // [title, subtitle] for a planned meal
+    if (!m) return null;
+    if (m.r) { var r = recById(m.r); return r ? [r.n, r.min ? r.min + ' min' : ''] : [m.t || 'Deleted recipe', '']; }
+    return m.t ? [m.t, ''] : null;
+  }
+  function setSlot(k, s, v) {
+    var d = data.plan[k] || (data.plan[k] = {});
+    if (v) d[s] = v; else delete d[s];
+    if (!Object.keys(d).length) delete data.plan[k];
+    save();
+  }
+
+  /* plan */
+  function renderPlan() {
+    var days = [0, 1, 2, 3, 4, 5, 6].map(function (i) { return addDays(wk, i); }), end = days[6], now = ds(new Date());
+    var sameMonth = wk.getMonth() === end.getMonth();
+    var cur = ds(monday(new Date())) === ds(wk);
+    var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Previous week">‹</button><div class="lab">' + wk.getDate() + (sameMonth ? '' : ' ' + MON[wk.getMonth()]) + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + (cur ? 'This week' : '<button data-wk="0" class="pill">Back to this week</button>') + '</small></div><button class="r" data-wk="1" aria-label="Next week">›</button></div>';
+    h += days.map(function (d) {
+      var k = ds(d);
+      return '<div class="day' + (k === now ? ' today' : '') + '"><h3>' + DAYS[d.getDay()] + '<span>' + d.getDate() + ' ' + MON[d.getMonth()] + '</span></h3>' + SL.map(function (s) {
+        var t = slotText(slotOf(k, s[0]));
+        return '<button class="slot" data-k="' + k + '" data-s="' + s[0] + '"><span class="sl">' + s[1] + '</span><span class="st' + (t ? '' : ' empty') + '">' + (t ? esc(t[0]) + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '+ add') + '</span></button>';
+      }).join('') + '</div>';
+    }).join('');
+    h += '<button class="btn ghost full" data-copy="1">Copy last week into the empty slots</button>';
+    $('v-plan').innerHTML = h;
+  }
+  function openSlot(k, s) {
+    slotCtx = { k: k, s: s, q: '' };
+    var d = new Date(k + 'T12:00:00'), lab = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
+    var cur = slotOf(k, s);
+    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Search your recipes" autocomplete="off" aria-label="Search recipes"><div class="pick" id="spick"></div>' +
+      '<div><label for="sfree">Or type what you are eating</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="e.g. Dinner out" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Use</button></div></div>' +
+      (cur ? '<button class="btn ghost full" data-sclear="1">Clear this meal</button>' : '') + '<button class="btn ghost full" data-close="1">Close</button>';
+    fillPick(); $('m').hidden = false;
+  }
+  function fillPick() {
+    var q = nrm(slotCtx.q), l = data.recipes.filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (data.recipes.length ? 'No recipe matches.' : 'No recipes yet. Add some in the Recipes tab, or type the meal below.') + '</div>';
+  }
+  function copyWeek() {
+    var prev = addDays(wk, -7), n = 0;
+    for (var i = 0; i < 7; i++) SL.forEach(function (s) {
+      var a = ds(addDays(prev, i)), b = ds(addDays(wk, i)), m = slotOf(a, s[0]);
+      if (m && !slotOf(b, s[0])) { var d = data.plan[b] || (data.plan[b] = {}); d[s[0]] = JSON.parse(JSON.stringify(m)); n++; }
+    });
+    save(); renderPlan();
+  }
+
+  /* recipes */
+  function allTags() { var o = BASE_TAGS.slice(); data.recipes.forEach(function (r) { (r.tags || []).forEach(function (t) { if (o.indexOf(t) === -1) o.push(t); }); }); return o; }
+  function renderRec() {
+    var q = nrm(rq), l = data.recipes.filter(function (r) { return (!rtag || (r.tags || []).indexOf(rtag) !== -1) && (!q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1); }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    var h = '<div class="stack"><input type="search" id="rq" placeholder="Search recipes or ingredients" value="' + esc(rq) + '" autocomplete="off" aria-label="Search recipes">' +
+      (data.recipes.length ? '<div class="chipsrow">' + allTags().map(function (t) { return '<button type="button" data-rt="' + esc(t) + '" aria-pressed="' + (rtag === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
+      '<button class="btn full" data-newr="1">+ New recipe</button></div>';
+    h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredients</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (data.recipes.length ? 'No recipe matches.' : 'Your recipes will live here.<br>Tap “New recipe” to add the first one.') + '</div>';
+    $('v-rec').innerHTML = h;
+    var s = $('rq'); if (s && document.activeElement === document.body && rq) { /* keep typing focus handled by input event */ }
+  }
+  function openRec(id) {
+    var r = id ? recById(id) : null; edId = id || ''; sure = false; edTags = r ? (r.tags || []).slice() : [];
+    $('sh').innerHTML = '<h2>' + (r ? 'Edit recipe' : 'New recipe') + '</h2><div><label for="rn">Name</label><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="e.g. Chicken and rice"></div>' +
+      '<div class="two"><div><label for="rm">Minutes</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div><label for="rt">Add a tag</label><input type="text" id="rt" placeholder="e.g. kids"></div></div>' +
+      '<div class="chipsrow" id="rtags"></div>' +
+      '<div><label for="ri">Ingredients (one per line, amounts as you like)</label><textarea id="ri" placeholder="200 g rice&#10;2 chicken breasts&#10;1 onion">' + esc(r ? (r.ing || []).join('\n') : '') + '</textarea></div>' +
+      '<div><label for="rs">Steps</label><textarea id="rs">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
+      '<button class="btn full" data-rsave="1">Save</button>' + (r ? '<button class="btn ghost full" data-rdel="1">Delete recipe</button>' : '') + '<button class="btn ghost full" data-close="1">Cancel</button>';
+    paintTags(); $('m').hidden = false;
+  }
+  function paintTags() {
+    var all = BASE_TAGS.slice(); allTags().concat(edTags).forEach(function (t) { if (all.indexOf(t) === -1) all.push(t); });
+    $('rtags').innerHTML = all.map(function (t) { return '<button type="button" data-et="' + esc(t) + '" aria-pressed="' + (edTags.indexOf(t) !== -1) + '">' + esc(t) + '</button>'; }).join('');
+  }
+  function addTag() { var i = $('rt'), v = i.value.trim().toLowerCase(); if (v && edTags.indexOf(v) === -1) edTags.push(v); i.value = ''; paintTags(); }
+  function saveRec() {
+    var n = $('rn').value.trim(); if (!n) { $('rn').focus(); return; }
+    if ($('rt').value.trim()) addTag();
+    var r = edId ? recById(edId) : null; if (!r) { r = { id: uid() }; data.recipes.push(r); }
+    r.n = n; r.min = Number($('rm').value) || 0; r.tags = edTags.slice(); r.ing = cleanLines($('ri').value); r.steps = $('rs').value.trim(); r.u = Date.now();
+    save(); closeM(); render();
+  }
+  function delRec() {
+    if (!sure) { sure = true; var b = document.querySelector('[data-rdel]'); b.textContent = 'Delete? Tap again'; b.classList.add('bad'); return; }
+    var r = recById(edId); if (!r) return;
+    Object.keys(data.plan).forEach(function (k) { Object.keys(data.plan[k]).forEach(function (s) { var m = data.plan[k][s]; if (m.r === r.id) data.plan[k][s] = { t: r.n }; }); });   // planned days keep the name
+    data.recipes = data.recipes.filter(function (x) { return x.id !== r.id; }); save(); closeM(); render();
+  }
+
+  /* shopping list for the week on the Plan tab */
+  function weekItems() {
+    var map = {}, order = [];
+    for (var i = 0; i < 7; i++) SL.forEach(function (s) {
+      var m = slotOf(ds(addDays(wk, i)), s[0]); if (!m || !m.r) return; var r = recById(m.r); if (!r) return;
+      (r.ing || []).forEach(function (line) {
+        var key = nrm(line); if (!key) return;
+        if (!map[key]) { map[key] = { key: key, t: line, n: 0, from: [] }; order.push(key); }
+        map[key].n++; if (map[key].from.indexOf(r.n) === -1) map[key].from.push(r.n);
+      });
+    });
+    return order.map(function (k) { return map[k]; });
+  }
+  function renderShop() {
+    var wkey = ds(wk), chk = data.chk[wkey] || {}, items = weekItems(), end = addDays(wk, 6);
+    var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Previous week">‹</button><div class="lab">' + wk.getDate() + ' ' + MON[wk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>Built from the meals you planned</small></div><button class="r" data-wk="1" aria-label="Next week">›</button></div>';
+    function row(it) { return '<button class="item" data-ci="' + esc(it.key) + '" aria-pressed="' + !!chk[it.key] + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(it.t) + (it.n > 1 ? ' ×' + it.n : '') + '<small>' + esc(it.from.join(', ')) + '</small></span></button>'; }
+    var todo = items.filter(function (i) { return !chk[i.key]; }), done = items.filter(function (i) { return chk[i.key]; });
+    h += items.length ? '<div class="h">To buy (' + todo.length + ')</div>' + todo.map(row).join('') + (done.length ? '<div class="h">In the basket</div>' + done.map(row).join('') : '') : '<div class="empty">Nothing yet.<br>Plan some meals with recipes and their ingredients will show up here.</div>';
+    h += '<div class="h">Extras</div><form class="addrow" id="xf" autocomplete="off"><input type="text" id="xin" placeholder="Add something (milk, coffee…)" aria-label="Add an extra item"><button class="btn" type="submit">Add</button></form>';
+    h += data.extra.map(function (x) { return '<div class="item" style="padding:0"><button class="item" style="margin:0;flex:1" data-xd="' + x.id + '" aria-pressed="' + !!x.done + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(x.t) + '</span></button><button class="x" data-xx="' + x.id + '" aria-label="Remove">✕</button></div>'; }).join('');
+    if (data.extra.some(function (x) { return x.done; }) || done.length) h += '<button class="btn ghost full" style="margin-top:12px" data-unt="1">Untick everything</button>';
+    $('v-shop').innerHTML = h;
+  }
+
+  function closeM() { $('m').hidden = true; slotCtx = null; edId = null; }
+  function render() {
+    $('v-plan').hidden = view !== 'plan'; $('v-rec').hidden = view !== 'rec'; $('v-shop').hidden = view !== 'shop';
+    [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
+    if (view === 'plan') renderPlan(); else if (view === 'rec') renderRec(); else renderShop();
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var D = b.dataset;
+    if (D.v) { view = D.v; render(); window.scrollTo(0, 0); }
+    else if (D.wk !== undefined) { wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
+    else if (D.s && D.k) openSlot(D.k, D.s);
+    else if (D.rpick && slotCtx) { setSlot(slotCtx.k, slotCtx.s, { r: D.rpick }); closeM(); render(); }
+    else if (D.sfree && slotCtx) { var v = $('sfree').value.trim(); if (v) { setSlot(slotCtx.k, slotCtx.s, { t: v }); closeM(); render(); } else $('sfree').focus(); }
+    else if (D.sclear && slotCtx) { setSlot(slotCtx.k, slotCtx.s, null); closeM(); render(); }
+    else if (D.copy) copyWeek();
+    else if (D.close) closeM();
+    else if (D.rt !== undefined) { rtag = rtag === D.rt ? '' : D.rt; renderRec(); }
+    else if (D.newr) openRec('');
+    else if (D.er) openRec(D.er);
+    else if (D.et) { var i = edTags.indexOf(D.et); if (i === -1) edTags.push(D.et); else edTags.splice(i, 1); paintTags(); }
+    else if (D.rsave) saveRec();
+    else if (D.rdel) delRec();
+    else if (D.ci) { var w = ds(wk), c = data.chk[w] || (data.chk[w] = {}); if (c[D.ci]) delete c[D.ci]; else c[D.ci] = 1; save(); renderShop(); }
+    else if (D.xd) { var x = data.extra.filter(function (y) { return y.id === D.xd; })[0]; if (x) { x.done = !x.done; save(); renderShop(); } }
+    else if (D.xx) { data.extra = data.extra.filter(function (y) { return y.id !== D.xx; }); save(); renderShop(); }
+    else if (D.unt) { delete data.chk[ds(wk)]; data.extra.forEach(function (y) { y.done = false; }); save(); renderShop(); }
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'rq') { rq = t.value; var pos = t.selectionStart; renderRec(); var n = $('rq'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} }
+    else if (t.id === 'sq' && slotCtx) { slotCtx.q = t.value; fillPick(); }
+  });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id === 'xf') { e.preventDefault(); var v = $('xin').value.trim(); if (v) { data.extra.push({ id: uid(), t: v, done: false }); save(); renderShop(); $('xin').focus(); } }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !$('m').hidden) closeM();
+    if (e.key === 'Enter' && e.target.id === 'rt') { e.preventDefault(); addTag(); }
+    if (e.key === 'Enter' && e.target.id === 'sfree') { e.preventDefault(); var b = document.querySelector('[data-sfree]'); if (b) b.click(); }
+  });
+  $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
+  window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); if ($('m').hidden) render(); } });
+  render();
+})();
+</script>
+</body>
+</html>
