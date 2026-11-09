@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-PT">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Meals</title>
+<title>Refeições</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
@@ -126,9 +126,9 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="ibtn" href="index.html" aria-label="Back to Daily Life">‹</a>
-    <h1>Meals</h1>
-    <!-- INFO-ICON --><button class="ibtn" data-info="1" aria-label="How to share a link here" style="font: 600 18px/1 var(--font)">i</button><!-- /INFO-ICON -->
+    <a class="ibtn" href="index.html" aria-label="Voltar ao Daily Life">‹</a>
+    <h1>Refeições</h1>
+    <!-- INFO-ICON --><button class="ibtn" data-info="1" aria-label="Como partilhar um link aqui" style="font: 600 18px/1 var(--font)">i</button><!-- /INFO-ICON -->
   </header>
   <section id="v-plan"></section>
   <section id="v-rec" hidden></section>
@@ -137,10 +137,10 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 
 <div class="modal" id="m" hidden><div class="sheet" id="sh"></div></div>
 
-<nav class="navbar" aria-label="Sections"><div class="tabbar">
-  <button data-v="plan" aria-pressed="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Plan</button>
-  <button data-v="rec" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14a0 0 0 0 1 0 0v1a7 7 0 0 1-7 7 7 7 0 0 1-7-7v-1z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg>Recipes</button>
-  <button data-v="shop" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5h2.5l2 10h9.5l2-7.5H7"/><circle cx="9.5" cy="19" r="1.2"/><circle cx="16.5" cy="19" r="1.2"/></svg>Shopping</button>
+<nav class="navbar" aria-label="Secções"><div class="tabbar">
+  <button data-v="plan" aria-pressed="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Plano</button>
+  <button data-v="rec" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14a0 0 0 0 1 0 0v1a7 7 0 0 1-7 7 7 7 0 0 1-7-7v-1z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg>Receitas</button>
+  <button data-v="shop" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5h2.5l2 10h9.5l2-7.5H7"/><circle cx="9.5" cy="19" r="1.2"/><circle cx="16.5" cy="19" r="1.2"/></svg>Compras</button>
 </div></nav>
 
 <script type="module" src="sync.js?v=10"></script>
@@ -148,11 +148,11 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 (function () {
   'use strict';
   var LS = 'meals-v1';
-  var SL = [['l', 'Lunch'], ['s', 'Snack']];   // Dinner is hidden for now (anything already planned for dinner stays saved): to bring it back, put ['d', 'Dinner'] between the two
+  var SL = [['l', 'Almoço'], ['s', 'Lanche']];   // o jantar está escondido por agora (o que já estava planeado fica guardado): para o voltar a ter, pôr ['d', 'Jantar'] entre os dois
 
-  var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  var BASE_TAGS = ['quick', 'vegetarian', 'freezes well'];
+  var DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  var MON = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var BASE_TAGS = ['rápido', 'vegetariano', 'congela bem'];
   /* data: recipes [{id,n,min,tags[],ing[],steps,u}], plan {'YYYY-MM-DD': {l|d|s: {r: recipe id} or {t: free text}}},
      chk {'weekMonday': {normalised ingredient: 1}} (ticked on the shopping list), extra [{id,t,done}] (things typed by hand) */
   var data = load(), view = 'plan', wk = monday(new Date()), rq = '', rtag = '', slotCtx = null, edId = null, edTags = [], sure = false;
@@ -179,7 +179,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function slotOf(k, s) { var d = data.plan[k]; return d && d[s] && !d[s].x ? d[s] : null; }   // {x:1} = cleared
   function slotText(m) {   // [title, subtitle] for a planned meal
     if (!m) return null;
-    if (m.r) { var r = recById(m.r); return r ? [r.n, r.min ? r.min + ' min' : ''] : [m.t || 'Deleted recipe', '']; }
+    if (m.r) { var r = recById(m.r); return r ? [r.n, r.min ? r.min + ' min' : ''] : [m.t || 'Receita apagada', '']; }
     return m.t ? [m.t, ''] : null;
   }
   function setSlot(k, s, v) {
@@ -193,29 +193,29 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     var days = [0, 1, 2, 3, 4, 5, 6].map(function (i) { return addDays(wk, i); }), end = days[6], now = ds(new Date());
     var sameMonth = wk.getMonth() === end.getMonth();
     var cur = ds(monday(new Date())) === ds(wk);
-    var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Previous week">‹</button><div class="lab">' + wk.getDate() + (sameMonth ? '' : ' ' + MON[wk.getMonth()]) + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + (cur ? 'This week' : '<button data-wk="0" class="pill">Back to this week</button>') + '</small></div><button class="r" data-wk="1" aria-label="Next week">›</button></div>';
+    var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Semana anterior">‹</button><div class="lab">' + wk.getDate() + (sameMonth ? '' : ' ' + MON[wk.getMonth()]) + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + (cur ? 'Esta semana' : '<button data-wk="0" class="pill">Voltar a esta semana</button>') + '</small></div><button class="r" data-wk="1" aria-label="Semana seguinte">›</button></div>';
     h += days.map(function (d) {
       var k = ds(d);
       return '<div class="day' + (k === now ? ' today' : '') + '"><h3>' + DAYS[d.getDay()] + '<span>' + d.getDate() + ' ' + MON[d.getMonth()] + '</span></h3>' + dayMacros(k) + SL.map(function (s) {
         var t = slotText(slotOf(k, s[0]));
-        return '<button class="slot" data-k="' + k + '" data-s="' + s[0] + '"><span class="sl">' + s[1] + '</span><span class="st' + (t ? '' : ' empty') + '">' + (t ? esc(t[0]) + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '+ add') + '</span></button>';
+        return '<button class="slot" data-k="' + k + '" data-s="' + s[0] + '"><span class="sl">' + s[1] + '</span><span class="st' + (t ? '' : ' empty') + '">' + (t ? esc(t[0]) + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '+ adicionar') + '</span></button>';
       }).join('') + '</div>';
     }).join('');
-    h += '<button class="btn ghost full" data-copy="1">Copy last week into the empty slots</button>';
+    h += '<button class="btn ghost full" data-copy="1">Copiar a semana anterior para os espaços vazios</button>';
     $('v-plan').innerHTML = h;
   }
   function openSlot(k, s) {
     slotCtx = { k: k, s: s, q: '' };
     var d = new Date(k + 'T12:00:00'), lab = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
     var cur = slotOf(k, s);
-    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Search your recipes" autocomplete="off" aria-label="Search recipes"><div class="pick" id="spick"></div>' +
-      '<div><label for="sfree">Or type what you are eating</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="e.g. Lunch out" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Use</button></div></div>' +
-      (cur ? '<button class="btn ghost full" data-sclear="1">Clear this meal</button>' : '') + '<button class="btn ghost full" data-close="1">Close</button>';
+    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="pick" id="spick"></div>' +
+      '<div><label for="sfree">Ou escreve o que vais comer</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Usar</button></div></div>' +
+      (cur ? '<button class="btn ghost full" data-sclear="1">Limpar esta refeição</button>' : '') + '<button class="btn ghost full" data-close="1">Fechar</button>';
     fillPick(); $('m').hidden = false;
   }
   function fillPick() {
     var q = nrm(slotCtx.q), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (recs().length ? 'No recipe matches.' : 'No recipes yet. Add some in the Recipes tab, or type the meal below.') + '</div>';
+    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Ainda não tens receitas. Acrescenta no separador Receitas, ou escreve a refeição em baixo.') + '</div>';
     $('spick').innerHTML = $('spick').innerHTML + savedHTML(q);
   }
   function copyWeek() {
@@ -232,10 +232,10 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function renderRec() {
     var q = nrm(rq), l = recs().filter(function (r) { return (!rtag || (r.tags || []).indexOf(rtag) !== -1) && (!q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1); }).sort(function (a, b) { return a.n.localeCompare(b.n); });
     var keepL = $('lin') ? $('lin').value : '';
-    var h = linksHTML() + '<div class="stack"><input type="search" id="rq" placeholder="Search recipes or ingredients" value="' + esc(rq) + '" autocomplete="off" aria-label="Search recipes">' +
+    var h = linksHTML() + '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas">' +
       (recs().length ? '<div class="chipsrow">' + allTags().map(function (t) { return '<button type="button" data-rt="' + esc(t) + '" aria-pressed="' + (rtag === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
-      '<button class="btn full" data-newr="1">+ New recipe</button></div>';
-    h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredients</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (recs().length ? 'No recipe matches.' : 'Your recipes will live here.<br>Tap “New recipe” to add the first one.') + '</div>';
+      '<button class="btn full" data-newr="1">+ Nova receita</button></div>';
+    h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'As tuas receitas ficam aqui.<br>Toca em “Nova receita” para acrescentar a primeira.') + '</div>';
     $('v-rec').innerHTML = h; if (keepL && $('lin')) $('lin').value = keepL;
     var s = $('rq'); if (s && document.activeElement === document.body && rq) { /* keep typing focus handled by input event */ }
   }
@@ -243,12 +243,12 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     var r = recById(id); if (!r) return;
     var ing = (r.ing || []).map(function (l) { return '<li>' + esc(l) + (hasQty(l) ? '' : '<span class="fl">⚑</span>') + '</li>'; }).join('');
     $('sh').innerHTML = '<div class="view"><h2>' + esc(r.n) + '</h2><p style="margin:2px 0 0;color:var(--mute);font-size:14px">' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</p>' +
-      (r.mac && r.mac.k != null ? '<p style="margin:8px 0 0;font-size:14px"><b>Per serving</b>' + (r.serv > 1 ? ' (' + r.serv + ' servings)' : '') + ': ' + esc(macLine(r.mac)) + '</p>' : '') + '<h3>Ingredients</h3>' + (ing ? '<ul>' + ing + '</ul>' : '<p style="margin:0;color:var(--mute)">None yet.</p>') + (/⚑/.test(ing) ? '<p style="margin:6px 0 0;font-size:12px;color:var(--mute)">⚑ = no amount yet. Edit the recipe to add it.</p>' : '') +
-      '<h3>Steps</h3>' + (r.steps ? '<p class="st">' + esc(r.steps) + '</p>' : '<p style="margin:0;color:var(--mute)">None yet.</p>') + '</div>' +
-      '<button class="btn ghost full" data-macros="' + r.id + '">Macros' + (r.mac && r.mac.k != null ? ' (recalculate)' : ' from the ingredients') + '</button><button class="btn full" data-edit="' + r.id + '">Edit</button><button class="btn ghost full" data-close="1">Close</button>';
+      (r.mac && r.mac.k != null ? '<p style="margin:8px 0 0;font-size:14px"><b>Por porção</b>' + (r.serv > 1 ? ' (' + r.serv + ' porções)' : '') + ': ' + esc(macLine(r.mac)) + '</p>' : '') + '<h3>Ingredientes</h3>' + (ing ? '<ul>' + ing + '</ul>' : '<p style="margin:0;color:var(--mute)">Ainda não há.</p>') + (/⚑/.test(ing) ? '<p style="margin:6px 0 0;font-size:12px;color:var(--mute)">⚑ = sem quantidade. Edita a receita para a acrescentar.</p>' : '') +
+      '<h3>Passos</h3>' + (r.steps ? '<p class="st">' + esc(r.steps) + '</p>' : '<p style="margin:0;color:var(--mute)">Ainda não há.</p>') + '</div>' +
+      '<button class="btn ghost full" data-macros="' + r.id + '">Macros' + (r.mac && r.mac.k != null ? ' (recalcular)' : ' a partir dos ingredientes') + '</button><button class="btn full" data-edit="' + r.id + '">Editar</button><button class="btn ghost full" data-close="1">Fechar</button>';
     $('m').hidden = false;
   }
-  var UNITS = [['', 'Unit'], ['g', 'gramas'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'litros'], ['un', 'unidades'], ['c. sopa', 'colher de sopa'], ['c. chá', 'colher de chá'], ['chávena', 'chávena'], ['pitada', 'pitada'], ['a gosto', 'a gosto']];
+  var UNITS = [['', 'Unidade'], ['g', 'gramas'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'litros'], ['un', 'unidades'], ['c. sopa', 'colher de sopa'], ['c. chá', 'colher de chá'], ['chávena', 'chávena'], ['pitada', 'pitada'], ['a gosto', 'a gosto']];
   var edItems = [];
   function ingLine(it) {   // "500 g de tomate", "2 un. cebola", "Sal (a gosto)", "Batata-doce"
     var n = String(it.n || '').trim(); if (!n) return '';
@@ -268,21 +268,21 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function paintRows() {
     if (!edItems.length) edItems.push({ n: '', q: '', u: '' });
     $('irows').innerHTML = edItems.map(function (it, i) {
-      return '<div class="irow"><input type="text" class="in-n" placeholder="Ingredient" aria-label="Ingredient" value="' + esc(it.n) + '"><input type="text" inputmode="decimal" class="in-q" placeholder="Amount" aria-label="Amount" value="' + esc(it.q) + '"' + (it.u === 'a gosto' ? ' disabled' : '') + '>' +
-        '<select class="in-u" aria-label="Unit">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select><button type="button" class="rm" data-irm="' + i + '" aria-label="Remove ingredient">✕</button></div>';
+      return '<div class="irow"><input type="text" class="in-n" placeholder="Ingrediente" aria-label="Ingrediente" value="' + esc(it.n) + '"><input type="text" inputmode="decimal" class="in-q" placeholder="Quantidade" aria-label="Quantidade" value="' + esc(it.q) + '"' + (it.u === 'a gosto' ? ' disabled' : '') + '>' +
+        '<select class="in-u" aria-label="Unidade">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select><button type="button" class="rm" data-irm="' + i + '" aria-label="Remover ingrediente">✕</button></div>';
     }).join('');
   }
   function openRec(id) {
     var r = id ? recById(id) : null; edId = id || ''; sure = false; edTags = r ? (r.tags || []).slice() : [];
     edItems = r ? (Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine)) : [];
     edItems.forEach(function (x) { if (!String(x.q).trim() && x.u !== 'a gosto') x.u = ''; });
-    $('sh').innerHTML = '<h2>' + (r ? 'Edit recipe' : 'New recipe') + '</h2><div><label for="rn">Name</label><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="e.g. Chicken and rice"></div>' +
-      '<div class="two"><div><label for="rm">Minutes</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div><label for="rt">Add a tag</label><input type="text" id="rt" placeholder="e.g. kids"></div></div>' +
+    $('sh').innerHTML = '<h2>' + (r ? 'Editar receita' : 'Nova receita') + '</h2><div><label for="rn">Nome</label><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="ex.: frango com arroz"></div>' +
+      '<div class="two"><div><label for="rm">Minutos</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div><label for="rt">Acrescentar etiqueta</label><input type="text" id="rt" placeholder="ex.: crianças"></div></div>' +
       '<div class="chipsrow" id="rtags"></div>' +
-      '<div><label>Ingredients</label><div class="irows" id="irows"></div><button type="button" class="btn ghost full" data-iadd="1">+ Add ingredient</button></div>' +
-      '<div><label for="rs">Steps</label><textarea id="rs">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
-      '<div><label>Macros per serving (type them, or use “Macros” on the recipe to calculate)</label><div class="mac"><div><label for="rmk">kcal</label><input type="text" inputmode="decimal" id="rmk" value="' + esc(r && r.mac && r.mac.k != null ? r.mac.k : '') + '"></div><div><label for="rmp">protein</label><input type="text" inputmode="decimal" id="rmp" value="' + esc(r && r.mac && r.mac.p != null ? r.mac.p : '') + '"></div><div><label for="rmc">carbs</label><input type="text" inputmode="decimal" id="rmc" value="' + esc(r && r.mac && r.mac.c != null ? r.mac.c : '') + '"></div><div><label for="rmf">fat</label><input type="text" inputmode="decimal" id="rmf" value="' + esc(r && r.mac && r.mac.f != null ? r.mac.f : '') + '"></div></div></div><div><label for="rsv">Servings</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div>' +
-      '<button class="btn full" data-rsave="1">Save</button>' + (r ? '<button class="btn ghost full" data-rdel="1">Delete recipe</button>' : '') + '<button class="btn ghost full" data-close="1">Cancel</button>';
+      '<div><label>Ingredientes</label><div class="irows" id="irows"></div><button type="button" class="btn ghost full" data-iadd="1">+ Acrescentar ingrediente</button></div>' +
+      '<div><label for="rs">Passos</label><textarea id="rs">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
+      '<div><label>Macros por porção (escreve-os, ou usa “Macros” na receita para os calcular)</label><div class="mac"><div><label for="rmk">kcal</label><input type="text" inputmode="decimal" id="rmk" value="' + esc(r && r.mac && r.mac.k != null ? r.mac.k : '') + '"></div><div><label for="rmp">proteína</label><input type="text" inputmode="decimal" id="rmp" value="' + esc(r && r.mac && r.mac.p != null ? r.mac.p : '') + '"></div><div><label for="rmc">hidratos</label><input type="text" inputmode="decimal" id="rmc" value="' + esc(r && r.mac && r.mac.c != null ? r.mac.c : '') + '"></div><div><label for="rmf">gordura</label><input type="text" inputmode="decimal" id="rmf" value="' + esc(r && r.mac && r.mac.f != null ? r.mac.f : '') + '"></div></div></div><div><label for="rsv">Porções</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div>' +
+      '<button class="btn full" data-rsave="1">Guardar</button>' + (r ? '<button class="btn ghost full" data-rdel="1">Apagar receita</button>' : '') + '<button class="btn ghost full" data-close="1">Cancelar</button>';
     paintTags(); paintRows(); $('m').hidden = false;
   }
   function paintTags() {
@@ -301,7 +301,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     save(); closeM(); render();
   }
   function delRec() {
-    if (!sure) { sure = true; var b = document.querySelector('[data-rdel]'); b.textContent = 'Delete? Tap again'; b.classList.add('bad'); return; }
+    if (!sure) { sure = true; var b = document.querySelector('[data-rdel]'); b.textContent = 'Apagar? Toca outra vez'; b.classList.add('bad'); return; }
     var r = recById(edId); if (!r) return;
     var now = Date.now();
     Object.keys(data.plan).forEach(function (k) { Object.keys(data.plan[k]).forEach(function (s) { var m = data.plan[k][s]; if (m.r === r.id) data.plan[k][s] = { t: r.n, u: now }; }); });   // planned days keep the name
@@ -353,10 +353,10 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   var UMAP = { 'g': 1, 'kg': 1000, 'ml': 1, 'l': 1000, 'c. sopa': 15, 'c. chá': 5, 'chávena': 240, 'pitada': 0.4 };   // millilitres counted as grams
   function recItems(r) { return Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine); }
   function gramsOf(it, rec) {
-    if (it.u === 'a gosto') return { g: 0, skip: 'to taste' };
-    var q = num(it.q); if (!(q > 0)) return { g: null, why: 'no amount' };
+    if (it.u === 'a gosto') return { g: 0, skip: 'a gosto' };
+    var q = num(it.q); if (!(q > 0)) return { g: null, why: 'sem quantidade' };
     if (it.u in UMAP) return { g: q * UMAP[it.u] };
-    return rec && rec.g > 0 ? { g: q * rec.g } : { g: null, why: 'grams per unit?' };   // units, or an amount with no unit
+    return rec && rec.g > 0 ? { g: q * rec.g } : { g: null, why: 'gramas por unidade?' };   // units, or an amount with no unit
   }
   var mx = null, mctx = null;
   function mxTotals() {
@@ -364,7 +364,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     mx.items.forEach(function (it) {
       if (!String(it.n).trim() || it.u === 'a gosto') return; tot++;
       var rec = nutRec(nutKey(it.n)), gr = gramsOf(it, rec);
-      if (!rec) { miss.push(it.n + ' (no food matched)'); return; }
+      if (!rec) { miss.push(it.n + ' (sem alimento escolhido)'); return; }
       if (gr.g == null) { miss.push(it.n + ' (' + gr.why + ')'); return; }
       ok++; t.k += rec.kcal * gr.g / 100; t.p += rec.p * gr.g / 100; t.c += rec.c * gr.g / 100; t.f += rec.f * gr.g / 100;
     });
@@ -378,40 +378,40 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   }
   function renderMacros() {
     var r = recById(mx.id), rows = mx.items.filter(function (it) { return String(it.n).trim(); }).map(function (it) {
-      var key = nutKey(it.n), rec = nutRec(key), gr = gramsOf(it, rec), amt = it.u === 'a gosto' ? 'a gosto' : (String(it.q).trim() ? it.q + ' ' + (it.u || '') : 'no amount');
+      var key = nutKey(it.n), rec = nutRec(key), gr = gramsOf(it, rec), amt = it.u === 'a gosto' ? 'a gosto' : (String(it.q).trim() ? it.q + ' ' + (it.u || '') : 'sem quantidade');
       var right = '';
-      if (it.u === 'a gosto') right = '<span class="chg">not counted</span>';
-      else if (!rec) right = '<button class="flagb" data-mfind="' + esc(key) + '" data-mn="' + esc(it.n) + '">⚑ find food</button>';
-      else { if (gr.g == null && gr.why === 'grams per unit?') right = '<input type="text" inputmode="decimal" data-mg="' + esc(key) + '" placeholder="g / unit" aria-label="Grams per unit">'; right += '<button class="chg" data-mfind="' + esc(key) + '" data-mn="' + esc(it.n) + '">change</button>'; }
+      if (it.u === 'a gosto') right = '<span class="chg">não conta</span>';
+      else if (!rec) right = '<button class="flagb" data-mfind="' + esc(key) + '" data-mn="' + esc(it.n) + '">⚑ escolher alimento</button>';
+      else { if (gr.g == null && gr.why === 'gramas por unidade?') right = '<input type="text" inputmode="decimal" data-mg="' + esc(key) + '" placeholder="g / unidade" aria-label="Gramas por unidade">'; right += '<button class="chg" data-mfind="' + esc(key) + '" data-mn="' + esc(it.n) + '">mudar</button>'; }
       return '<div class="mrow"><div class="mn"><b>' + esc(it.n) + '</b><small>' + esc(amt) + (rec ? ' · ' + esc(rec.d || 'manual') + ' · ' + rec.kcal + ' kcal/100 g' : '') + (gr.g == null && rec && gr.why ? ' · ⚑ ' + gr.why : '') + '</small></div>' + right + '</div>';
     }).join('');
-    $('sh').innerHTML = '<h2>Macros</h2><p style="margin:0;color:var(--mute);font-size:14px">' + esc(r.n) + '. Pick the matching food once for each ingredient (it is remembered for every recipe).</p>' +
-      '<div><label for="mserv">Servings the recipe makes</label><input type="text" inputmode="numeric" id="mserv" value="' + esc(mx.serv) + '"></div>' + (rows || '<p style="color:var(--mute)">This recipe has no ingredients yet.</p>') +
-      '<div class="mtot" id="mtot"></div><button class="btn full" data-msave="1">Save macros to the recipe</button><button class="btn ghost full" data-mclose="1">Back</button>';
+    $('sh').innerHTML = '<h2>Macros</h2><p style="margin:0;color:var(--mute);font-size:14px">' + esc(r.n) + '. Escolhe uma vez o alimento certo para cada ingrediente (fica guardado para todas as receitas).</p>' +
+      '<div><label for="mserv">Porções que a receita dá</label><input type="text" inputmode="numeric" id="mserv" value="' + esc(mx.serv) + '"></div>' + (rows || '<p style="color:var(--mute)">Esta receita ainda não tem ingredientes.</p>') +
+      '<div class="mtot" id="mtot"></div><button class="btn full" data-msave="1">Guardar os macros na receita</button><button class="btn ghost full" data-mclose="1">Voltar</button>';
     paintTot(); $('m').hidden = false;
   }
   function paintTot() {
     var t = mxTotals(), el = $('mtot'); if (!el) return;
-    el.innerHTML = '<b>Per serving</b> (' + t.s + ' ' + (t.s === 1 ? 'serving' : 'servings') + '): ' + t.k + ' kcal · P ' + t.p + ' g · H ' + t.c + ' g · G ' + t.f + ' g<small>Counted ' + t.ok + ' of ' + t.tot + ' ingredients.' + (t.miss.length ? ' Missing: ' + esc(t.miss.join(', ')) + '.' : '') + '</small>';
+    el.innerHTML = '<b>Por porção</b> (' + t.s + ' ' + (t.s === 1 ? 'porção' : 'porções') + '): ' + t.k + ' kcal · P ' + t.p + ' g · H ' + t.c + ' g · G ' + t.f + ' g<small>Contados ' + t.ok + ' de ' + t.tot + ' ingredientes.' + (t.miss.length ? ' Em falta: ' + esc(t.miss.join(', ')) + '.' : '') + '</small>';
   }
   function openMatch(key, name) {
     mctx = { key: key, name: name, res: [] };
-    $('sh').innerHTML = '<h2>Which food is “' + esc(name) + '”?</h2><p style="margin:0;color:var(--mute);font-size:14px">Searching the USDA food database (in English). Pick the closest one.</p>' +
-      '<div class="addrow" style="margin:0"><input type="text" id="mq" value="' + esc(enGuess(name)) + '"><button class="btn" data-msearch="1">Search</button></div><div class="mres" id="mres"><p style="color:var(--mute)">Searching…</p></div>' +
-      '<details><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Or type the values per 100 g yourself</summary><div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>protein</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>carbs</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>fat</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Use these values</button></details>' +
-      '<button class="btn ghost full" data-mbackm="1">Back</button>';
+    $('sh').innerHTML = '<h2>Que alimento é “' + esc(name) + '”?</h2><p style="margin:0;color:var(--mute);font-size:14px">A pesquisar na base de dados de alimentos da USDA (em inglês). Escolhe o mais parecido.</p>' +
+      '<div class="addrow" style="margin:0"><input type="text" id="mq" value="' + esc(enGuess(name)) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
+      '<details><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Ou escreve tu os valores por 100 g</summary><div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
+      '<button class="btn ghost full" data-mbackm="1">Voltar</button>';
     mSearch();
   }
   function mSearch() {
-    var q = $('mq').value.trim(); if (!q) return; $('mres').innerHTML = '<p style="color:var(--mute)">Searching…</p>';
+    var q = $('mq').value.trim(); if (!q) return; $('mres').innerHTML = '<p style="color:var(--mute)">A pesquisar…</p>';
     fdcSearch(q).then(function (res) {
-      mctx.res = res; $('mres').innerHTML = res.length ? res.map(function (x, i) { return '<button data-mxpick="' + i + '">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (per 100 g)</small></button>'; }).join('') : '<p style="color:var(--mute)">Nothing found. Try another word (in English), or type the values yourself.</p>';
-    }).catch(function () { $('mres').innerHTML = '<p style="color:var(--mute)">Could not reach the food database (offline, or too many searches for now). Try again in a bit, or type the values yourself.</p>'; });
+      mctx.res = res; $('mres').innerHTML = res.length ? res.map(function (x, i) { return '<button data-mxpick="' + i + '">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></button>'; }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra (em inglês), ou escreve tu os valores.</p>';
+    }).catch(function () { $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui chegar à base de dados de alimentos (sem ligação, ou demasiadas pesquisas por agora). Tenta daqui a pouco, ou escreve tu os valores.</p>'; });
   }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
     SL.forEach(function (s) { var m = slotOf(k, s[0]); if (!m) return; var r = m.r ? recById(m.r) : null; if (r && r.mac && r.mac.k != null) { n++; t.k += r.mac.k; t.p += r.mac.p; t.c += r.mac.c; t.f += r.mac.f; } else miss++; });
-    return n ? '<div class="dm">≈ ' + Math.round(t.k) + ' kcal · P ' + r1(t.p) + ' · H ' + r1(t.c) + ' · G ' + r1(t.f) + (miss ? ' · +' + miss + ' without macros' : '') + '</div>' : '';
+    return n ? '<div class="dm">≈ ' + Math.round(t.k) + ' kcal · P ' + r1(t.p) + ' · H ' + r1(t.c) + ' · G ' + r1(t.f) + (miss ? ' · +' + miss + ' sem macros' : '') + '</div>' : '';
   }
   function savedMeals(q) { return data.extra.filter(function (x) { return x.k === 'meal' && !x.del && (!q || nrm(x.t).indexOf(q) !== -1); }).sort(function (a, b) { return a.t.localeCompare(b.t); }); }
   function saveMeal(t) {   // remember what was typed, so next time it is one tap away
@@ -421,7 +421,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   }
   function savedHTML(q) {
     var l = savedMeals(q); if (!l.length) return '';
-    return '<div class="h" style="margin:12px 4px 6px">Saved meals</div><div class="chipsrow">' + l.map(function (x) { return '<span class="mchip"><button type="button" data-mpick="' + x.id + '">' + esc(x.t) + '</button><button type="button" data-mdel="' + x.id + '" aria-label="Forget this meal">✕</button></span>'; }).join('') + '</div>';
+    return '<div class="h" style="margin:12px 4px 6px">Refeições guardadas</div><div class="chipsrow">' + l.map(function (x) { return '<span class="mchip"><button type="button" data-mpick="' + x.id + '">' + esc(x.t) + '</button><button type="button" data-mdel="' + x.id + '" aria-label="Esquecer esta refeição">✕</button></span>'; }).join('') + '</div>';
   }
   function hasQty(line) { return /\d|[½¼¾]|\b(um|uma|dois|duas|meia|meio|pitada|punhado|fio|q\.?b\.?|a gosto|dentes?|ramo|molho)\b/i.test(line); }   // does the ingredient line say how much?
   function qtyMap(wkey) { var m = {}; data.extra.forEach(function (x) { if (x.k === 'qty' && !x.del && x.wk === wkey) m[x.key] = x.t; }); return m; }
@@ -429,9 +429,9 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function openQty(key) {
     var w = ds(wk), cur = qtyMap(w)[key] || '', it = weekItems().filter(function (i) { return i.key === key; })[0]; if (!it) return;
     qCtx = { key: key, wkey: w };
-    $('sh').innerHTML = '<h2>' + esc(it.t) + '</h2><p style="margin:0;color:var(--mute);font-size:14px">The recipe does not say how much. Type the amount for this week (e.g. 500 g, 2 units, a pinch).</p>' +
-      '<div><label for="qin2">Amount</label><input type="text" id="qin2" value="' + esc(cur) + '" placeholder="e.g. 500 g"></div>' +
-      '<button class="btn full" data-qsave="1">Save</button>' + (cur ? '<button class="btn ghost full" data-qclear="1">Remove the amount</button>' : '') + '<button class="btn ghost full" data-close="1">Cancel</button>';
+    $('sh').innerHTML = '<h2>' + esc(it.t) + '</h2><p style="margin:0;color:var(--mute);font-size:14px">A receita não diz a quantidade. Escreve a quantidade para esta semana (ex.: 500 g, 2 unidades, uma pitada).</p>' +
+      '<div><label for="qin2">Quantidade</label><input type="text" id="qin2" value="' + esc(cur) + '" placeholder="ex.: 500 g"></div>' +
+      '<button class="btn full" data-qsave="1">Guardar</button>' + (cur ? '<button class="btn ghost full" data-qclear="1">Remover a quantidade</button>' : '') + '<button class="btn ghost full" data-close="1">Cancelar</button>';
     $('m').hidden = false; setTimeout(function () { var i = $('qin2'); if (i) i.focus(); }, 60);
   }
   function setQty(text) {
@@ -443,8 +443,8 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
   function linksHTML() {
     var L = links();
-    return '<form class="addrow" id="lf" autocomplete="off"><input type="text" id="lin" inputmode="url" placeholder="Paste a recipe link" aria-label="Recipe link"><button class="btn" type="submit">+</button></form>' + (lmsg ? '<p style="margin:-4px 4px 10px;font-size:13px;color:var(--mute)">' + esc(lmsg) + '</p>' : '') +
-      (L.length ? '<div class="h" style="margin-top:0">Waiting to become recipes (' + L.length + ')</div>' + L.map(function (x) { return '<div class="item"><span class="tx">' + esc(hostOf(x.url)) + '<small>' + esc(x.url) + '</small></span><button class="x" data-ld="' + x.id + '" aria-label="Remove link">✕</button></div>'; }).join('') + '<div style="height:10px"></div>' : '');
+    return '<form class="addrow" id="lf" autocomplete="off"><input type="text" id="lin" inputmode="url" placeholder="Cola o link de uma receita" aria-label="Link da receita"><button class="btn" type="submit">+</button></form>' + (lmsg ? '<p style="margin:-4px 4px 10px;font-size:13px;color:var(--mute)">' + esc(lmsg) + '</p>' : '') +
+      (L.length ? '<div class="h" style="margin-top:0">À espera de virar receita (' + L.length + ')</div>' + L.map(function (x) { return '<div class="item"><span class="tx">' + esc(hostOf(x.url)) + '<small>' + esc(x.url) + '</small></span><button class="x" data-ld="' + x.id + '" aria-label="Remover link">✕</button></div>'; }).join('') + '<div style="height:10px"></div>' : '');
   }
   var lmsg = '';
   function saveLink(v) {   // 'ok' | 'dup' | 'bad'
@@ -458,41 +458,41 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function addLink() {
     var i = $('lin'), r = saveLink(i.value); if (!i.value.trim()) return;
     if (r === 'bad') { i.focus(); return; }
-    lmsg = r === 'ok' ? 'Link saved ✓' : 'That link is already waiting'; i.value = ''; renderRec();
+    lmsg = r === 'ok' ? 'Link guardado ✓' : 'Esse link já está na lista'; i.value = ''; renderRec();
   }
   function renderShop() {
     var wkey = ds(wk), chk = data.chk[wkey] || {}, items = weekItems(), end = addDays(wk, 6);
-    var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Previous week">‹</button><div class="lab">' + wk.getDate() + ' ' + MON[wk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>Built from the meals you planned</small></div><button class="r" data-wk="1" aria-label="Next week">›</button></div>';
+    var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Semana anterior">‹</button><div class="lab">' + wk.getDate() + ' ' + MON[wk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>Feita a partir das refeições planeadas</small></div><button class="r" data-wk="1" aria-label="Semana seguinte">›</button></div>';
     var qm = qtyMap(wkey);
     function row(it) {
       var noq = !hasQty(it.t), am = qm[it.key];
       var main = '<button class="item" data-ci="' + esc(it.key) + '" aria-pressed="' + (chk[it.key] > 0) + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + (am ? '<b>' + esc(am) + '</b> · ' : '') + esc(it.t) + (it.n > 1 ? ' ×' + it.n : '') + '<small>' + esc(it.from.join(', ')) + '</small></span></button>';
       if (!noq) return main;
-      return '<div class="itemw">' + main + '<button class="flag" data-qf="' + esc(it.key) + '" aria-label="Add the amount">' + (am ? 'edit' : '⚑ amount') + '</button></div>';
+      return '<div class="itemw">' + main + '<button class="flag" data-qf="' + esc(it.key) + '" aria-label="Acrescentar a quantidade">' + (am ? 'editar' : '⚑ quantidade') + '</button></div>';
     }
     var todo = items.filter(function (i) { return !(chk[i.key] > 0); }), done = items.filter(function (i) { return chk[i.key] > 0; });
-    h += items.length ? '<div class="h">To buy (' + todo.length + ')</div>' + (todo.concat(done).some(function (i) { return !hasQty(i.t) && !qm[i.key]; }) ? '<p style="margin:0 4px 8px;font-size:13px;color:var(--mute)">⚑ The recipe does not say how much. Tap it to add the amount.</p>' : '') + todo.map(row).join('') + (done.length ? '<div class="h">In the basket</div>' + done.map(row).join('') : '') : '<div class="empty">Nothing yet.<br>Plan some meals with recipes and their ingredients will show up here.</div>';
-    h += '<div class="h">Extras</div><form class="addrow" id="xf" autocomplete="off"><input type="text" id="xin" placeholder="Add something (milk, coffee…)" aria-label="Add an extra item"><button class="btn" type="submit">Add</button></form>';
-    h += extras().map(function (x) { return '<div class="item" style="padding:0"><button class="item" style="margin:0;flex:1" data-xd="' + x.id + '" aria-pressed="' + !!x.done + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(x.t) + '</span></button><button class="x" data-xx="' + x.id + '" aria-label="Remove">✕</button></div>'; }).join('');
-    if (extras().some(function (x) { return x.done; }) || done.length) h += '<button class="btn ghost full" style="margin-top:12px" data-unt="1">Untick everything</button>';
+    h += items.length ? '<div class="h">Para comprar (' + todo.length + ')</div>' + (todo.concat(done).some(function (i) { return !hasQty(i.t) && !qm[i.key]; }) ? '<p style="margin:0 4px 8px;font-size:13px;color:var(--mute)">⚑ A receita não diz a quantidade. Toca para a acrescentar.</p>' : '') + todo.map(row).join('') + (done.length ? '<div class="h">No cesto</div>' + done.map(row).join('') : '') : '<div class="empty">Ainda nada.<br>Planeia refeições com receitas e os ingredientes aparecem aqui.</div>';
+    h += '<div class="h">Extras</div><form class="addrow" id="xf" autocomplete="off"><input type="text" id="xin" placeholder="Acrescentar algo (leite, café…)" aria-label="Acrescentar um item extra"><button class="btn" type="submit">Acrescentar</button></form>';
+    h += extras().map(function (x) { return '<div class="item" style="padding:0"><button class="item" style="margin:0;flex:1" data-xd="' + x.id + '" aria-pressed="' + !!x.done + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(x.t) + '</span></button><button class="x" data-xx="' + x.id + '" aria-label="Remover">✕</button></div>'; }).join('');
+    if (extras().some(function (x) { return x.done; }) || done.length) h += '<button class="btn ghost full" style="margin-top:12px" data-unt="1">Desmarcar tudo</button>';
     $('v-shop').innerHTML = h;
   }
 
   /* INFO-ICON: how to send a TikTok link straight into the app (iPhone Shortcut) */
   var SHARE_URL = 'https://danscraig.github.io/daily-life/meals.html#add=';
   function openInfo() {
-    $('sh').innerHTML = '<h2>Share a recipe link into the app</h2>' +
-      '<p style="margin:0;color:var(--mute);font-size:14px">On the iPhone, create a Shortcut once. After that, in TikTok tap Share and pick “Receita”: the link lands in the list “Waiting to become recipes”.</p>' +
+    $('sh').innerHTML = '<h2>Partilhar o link de uma receita para a app</h2>' +
+      '<p style="margin:0;color:var(--mute);font-size:14px">No iPhone, cria um Atalho uma só vez. Depois, no TikTok toca em Partilhar e escolhe “Receita”: o link fica na lista “À espera de virar receita”.</p>' +
       '<ol style="margin:0;padding-left:20px;font-size:15px;display:flex;flex-direction:column;gap:6px">' +
-      '<li>Open the <b>Shortcuts</b> app, tap <b>+</b> and name it <b>Receita</b>.</li>' +
-      '<li>Tap <b>(i)</b> and turn on <b>Show in Share Sheet</b>. Keep only <b>URLs</b> and <b>Text</b> as accepted types.</li>' +
-      '<li>Add the action <b>Text</b>. Paste the address below, then right after it insert the variable <b>Shortcut Input</b>.</li>' +
-      '<li>Add the action <b>Open URLs</b> and give it that Text as input.</li>' +
-      '<li>In TikTok: <b>Share</b>, then <b>Receita</b>.</li></ol>' +
-      '<div><label>Address to paste in the Text action</label><input type="text" id="shareurl" readonly value="' + esc(SHARE_URL) + '"></div>' +
-      '<button class="btn full" data-copyurl="1">Copy the address</button>' +
-      '<p style="margin:0;color:var(--mute);font-size:13px">The link opens in Safari, so Safari must be signed in to the cloud account (Daily Life home, Cloud sync) for it to reach the other devices. Then ask Claude to turn the waiting links into recipes.</p>' +
-      '<button class="btn ghost full" data-close="1">Close</button>';
+      '<li>Abre a app <b>Shortcuts</b> (Atalhos), toca em <b>+</b> e chama-lhe <b>Receita</b>.</li>' +
+      '<li>Toca em <b>(i)</b> e liga <b>Show in Share Sheet</b>. Deixa só <b>URLs</b> e <b>Text</b> como tipos aceites.</li>' +
+      '<li>Acrescenta a ação <b>Text</b>. Cola o endereço em baixo e, logo a seguir, insere a variável <b>Shortcut Input</b>.</li>' +
+      '<li>Acrescenta a ação <b>Open URLs</b> com esse Text como entrada.</li>' +
+      '<li>No TikTok: <b>Share</b> (Partilhar) e depois <b>Receita</b>.</li></ol>' +
+      '<div><label>Endereço para colar na ação Text</label><input type="text" id="shareurl" readonly value="' + esc(SHARE_URL) + '"></div>' +
+      '<button class="btn full" data-copyurl="1">Copiar o endereço</button>' +
+      '<p style="margin:0;color:var(--mute);font-size:13px">O link abre no Safari, por isso o Safari tem de ter a sessão iniciada na conta da nuvem (ecrã inicial do Daily Life, Cloud sync) para chegar aos outros aparelhos. Depois pede ao Claude para transformar os links à espera em receitas.</p>' +
+      '<button class="btn ghost full" data-close="1">Fechar</button>';
     $('m').hidden = false;
   }
   function closeM() { $('m').hidden = true; slotCtx = null; edId = null; }
@@ -515,7 +515,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (D.mdel && slotCtx) { var dm = data.extra.filter(function (y) { return y.id === D.mdel; })[0]; if (dm) { dm.del = true; dm.u = Date.now(); save(); fillPick(); } }
     else if (D.copy) copyWeek();
     else if (D.info) openInfo();
-    else if (D.copyurl) { var cu = $('shareurl'); cu.focus(); cu.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (x) {} if (!ok && navigator.clipboard) { navigator.clipboard.writeText(SHARE_URL).catch(function () {}); ok = true; } b.textContent = ok ? 'Copied ✓' : 'Select the address and copy it'; }
+    else if (D.copyurl) { var cu = $('shareurl'); cu.focus(); cu.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (x) {} if (!ok && navigator.clipboard) { navigator.clipboard.writeText(SHARE_URL).catch(function () {}); ok = true; } b.textContent = ok ? 'Copiado ✓' : 'Seleciona o endereço e copia-o'; }
     else if (D.close) closeM();
     else if (D.rt !== undefined) { rtag = rtag === D.rt ? '' : D.rt; renderRec(); }
     else if (D.newr) openRec('');
@@ -528,7 +528,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (D.msearch) mSearch();
     else if (D.mbackm) renderMacros();
     else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { saveNut(mctx.key, mctx.name, pk); renderMacros(); } }
-    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value); if (mk1 != null) { saveNut(mctx.key, mctx.name, { d: 'typed by you', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }); renderMacros(); } else $('mmk').focus(); }
+    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value); if (mk1 != null) { saveNut(mctx.key, mctx.name, { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }); renderMacros(); } else $('mmk').focus(); }
     else if (D.msave && mx) { var t = mxTotals(), rr = recById(mx.id); if (rr) { rr.serv = t.s; rr.mac = { k: t.k, p: t.p, c: t.c, f: t.f, cov: t.ok + '/' + t.tot }; rr.u = Date.now(); save(); } openView(mx.id); render(); }
     else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var ns = document.querySelectorAll('#irows .in-n'); if (ns.length) ns[ns.length - 1].focus(); }
     else if (D.irm !== undefined) { readRows(); edItems.splice(Number(D.irm), 1); paintRows(); }
@@ -568,7 +568,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     var shared = sh[1]; try { shared = decodeURIComponent(shared); } catch (e) {}
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
     var sr = saveLink(shared); view = 'rec';
-    lmsg = sr === 'ok' ? 'Link saved ✓' : sr === 'dup' ? 'That link is already waiting' : 'That did not look like a link';
+    lmsg = sr === 'ok' ? 'Link guardado ✓' : sr === 'dup' ? 'Esse link já está na lista' : 'Isso não parece um link';
   }
   render();
 })();
