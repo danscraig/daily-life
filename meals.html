@@ -85,6 +85,13 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .sheet label { font-size: 13px; color: var(--mute); display: block; margin: 0 0 4px 4px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pick { max-height: 34vh; overflow-y: auto; }
+.itemw { display: flex; align-items: center; background: var(--paper); border-radius: 16px; margin-bottom: 6px; }
+.itemw .item { margin: 0; background: none; flex: 1; min-width: 0; }
+.flag { flex: none; margin-right: 10px; padding: 5px 11px; border-radius: 999px; background: #FCEBD6; color: #A5560E; font-size: 12px; font-weight: 600; }
+.view h3 { margin: 6px 0 4px; font-size: 14px; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
+.view ul { margin: 0; padding-left: 20px; }
+.view .st { white-space: pre-wrap; margin: 0; }
+.view .fl { color: #A5560E; font-size: 12px; font-weight: 600; margin-left: 6px; }
 @keyframes fadein { from { opacity: 0; } }
 @keyframes sheetin { from { opacity: 0; transform: translateY(12px) scale(.98); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
@@ -204,6 +211,15 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     $('v-rec').innerHTML = h; if (keepL && $('lin')) $('lin').value = keepL;
     var s = $('rq'); if (s && document.activeElement === document.body && rq) { /* keep typing focus handled by input event */ }
   }
+  function openView(id) {
+    var r = recById(id); if (!r) return;
+    var ing = (r.ing || []).map(function (l) { return '<li>' + esc(l) + (hasQty(l) ? '' : '<span class="fl">⚑</span>') + '</li>'; }).join('');
+    $('sh').innerHTML = '<div class="view"><h2>' + esc(r.n) + '</h2><p style="margin:2px 0 0;color:var(--mute);font-size:14px">' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</p>' +
+      '<h3>Ingredients</h3>' + (ing ? '<ul>' + ing + '</ul>' : '<p style="margin:0;color:var(--mute)">None yet.</p>') + (/⚑/.test(ing) ? '<p style="margin:6px 0 0;font-size:12px;color:var(--mute)">⚑ = no amount yet. Edit the recipe to add it.</p>' : '') +
+      '<h3>Steps</h3>' + (r.steps ? '<p class="st">' + esc(r.steps) + '</p>' : '<p style="margin:0;color:var(--mute)">None yet.</p>') + '</div>' +
+      '<button class="btn full" data-edit="' + r.id + '">Edit</button><button class="btn ghost full" data-close="1">Close</button>';
+    $('m').hidden = false;
+  }
   function openRec(id) {
     var r = id ? recById(id) : null; edId = id || ''; sure = false; edTags = r ? (r.tags || []).slice() : [];
     $('sh').innerHTML = '<h2>' + (r ? 'Edit recipe' : 'New recipe') + '</h2><div><label for="rn">Name</label><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="e.g. Chicken and rice"></div>' +
@@ -247,7 +263,23 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     });
     return order.map(function (k) { return map[k]; });
   }
-  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link'; }); }
+  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link' && x.k !== 'qty'; }); }
+  function hasQty(line) { return /\d|[½¼¾]|\b(um|uma|dois|duas|meia|meio|pitada|punhado|fio|q\.?b\.?|a gosto|dentes?|ramo|molho)\b/i.test(line); }   // does the ingredient line say how much?
+  function qtyMap(wkey) { var m = {}; data.extra.forEach(function (x) { if (x.k === 'qty' && !x.del && x.wk === wkey) m[x.key] = x.t; }); return m; }
+  var qCtx = null;
+  function openQty(key) {
+    var w = ds(wk), cur = qtyMap(w)[key] || '', it = weekItems().filter(function (i) { return i.key === key; })[0]; if (!it) return;
+    qCtx = { key: key, wkey: w };
+    $('sh').innerHTML = '<h2>' + esc(it.t) + '</h2><p style="margin:0;color:var(--mute);font-size:14px">The recipe does not say how much. Type the amount for this week (e.g. 500 g, 2 units, a pinch).</p>' +
+      '<div><label for="qin2">Amount</label><input type="text" id="qin2" value="' + esc(cur) + '" placeholder="e.g. 500 g"></div>' +
+      '<button class="btn full" data-qsave="1">Save</button>' + (cur ? '<button class="btn ghost full" data-qclear="1">Remove the amount</button>' : '') + '<button class="btn ghost full" data-close="1">Cancel</button>';
+    $('m').hidden = false; setTimeout(function () { var i = $('qin2'); if (i) i.focus(); }, 60);
+  }
+  function setQty(text) {
+    var id = 'q|' + qCtx.wkey + '|' + qCtx.key, x = data.extra.filter(function (y) { return y.id === id; })[0], now = Date.now();
+    if (!x) { x = { id: id, k: 'qty', wk: qCtx.wkey, key: qCtx.key }; data.extra.push(x); }
+    x.t = text; x.del = !text; x.u = now; save(); closeM(); renderShop();
+  }
   function links() { return data.extra.filter(function (x) { return x.k === 'link' && !x.del; }); }   // recipe links waiting to be turned into recipes
   function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
   function linksHTML() {
@@ -272,9 +304,15 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function renderShop() {
     var wkey = ds(wk), chk = data.chk[wkey] || {}, items = weekItems(), end = addDays(wk, 6);
     var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Previous week">‹</button><div class="lab">' + wk.getDate() + ' ' + MON[wk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>Built from the meals you planned</small></div><button class="r" data-wk="1" aria-label="Next week">›</button></div>';
-    function row(it) { return '<button class="item" data-ci="' + esc(it.key) + '" aria-pressed="' + (chk[it.key] > 0) + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(it.t) + (it.n > 1 ? ' ×' + it.n : '') + '<small>' + esc(it.from.join(', ')) + '</small></span></button>'; }
+    var qm = qtyMap(wkey);
+    function row(it) {
+      var noq = !hasQty(it.t), am = qm[it.key];
+      var main = '<button class="item" data-ci="' + esc(it.key) + '" aria-pressed="' + (chk[it.key] > 0) + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + (am ? '<b>' + esc(am) + '</b> · ' : '') + esc(it.t) + (it.n > 1 ? ' ×' + it.n : '') + '<small>' + esc(it.from.join(', ')) + '</small></span></button>';
+      if (!noq) return main;
+      return '<div class="itemw">' + main + '<button class="flag" data-qf="' + esc(it.key) + '" aria-label="Add the amount">' + (am ? 'edit' : '⚑ amount') + '</button></div>';
+    }
     var todo = items.filter(function (i) { return !(chk[i.key] > 0); }), done = items.filter(function (i) { return chk[i.key] > 0; });
-    h += items.length ? '<div class="h">To buy (' + todo.length + ')</div>' + todo.map(row).join('') + (done.length ? '<div class="h">In the basket</div>' + done.map(row).join('') : '') : '<div class="empty">Nothing yet.<br>Plan some meals with recipes and their ingredients will show up here.</div>';
+    h += items.length ? '<div class="h">To buy (' + todo.length + ')</div>' + (todo.concat(done).some(function (i) { return !hasQty(i.t) && !qm[i.key]; }) ? '<p style="margin:0 4px 8px;font-size:13px;color:var(--mute)">⚑ The recipe does not say how much. Tap it to add the amount.</p>' : '') + todo.map(row).join('') + (done.length ? '<div class="h">In the basket</div>' + done.map(row).join('') : '') : '<div class="empty">Nothing yet.<br>Plan some meals with recipes and their ingredients will show up here.</div>';
     h += '<div class="h">Extras</div><form class="addrow" id="xf" autocomplete="off"><input type="text" id="xin" placeholder="Add something (milk, coffee…)" aria-label="Add an extra item"><button class="btn" type="submit">Add</button></form>';
     h += extras().map(function (x) { return '<div class="item" style="padding:0"><button class="item" style="margin:0;flex:1" data-xd="' + x.id + '" aria-pressed="' + !!x.done + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(x.t) + '</span></button><button class="x" data-xx="' + x.id + '" aria-label="Remove">✕</button></div>'; }).join('');
     if (extras().some(function (x) { return x.done; }) || done.length) h += '<button class="btn ghost full" style="margin-top:12px" data-unt="1">Untick everything</button>';
@@ -321,7 +359,11 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (D.rt !== undefined) { rtag = rtag === D.rt ? '' : D.rt; renderRec(); }
     else if (D.newr) openRec('');
     else if (D.ld) { var lk = data.extra.filter(function (y) { return y.id === D.ld; })[0]; if (lk) { lk.del = true; lk.u = Date.now(); save(); renderRec(); } }
-    else if (D.er) openRec(D.er);
+    else if (D.er) openView(D.er);
+    else if (D.edit) openRec(D.edit);
+    else if (D.qf) openQty(D.qf);
+    else if (D.qsave && qCtx) setQty($('qin2').value.trim());
+    else if (D.qclear && qCtx) setQty('');
     else if (D.et) { var i = edTags.indexOf(D.et); if (i === -1) edTags.push(D.et); else edTags.splice(i, 1); paintTags(); }
     else if (D.rsave) saveRec();
     else if (D.rdel) delRec();
