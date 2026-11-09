@@ -231,12 +231,13 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
       '<button class="btn full" data-edit="' + r.id + '">Edit</button><button class="btn ghost full" data-close="1">Close</button>';
     $('m').hidden = false;
   }
-  var UNITS = [['g', 'gramas'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'litros'], ['un', 'unidades'], ['c. sopa', 'colher de sopa'], ['c. chá', 'colher de chá'], ['chávena', 'chávena'], ['pitada', 'pitada'], ['a gosto', 'a gosto']];
+  var UNITS = [['', 'Unit'], ['g', 'gramas'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'litros'], ['un', 'unidades'], ['c. sopa', 'colher de sopa'], ['c. chá', 'colher de chá'], ['chávena', 'chávena'], ['pitada', 'pitada'], ['a gosto', 'a gosto']];
   var edItems = [];
   function ingLine(it) {   // "500 g de tomate", "2 un. cebola", "Sal (a gosto)", "Batata-doce"
     var n = String(it.n || '').trim(); if (!n) return '';
     if (it.u === 'a gosto') return n + ' (a gosto)';
     var q = String(it.q || '').trim(); if (!q) return n;
+    if (!it.u) return q + ' ' + n;   // amount without a unit: "2 cebolas"
     return it.u === 'un' ? q + ' un. ' + n : q + ' ' + it.u + ' de ' + n;
   }
   function parseLine(l) {   // an older recipe saved as plain lines: split it when it is clean, otherwise keep the whole line as the name
@@ -244,20 +245,20 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     if (m) { var u = m[2].toLowerCase().replace(/\.$/, ''); if (u === 'chavena') u = 'chávena'; return { n: m[3], q: m[1], u: u }; }
     var g = String(l).trim().match(/^(.+?)\s*\(a gosto\)$/i);
     if (g) return { n: g[1], q: '', u: 'a gosto' };
-    return { n: String(l).trim(), q: '', u: 'g' };
+    return { n: String(l).trim(), q: '', u: '' };
   }
   function readRows() { edItems = [].map.call(document.querySelectorAll('#irows .irow'), function (r) { return { n: r.querySelector('.in-n').value, q: r.querySelector('.in-q').value, u: r.querySelector('.in-u').value }; }); }
   function paintRows() {
-    if (!edItems.length) edItems.push({ n: '', q: '', u: 'g' });
+    if (!edItems.length) edItems.push({ n: '', q: '', u: '' });
     $('irows').innerHTML = edItems.map(function (it, i) {
       return '<div class="irow"><input type="text" class="in-n" placeholder="Ingredient" aria-label="Ingredient" value="' + esc(it.n) + '"><input type="text" inputmode="decimal" class="in-q" placeholder="Amount" aria-label="Amount" value="' + esc(it.q) + '"' + (it.u === 'a gosto' ? ' disabled' : '') + '>' +
-        '<button type="button" class="rm" data-irm="' + i + '" aria-label="Remove ingredient">✕</button>' +
-        '<select class="in-u" aria-label="Unit">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></div>';
+        '<select class="in-u" aria-label="Unit">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select><button type="button" class="rm" data-irm="' + i + '" aria-label="Remove ingredient">✕</button></div>';
     }).join('');
   }
   function openRec(id) {
     var r = id ? recById(id) : null; edId = id || ''; sure = false; edTags = r ? (r.tags || []).slice() : [];
     edItems = r ? (Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine)) : [];
+    edItems.forEach(function (x) { if (!String(x.q).trim() && x.u !== 'a gosto') x.u = ''; });
     $('sh').innerHTML = '<h2>' + (r ? 'Edit recipe' : 'New recipe') + '</h2><div><label for="rn">Name</label><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="e.g. Chicken and rice"></div>' +
       '<div class="two"><div><label for="rm">Minutes</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div><label for="rt">Add a tag</label><input type="text" id="rt" placeholder="e.g. kids"></div></div>' +
       '<div class="chipsrow" id="rtags"></div>' +
@@ -409,7 +410,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (D.ld) { var lk = data.extra.filter(function (y) { return y.id === D.ld; })[0]; if (lk) { lk.del = true; lk.u = Date.now(); save(); renderRec(); } }
     else if (D.er) openView(D.er);
     else if (D.edit) openRec(D.edit);
-    else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: 'g' }); paintRows(); var ns = document.querySelectorAll('#irows .in-n'); if (ns.length) ns[ns.length - 1].focus(); }
+    else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var ns = document.querySelectorAll('#irows .in-n'); if (ns.length) ns[ns.length - 1].focus(); }
     else if (D.irm !== undefined) { readRows(); edItems.splice(Number(D.irm), 1); paintRows(); }
     else if (D.qf) openQty(D.qf);
     else if (D.qsave && qCtx) setQty($('qin2').value.trim());
