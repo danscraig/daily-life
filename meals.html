@@ -85,6 +85,9 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .sheet label { font-size: 13px; color: var(--mute); display: block; margin: 0 0 4px 4px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pick { max-height: 34vh; overflow-y: auto; }
+.mchip { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font-size: 14px; color: var(--ink); margin: 0 6px 6px 0; }
+.chipsrow .mchip button { border: 0; background: none; padding: 8px 4px 8px 14px; color: inherit; border-radius: 999px; font-size: 14px; }
+.chipsrow .mchip button + button { padding: 8px 12px 8px 4px; color: var(--mute); }
 .itemw { display: flex; align-items: center; background: var(--paper); border-radius: 16px; margin-bottom: 6px; }
 .itemw .item { margin: 0; background: none; flex: 1; min-width: 0; }
 .flag { flex: none; margin-right: 10px; padding: 5px 11px; border-radius: 999px; background: #FCEBD6; color: #A5560E; font-size: 12px; font-weight: 600; }
@@ -189,6 +192,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function fillPick() {
     var q = nrm(slotCtx.q), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
     $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (recs().length ? 'No recipe matches.' : 'No recipes yet. Add some in the Recipes tab, or type the meal below.') + '</div>';
+    $('spick').innerHTML = $('spick').innerHTML + savedHTML(q);
   }
   function copyWeek() {
     var prev = addDays(wk, -7), n = 0;
@@ -263,7 +267,17 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     });
     return order.map(function (k) { return map[k]; });
   }
-  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link' && x.k !== 'qty'; }); }
+  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link' && x.k !== 'qty' && x.k !== 'meal'; }); }
+  function savedMeals(q) { return data.extra.filter(function (x) { return x.k === 'meal' && !x.del && (!q || nrm(x.t).indexOf(q) !== -1); }).sort(function (a, b) { return a.t.localeCompare(b.t); }); }
+  function saveMeal(t) {   // remember what was typed, so next time it is one tap away
+    var id = 'mt|' + nrm(t), x = data.extra.filter(function (y) { return y.id === id; })[0];
+    if (!x) { x = { id: id, k: 'meal' }; data.extra.push(x); }
+    x.t = t; x.del = false; x.u = Date.now(); save();
+  }
+  function savedHTML(q) {
+    var l = savedMeals(q); if (!l.length) return '';
+    return '<div class="h" style="margin:12px 4px 6px">Saved meals</div><div class="chipsrow">' + l.map(function (x) { return '<span class="mchip"><button type="button" data-mpick="' + x.id + '">' + esc(x.t) + '</button><button type="button" data-mdel="' + x.id + '" aria-label="Forget this meal">✕</button></span>'; }).join('') + '</div>';
+  }
   function hasQty(line) { return /\d|[½¼¾]|\b(um|uma|dois|duas|meia|meio|pitada|punhado|fio|q\.?b\.?|a gosto|dentes?|ramo|molho)\b/i.test(line); }   // does the ingredient line say how much?
   function qtyMap(wkey) { var m = {}; data.extra.forEach(function (x) { if (x.k === 'qty' && !x.del && x.wk === wkey) m[x.key] = x.t; }); return m; }
   var qCtx = null;
@@ -350,8 +364,10 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (D.wk !== undefined) { wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
     else if (D.s && D.k) openSlot(D.k, D.s);
     else if (D.rpick && slotCtx) { setSlot(slotCtx.k, slotCtx.s, { r: D.rpick }); closeM(); render(); }
-    else if (D.sfree && slotCtx) { var v = $('sfree').value.trim(); if (v) { setSlot(slotCtx.k, slotCtx.s, { t: v }); closeM(); render(); } else $('sfree').focus(); }
+    else if (D.sfree && slotCtx) { var v = $('sfree').value.trim(); if (v) { saveMeal(v); setSlot(slotCtx.k, slotCtx.s, { t: v }); closeM(); render(); } else $('sfree').focus(); }
     else if (D.sclear && slotCtx) { setSlot(slotCtx.k, slotCtx.s, null); closeM(); render(); }
+    else if (D.mpick && slotCtx) { var sm = data.extra.filter(function (y) { return y.id === D.mpick; })[0]; if (sm) { sm.u = Date.now(); setSlot(slotCtx.k, slotCtx.s, { t: sm.t }); closeM(); render(); } }
+    else if (D.mdel && slotCtx) { var dm = data.extra.filter(function (y) { return y.id === D.mdel; })[0]; if (dm) { dm.del = true; dm.u = Date.now(); save(); fillPick(); } }
     else if (D.copy) copyWeek();
     else if (D.info) openInfo();
     else if (D.copyurl) { var cu = $('shareurl'); cu.focus(); cu.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (x) {} if (!ok && navigator.clipboard) { navigator.clipboard.writeText(SHARE_URL).catch(function () {}); ok = true; } b.textContent = ok ? 'Copied ✓' : 'Select the address and copy it'; }
