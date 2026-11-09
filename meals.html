@@ -95,6 +95,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   <header class="top">
     <a class="ibtn" href="index.html" aria-label="Back to Daily Life">‹</a>
     <h1>Meals</h1>
+    <!-- INFO-ICON --><button class="ibtn" data-info="1" aria-label="How to share a link here" style="font: 600 18px/1 var(--font)">i</button><!-- /INFO-ICON -->
   </header>
   <section id="v-plan"></section>
   <section id="v-rec" hidden></section>
@@ -277,6 +278,23 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     $('v-shop').innerHTML = h;
   }
 
+  /* INFO-ICON: how to send a TikTok link straight into the app (iPhone Shortcut) */
+  var SHARE_URL = 'https://danscraig.github.io/daily-life/meals.html#add=';
+  function openInfo() {
+    $('sh').innerHTML = '<h2>Share a recipe link into the app</h2>' +
+      '<p style="margin:0;color:var(--mute);font-size:14px">On the iPhone, create a Shortcut once. After that, in TikTok tap Share and pick “Receita”: the link lands in the list “Waiting to become recipes”.</p>' +
+      '<ol style="margin:0;padding-left:20px;font-size:15px;display:flex;flex-direction:column;gap:6px">' +
+      '<li>Open the <b>Shortcuts</b> app, tap <b>+</b> and name it <b>Receita</b>.</li>' +
+      '<li>Tap <b>(i)</b> and turn on <b>Show in Share Sheet</b>. Keep only <b>URLs</b> and <b>Text</b> as accepted types.</li>' +
+      '<li>Add the action <b>Text</b>. Paste the address below, then right after it insert the variable <b>Shortcut Input</b>.</li>' +
+      '<li>Add the action <b>Open URLs</b> and give it that Text as input.</li>' +
+      '<li>In TikTok: <b>Share</b>, then <b>Receita</b>.</li></ol>' +
+      '<div><label>Address to paste in the Text action</label><input type="text" id="shareurl" readonly value="' + esc(SHARE_URL) + '"></div>' +
+      '<button class="btn full" data-copyurl="1">Copy the address</button>' +
+      '<p style="margin:0;color:var(--mute);font-size:13px">The link opens in Safari, so Safari must be signed in to the cloud account (Daily Life home, Cloud sync) for it to reach the other devices. Then ask Claude to turn the waiting links into recipes.</p>' +
+      '<button class="btn ghost full" data-close="1">Close</button>';
+    $('m').hidden = false;
+  }
   function closeM() { $('m').hidden = true; slotCtx = null; edId = null; }
   function render() {
     $('v-plan').hidden = view !== 'plan'; $('v-rec').hidden = view !== 'rec'; $('v-shop').hidden = view !== 'shop';
@@ -294,6 +312,8 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (D.sfree && slotCtx) { var v = $('sfree').value.trim(); if (v) { setSlot(slotCtx.k, slotCtx.s, { t: v }); closeM(); render(); } else $('sfree').focus(); }
     else if (D.sclear && slotCtx) { setSlot(slotCtx.k, slotCtx.s, null); closeM(); render(); }
     else if (D.copy) copyWeek();
+    else if (D.info) openInfo();
+    else if (D.copyurl) { var cu = $('shareurl'); cu.focus(); cu.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (x) {} if (!ok && navigator.clipboard) { navigator.clipboard.writeText(SHARE_URL).catch(function () {}); ok = true; } b.textContent = ok ? 'Copied ✓' : 'Select the address and copy it'; }
     else if (D.close) closeM();
     else if (D.rt !== undefined) { rtag = rtag === D.rt ? '' : D.rt; renderRec(); }
     else if (D.newr) openRec('');
