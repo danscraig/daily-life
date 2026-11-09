@@ -109,6 +109,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   <button data-v="shop" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5h2.5l2 10h9.5l2-7.5H7"/><circle cx="9.5" cy="19" r="1.2"/><circle cx="16.5" cy="19" r="1.2"/></svg>Shopping</button>
 </div></nav>
 
+<script type="module" src="sync.js?v=10"></script>
 <script>
 (function () {
   'use strict';
@@ -135,8 +136,9 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
   function nrm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
   function recById(id) { return data.recipes.filter(function (r) { return r.id === id; })[0]; }
+  function recs() { return data.recipes.filter(function (r) { return !r.del; }); }   // a deleted recipe stays in the data (so the other devices learn about it) but is hidden
   function cleanLines(t) { return String(t || '').split('\n').map(function (l) { return l.replace(/^\s*[-•*]\s*/, '').trim(); }).filter(Boolean); }
-  function slotOf(k, s) { var d = data.plan[k]; return d && d[s] ? d[s] : null; }
+  function slotOf(k, s) { var d = data.plan[k]; return d && d[s] && !d[s].x ? d[s] : null; }   // {x:1} = cleared
   function slotText(m) {   // [title, subtitle] for a planned meal
     if (!m) return null;
     if (m.r) { var r = recById(m.r); return r ? [r.n, r.min ? r.min + ' min' : ''] : [m.t || 'Deleted recipe', '']; }
@@ -144,8 +146,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   }
   function setSlot(k, s, v) {
     var d = data.plan[k] || (data.plan[k] = {});
-    if (v) d[s] = v; else delete d[s];
-    if (!Object.keys(d).length) delete data.plan[k];
+    d[s] = v ? Object.assign({}, v, { u: Date.now() }) : { x: 1, u: Date.now() };   // a cleared meal is kept as a marker so the clearing syncs
     save();
   }
 
@@ -175,26 +176,26 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     fillPick(); $('m').hidden = false;
   }
   function fillPick() {
-    var q = nrm(slotCtx.q), l = data.recipes.filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (data.recipes.length ? 'No recipe matches.' : 'No recipes yet. Add some in the Recipes tab, or type the meal below.') + '</div>';
+    var q = nrm(slotCtx.q), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (recs().length ? 'No recipe matches.' : 'No recipes yet. Add some in the Recipes tab, or type the meal below.') + '</div>';
   }
   function copyWeek() {
     var prev = addDays(wk, -7), n = 0;
     for (var i = 0; i < 7; i++) SL.forEach(function (s) {
       var a = ds(addDays(prev, i)), b = ds(addDays(wk, i)), m = slotOf(a, s[0]);
-      if (m && !slotOf(b, s[0])) { var d = data.plan[b] || (data.plan[b] = {}); d[s[0]] = JSON.parse(JSON.stringify(m)); n++; }
+      if (m && !slotOf(b, s[0])) { var d = data.plan[b] || (data.plan[b] = {}); d[s[0]] = Object.assign(JSON.parse(JSON.stringify(m)), { u: Date.now() }); n++; }
     });
     save(); renderPlan();
   }
 
   /* recipes */
-  function allTags() { var o = BASE_TAGS.slice(); data.recipes.forEach(function (r) { (r.tags || []).forEach(function (t) { if (o.indexOf(t) === -1) o.push(t); }); }); return o; }
+  function allTags() { var o = BASE_TAGS.slice(); recs().forEach(function (r) { (r.tags || []).forEach(function (t) { if (o.indexOf(t) === -1) o.push(t); }); }); return o; }
   function renderRec() {
-    var q = nrm(rq), l = data.recipes.filter(function (r) { return (!rtag || (r.tags || []).indexOf(rtag) !== -1) && (!q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1); }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    var q = nrm(rq), l = recs().filter(function (r) { return (!rtag || (r.tags || []).indexOf(rtag) !== -1) && (!q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1); }).sort(function (a, b) { return a.n.localeCompare(b.n); });
     var h = '<div class="stack"><input type="search" id="rq" placeholder="Search recipes or ingredients" value="' + esc(rq) + '" autocomplete="off" aria-label="Search recipes">' +
-      (data.recipes.length ? '<div class="chipsrow">' + allTags().map(function (t) { return '<button type="button" data-rt="' + esc(t) + '" aria-pressed="' + (rtag === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
+      (recs().length ? '<div class="chipsrow">' + allTags().map(function (t) { return '<button type="button" data-rt="' + esc(t) + '" aria-pressed="' + (rtag === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
       '<button class="btn full" data-newr="1">+ New recipe</button></div>';
-    h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredients</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (data.recipes.length ? 'No recipe matches.' : 'Your recipes will live here.<br>Tap “New recipe” to add the first one.') + '</div>';
+    h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredients</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (recs().length ? 'No recipe matches.' : 'Your recipes will live here.<br>Tap “New recipe” to add the first one.') + '</div>';
     $('v-rec').innerHTML = h;
     var s = $('rq'); if (s && document.activeElement === document.body && rq) { /* keep typing focus handled by input event */ }
   }
@@ -223,8 +224,9 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
   function delRec() {
     if (!sure) { sure = true; var b = document.querySelector('[data-rdel]'); b.textContent = 'Delete? Tap again'; b.classList.add('bad'); return; }
     var r = recById(edId); if (!r) return;
-    Object.keys(data.plan).forEach(function (k) { Object.keys(data.plan[k]).forEach(function (s) { var m = data.plan[k][s]; if (m.r === r.id) data.plan[k][s] = { t: r.n }; }); });   // planned days keep the name
-    data.recipes = data.recipes.filter(function (x) { return x.id !== r.id; }); save(); closeM(); render();
+    var now = Date.now();
+    Object.keys(data.plan).forEach(function (k) { Object.keys(data.plan[k]).forEach(function (s) { var m = data.plan[k][s]; if (m.r === r.id) data.plan[k][s] = { t: r.n, u: now }; }); });   // planned days keep the name
+    r.del = now; r.u = now; save(); closeM(); render();
   }
 
   /* shopping list for the week on the Plan tab */
@@ -240,15 +242,16 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     });
     return order.map(function (k) { return map[k]; });
   }
+  function extras() { return data.extra.filter(function (x) { return !x.del; }); }
   function renderShop() {
     var wkey = ds(wk), chk = data.chk[wkey] || {}, items = weekItems(), end = addDays(wk, 6);
     var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Previous week">‹</button><div class="lab">' + wk.getDate() + ' ' + MON[wk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>Built from the meals you planned</small></div><button class="r" data-wk="1" aria-label="Next week">›</button></div>';
-    function row(it) { return '<button class="item" data-ci="' + esc(it.key) + '" aria-pressed="' + !!chk[it.key] + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(it.t) + (it.n > 1 ? ' ×' + it.n : '') + '<small>' + esc(it.from.join(', ')) + '</small></span></button>'; }
-    var todo = items.filter(function (i) { return !chk[i.key]; }), done = items.filter(function (i) { return chk[i.key]; });
+    function row(it) { return '<button class="item" data-ci="' + esc(it.key) + '" aria-pressed="' + (chk[it.key] > 0) + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(it.t) + (it.n > 1 ? ' ×' + it.n : '') + '<small>' + esc(it.from.join(', ')) + '</small></span></button>'; }
+    var todo = items.filter(function (i) { return !(chk[i.key] > 0); }), done = items.filter(function (i) { return chk[i.key] > 0; });
     h += items.length ? '<div class="h">To buy (' + todo.length + ')</div>' + todo.map(row).join('') + (done.length ? '<div class="h">In the basket</div>' + done.map(row).join('') : '') : '<div class="empty">Nothing yet.<br>Plan some meals with recipes and their ingredients will show up here.</div>';
     h += '<div class="h">Extras</div><form class="addrow" id="xf" autocomplete="off"><input type="text" id="xin" placeholder="Add something (milk, coffee…)" aria-label="Add an extra item"><button class="btn" type="submit">Add</button></form>';
-    h += data.extra.map(function (x) { return '<div class="item" style="padding:0"><button class="item" style="margin:0;flex:1" data-xd="' + x.id + '" aria-pressed="' + !!x.done + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(x.t) + '</span></button><button class="x" data-xx="' + x.id + '" aria-label="Remove">✕</button></div>'; }).join('');
-    if (data.extra.some(function (x) { return x.done; }) || done.length) h += '<button class="btn ghost full" style="margin-top:12px" data-unt="1">Untick everything</button>';
+    h += extras().map(function (x) { return '<div class="item" style="padding:0"><button class="item" style="margin:0;flex:1" data-xd="' + x.id + '" aria-pressed="' + !!x.done + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(x.t) + '</span></button><button class="x" data-xx="' + x.id + '" aria-label="Remove">✕</button></div>'; }).join('');
+    if (extras().some(function (x) { return x.done; }) || done.length) h += '<button class="btn ghost full" style="margin-top:12px" data-unt="1">Untick everything</button>';
     $('v-shop').innerHTML = h;
   }
 
@@ -276,10 +279,10 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (D.et) { var i = edTags.indexOf(D.et); if (i === -1) edTags.push(D.et); else edTags.splice(i, 1); paintTags(); }
     else if (D.rsave) saveRec();
     else if (D.rdel) delRec();
-    else if (D.ci) { var w = ds(wk), c = data.chk[w] || (data.chk[w] = {}); if (c[D.ci]) delete c[D.ci]; else c[D.ci] = 1; save(); renderShop(); }
-    else if (D.xd) { var x = data.extra.filter(function (y) { return y.id === D.xd; })[0]; if (x) { x.done = !x.done; save(); renderShop(); } }
-    else if (D.xx) { data.extra = data.extra.filter(function (y) { return y.id !== D.xx; }); save(); renderShop(); }
-    else if (D.unt) { delete data.chk[ds(wk)]; data.extra.forEach(function (y) { y.done = false; }); save(); renderShop(); }
+    else if (D.ci) { var w = ds(wk), c = data.chk[w] || (data.chk[w] = {}); c[D.ci] = c[D.ci] > 0 ? -Date.now() : Date.now(); save(); renderShop(); }
+    else if (D.xd) { var x = data.extra.filter(function (y) { return y.id === D.xd; })[0]; if (x) { x.done = !x.done; x.u = Date.now(); save(); renderShop(); } }
+    else if (D.xx) { var xr = data.extra.filter(function (y) { return y.id === D.xx; })[0]; if (xr) { xr.del = true; xr.u = Date.now(); save(); renderShop(); } }
+    else if (D.unt) { var uc = data.chk[ds(wk)] || {}, un = Date.now(); Object.keys(uc).forEach(function (i) { uc[i] = -un; }); data.extra.forEach(function (y) { if (y.done) { y.done = false; y.u = un; } }); save(); renderShop(); }
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
@@ -287,7 +290,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     else if (t.id === 'sq' && slotCtx) { slotCtx.q = t.value; fillPick(); }
   });
   document.addEventListener('submit', function (e) {
-    if (e.target.id === 'xf') { e.preventDefault(); var v = $('xin').value.trim(); if (v) { data.extra.push({ id: uid(), t: v, done: false }); save(); renderShop(); $('xin').focus(); } }
+    if (e.target.id === 'xf') { e.preventDefault(); var v = $('xin').value.trim(); if (v) { data.extra.push({ id: uid(), t: v, done: false, u: Date.now() }); save(); renderShop(); $('xin').focus(); } }
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !$('m').hidden) closeM();

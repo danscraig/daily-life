@@ -1429,7 +1429,7 @@ img { max-width: 100%; }
       });
     });
     document.getElementById('smeta').textContent = [night && night.n ? 'Tonight: ' + night.n : '', st ? sd + ' of ' + st + ' steps' : ''].filter(Boolean).join(' · ');   // under the name, like the other cards
-    var ml = lsGet('meals-v1', null), mt = ml && ml.plan && ml.plan[tds] ? ml.plan[tds] : {}, mn = function (m) { if (!m) return ''; var r = m.r && Array.isArray(ml.recipes) ? ml.recipes.filter(function (x) { return x.id === m.r; })[0] : null; return r ? r.n : (m.t || ''); };
+    var ml = lsGet('meals-v1', null), mt = ml && ml.plan && ml.plan[tds] ? ml.plan[tds] : {}, mn = function (m) { if (!m || m.x) return ''; var r = m.r && Array.isArray(ml.recipes) ? ml.recipes.filter(function (x) { return x.id === m.r; })[0] : null; return r ? r.n : (m.t || ''); };
     document.getElementById('mlmeta').textContent = [mn(mt.l) ? 'Lunch: ' + mn(mt.l) : '', mn(mt.d) ? 'Dinner: ' + mn(mt.d) : ''].filter(Boolean).join(' · ');
   }
   var ovTab = document.querySelector('.tab[data-view="ov"]'), tabsIn = document.querySelector('.tabs .in');
@@ -1534,7 +1534,7 @@ img { max-width: 100%; }
   document.addEventListener('click', function (e) { pairs.forEach(function (x) { if (!x[1].hidden && !x[1].contains(e.target)) closeAll(); }); });
 })();
 </script>
-<script type="module" src="sync.js?v=9"></script>
+<script type="module" src="sync.js?v=10"></script>
 
 </body>
 </html>

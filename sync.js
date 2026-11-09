@@ -19,8 +19,8 @@ var app = initializeApp({
 var auth = getAuth(app), db = getFirestore(app);
 
 var LS = 'year-after-year-v1', LSA = 'year-after-year-acts-v1', LSN = 'year-after-year-notes-v1', MKEY = 'movies-and-series-v1';
-var EKEY = 'daily-life-events-v1', SKEY = 'skincare-v1';
-var WATCH = [LS, LSA, LSN, MKEY, EKEY, SKEY], META = 'daily-life-sync-meta';
+var EKEY = 'daily-life-events-v1', SKEY = 'skincare-v1', MLKEY = 'meals-v1';
+var WATCH = [LS, LSA, LSN, MKEY, EKEY, SKEY, MLKEY], META = 'daily-life-sync-meta';
 var rawSet = Storage.prototype.setItem;
 var user = null, applying = false, rev = 0, timer = null, busy = Promise.resolve(), msg = '', msgErr = false;
 
@@ -38,10 +38,35 @@ function normSk(o) {
 }
 function skEmpty(s) { return !s.am.length && !s.pm.length && !s.prods.length && !Object.keys(s.log).length; }
 
+/* meals: { recipes: [..], plan: { 'YYYY-MM-DD': { l|d|s: meal } }, chk: { weekMonday: { item: +time ticked | -time unticked } }, extra: [..] }.
+   Nothing is ever really deleted: a deleted recipe or extra has del, a cleared meal is {x:1}; every edit carries u (time) and the newer one wins. */
+function normMl(o) {
+  o = (o && typeof o === 'object') ? o : {};
+  return { recipes: Array.isArray(o.recipes) ? o.recipes : [], plan: (o.plan && typeof o.plan === 'object') ? o.plan : {}, chk: (o.chk && typeof o.chk === 'object') ? o.chk : {}, extra: Array.isArray(o.extra) ? o.extra : [] };
+}
+function mlEmpty(m) { return !m.recipes.length && !Object.keys(m.plan).length && !Object.keys(m.chk).length && !m.extra.length; }
+function unionMl(a, b) {
+  a = normMl(a); b = normMl(b);
+  var plan = {}, chk = {};
+  Object.keys(a.plan).concat(Object.keys(b.plan)).forEach(function (k) {
+    if (plan[k]) return;
+    var x = a.plan[k] || {}, y = b.plan[k] || {}, o = {};
+    ['l', 'd', 's'].forEach(function (s) { var p = x[s], q = y[s], w = !p ? q : !q ? p : ((q.u || 0) > (p.u || 0) ? q : p); if (w) o[s] = w; });
+    plan[k] = o;
+  });
+  Object.keys(a.chk).concat(Object.keys(b.chk)).forEach(function (k) {
+    if (chk[k]) return;
+    var x = a.chk[k] || {}, y = b.chk[k] || {}, o = {};
+    Object.keys(x).concat(Object.keys(y)).forEach(function (i) { if (i in o) return; var p = x[i] || 0, q = y[i] || 0; o[i] = Math.abs(q) > Math.abs(p) ? q : p; });
+    chk[k] = o;
+  });
+  return { recipes: unionList(a.recipes, b.recipes, true), plan: plan, chk: chk, extra: unionList(a.extra, b.extra, true) };
+}
+
 /* local data as one object */
 function readLocal() {
   var mv = lsGet(MKEY, null), ev = lsGet(EKEY, null);
-  return { store: lsGet(LS, {}), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [], skincare: normSk(lsGet(SKEY, null)) };
+  return { store: lsGet(LS, {}), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [], skincare: normSk(lsGet(SKEY, null)), meals: normMl(lsGet(MLKEY, null)) };
 }
 function fromCloud(c, local) {
   function p(s, fb) { try { var v = JSON.parse(s); return v == null ? fb : v; } catch (e) { return fb; } }
@@ -49,8 +74,9 @@ function fromCloud(c, local) {
   var cs = c.skincare === undefined ? null : normSk(p(c.skincare, null));
   if (cs && !cs.cyc && local.skincare && local.skincare.cyc) cs.cyc = local.skincare.cyc;   // a copy saved before the night cycle existed: keep this device's
   if (cs && !cs.skin && local.skincare && local.skincare.skin) cs.skin = local.skincare.skin;   // a copy saved before the skin profile existed: keep this device's
+  var cm = c.meals === undefined ? null : normMl(p(c.meals, null));   // a copy saved before the meals planner existed: keep this device's
   // an empty cloud skincare never wipes what this device has: it goes up instead (see sync)
-  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs };
+  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs, meals: (!cm || (mlEmpty(cm) && !mlEmpty(local.meals))) ? local.meals : cm };
 }
 /* write to localStorage without triggering a push; returns true when something changed */
 function applyLocal(d) {
@@ -66,6 +92,8 @@ function applyLocal(d) {
     if (JSON.stringify(mv.items) !== before) { rawSet.call(localStorage, MKEY, JSON.stringify(mv)); changed = true; }
     var sk = normSk(d.skincare);
     if (!skEmpty(sk) || localStorage.getItem(SKEY) !== null) put(SKEY, sk);
+    var ml = normMl(d.meals);
+    if (!mlEmpty(ml) || localStorage.getItem(MLKEY) !== null) put(MLKEY, ml);
   } finally { applying = false; }
   return changed;
 }
@@ -93,7 +121,7 @@ function union(a, b) {
     ['t', 'm', 'a', 'l'].forEach(function (f) { Object.keys(y[f]).forEach(function (d) { if (!(d in x[f])) x[f][d] = y[f][d]; }); });
     store[k] = x;
   });
-  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true), events: unionList(a.events, b.events, true), skincare: unionSk(a.skincare, b.skincare) };
+  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true), events: unionList(a.events, b.events, true), skincare: unionSk(a.skincare, b.skincare), meals: unionMl(a.meals, b.meals) };
 }
 function unionSk(a, b) {   // steps and products by id (the newer edit wins); a day's ticks are joined
   a = normSk(a); b = normSk(b);
@@ -116,9 +144,9 @@ function unionSk(a, b) {   // steps and products by id (the newer edit wins); a 
 function ref() { return doc(db, 'users', user.uid); }
 async function push(d) {
   var r0 = rev, at = Date.now();
-  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies), events: JSON.stringify(d.events), skincare: JSON.stringify(normSk(d.skincare)) };
-  if (body.store.length + body.acts.length + body.notes.length + body.movies.length + body.events.length + body.skincare.length > 900000) throw new Error('too big');
-  await setDoc(ref(), body);
+  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies), events: JSON.stringify(d.events), skincare: JSON.stringify(normSk(d.skincare)), meals: JSON.stringify(normMl(d.meals)) };
+  if (body.store.length + body.acts.length + body.notes.length + body.movies.length + body.events.length + body.skincare.length + body.meals.length > 900000) throw new Error('too big');
+  await setDoc(ref(), body, { merge: true });   // merge: a page that does not know a newer field yet never wipes it
   setMeta({ uid: user.uid, at: at, dirty: rev !== r0 });
 }
 async function sync(reloadOk) {
@@ -134,7 +162,9 @@ async function sync(reloadOk) {
   }
   var cloudSk = null; try { cloudSk = cloud && cloud.skincare !== undefined ? normSk(JSON.parse(cloud.skincare)) : null; } catch (e) {}
   var skUp = !!cloud && !skEmpty(merged.skincare) && (!cloudSk || skEmpty(cloudSk));   // skincare written on a device before it was synced
-  var needPush = !cloud || meta.uid !== user.uid || meta.dirty || skUp;
+  var cloudMl = null; try { cloudMl = cloud && cloud.meals !== undefined ? normMl(JSON.parse(cloud.meals)) : null; } catch (e) {}
+  var mlUp = !!cloud && !mlEmpty(merged.meals) && (!cloudMl || mlEmpty(cloudMl));   // meals written on a device before they were synced
+  var needPush = !cloud || meta.uid !== user.uid || meta.dirty || skUp || mlUp;
   if (needPush) await push(merged);
   if (changed && reloadOk && !sessionStorage.getItem('daily-life-synced')) { try { sessionStorage.setItem('daily-life-synced', '1'); } catch (e) {} location.reload(); }
 }
