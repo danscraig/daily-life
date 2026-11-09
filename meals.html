@@ -132,7 +132,8 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 (function () {
   'use strict';
   var LS = 'meals-v1';
-  var SL = [['l', 'Lunch'], ['d', 'Dinner'], ['s', 'Snack']];
+  var SL = [['l', 'Lunch'], ['s', 'Snack']];   // Dinner is hidden for now (anything already planned for dinner stays saved): to bring it back, put ['d', 'Dinner'] between the two
+
   var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var BASE_TAGS = ['quick', 'vegetarian', 'freezes well'];
@@ -192,7 +193,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
     var d = new Date(k + 'T12:00:00'), lab = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
     var cur = slotOf(k, s);
     $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Search your recipes" autocomplete="off" aria-label="Search recipes"><div class="pick" id="spick"></div>' +
-      '<div><label for="sfree">Or type what you are eating</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="e.g. Dinner out" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Use</button></div></div>' +
+      '<div><label for="sfree">Or type what you are eating</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="e.g. Lunch out" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Use</button></div></div>' +
       (cur ? '<button class="btn ghost full" data-sclear="1">Clear this meal</button>' : '') + '<button class="btn ghost full" data-close="1">Close</button>';
     fillPick(); $('m').hidden = false;
   }
