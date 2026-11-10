@@ -502,7 +502,7 @@ html.onhome body::before { display: none; }
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
 .iwin.off { visibility: hidden; pointer-events: none; }
 .iwin iframe { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top, 0px); width: 100%; height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); border: 0; background: var(--bg); display: block; opacity: 0; transition: opacity 200ms ease-out; visibility: hidden; }
-.ihbar { flex: none; height: env(safe-area-inset-bottom, 0px); background: var(--paper); }
+.ihbar { position: absolute; left: 0; right: 0; bottom: 0; height: env(safe-area-inset-bottom, 0px); background: var(--paper); }
 html[data-ac="check"] { --accent: #7A7352; }
 html[data-ac="diary"] { --accent: #8F7376; }
 html[data-ac="notes"] { --accent: #5B5049; }
@@ -541,7 +541,7 @@ function fitBox(t) {
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 10</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 11</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -1717,7 +1717,14 @@ function fitBox(t) {
   function wireFrame(fr) {
     try {   // inside the window, the app's own "back to Daily Life" link closes the window instead of loading this page again
       var d = fr.contentDocument; if (!d || d.__wired) return; d.__wired = true;
-      edgeSwipe(d, function () { if (!closeTop(d)) closeIApp(); }, { any: function () { return /\/(skincare|meals)\.html$/.test(d.location.pathname); } });   // Calendar and Movies swipe sideways themselves: edges only there
+      edgeSwipe(d, function () { if (!closeTop(d)) closeIApp(); }, { any: function () {
+        var pn = d.location.pathname; if (/\/(skincare|meals)\.html$/.test(pn)) return true;
+        if (/\/movies\.html$/.test(pn)) {   // Movies swipes sideways between its lists: going back by swipe works on Search, and on the first list
+          var sb = d.querySelector('#nav [data-view=search]'); if (sb && sb.getAttribute('aria-pressed') === 'true') return true;
+          var t1 = d.querySelector('[data-tab]'); return !t1 || t1.getAttribute('aria-pressed') === 'true';
+        }
+        return false;
+      } });   // Calendar swipes sideways itself: edges only there
       d.addEventListener('click', function (e) { var l = e.target.closest && e.target.closest('a[href="index.html"]'); if (l) { e.preventDefault(); e.stopPropagation(); closeIApp(); } }, true);
     } catch (x) {}
   }
