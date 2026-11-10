@@ -474,13 +474,13 @@ html.onhome body::before { display: none; }
 .ihw .chip { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; height: 26px; border-radius: 13px; font-size: 11.5px; font-weight: 500; background: rgba(58, 50, 45, .08); color: rgba(58, 50, 45, .6); }
 .ihw .chip.on { background: #7F8060; color: #fff; }
 .ihw .chip svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.ihw .hb { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 10px; text-align: left; color: inherit; }
-.ihw .hb .nm { flex: 1; font-size: 13.5px; font-weight: 500; }
+.ihw .hb { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 10px; text-align: left; color: inherit; }
+.ihw .hb .nm { flex: 1; font-size: 13px; font-weight: 500; white-space: nowrap; }
 .ihw .tick { flex: none; width: 21px; height: 21px; border-radius: 50%; border: 1.5px solid rgba(58, 50, 45, .25); display: grid; place-items: center; transition: background 160ms ease-out; }
 .ihw .tick.on { background: #7F8060; border-color: #7F8060; }
 .ihw .tick svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
 .ihw .tick.on svg { opacity: 1; }
-.ihw .fl { display: flex; align-items: center; gap: 2px; font-size: 13px; font-weight: 600; min-width: 36px; justify-content: flex-end; color: rgba(58, 50, 45, .42); }
+.ihw .fl { display: flex; align-items: center; gap: 1px; font-size: 13px; font-weight: 600; min-width: 0; justify-content: flex-end; color: rgba(58, 50, 45, .42); }
 .ihw .fl svg { width: 18px; height: 18px; }
 .ihw .fl .o { fill: rgba(58, 50, 45, .2); }
 .ihw .fl .i { fill: rgba(58, 50, 45, .12); }
@@ -498,6 +498,10 @@ html.onhome body::before { display: none; }
 #home.ios.tight2 .ihw .ln:nth-child(n+3), #home.ios.tight2 .ihw .more { display: none; }
 #home.ios.tight2 .ihw .chips { padding-top: 4px; }
 #home.ios.tight2 .hello .hdate { display: none; }
+#home.ios.tight3 { padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
+#home.ios.tight3 .ic .sq { width: 48px; height: 48px; }
+#home.ios.tight3 .ic .lb { font-size: 11px; }
+#home.ios.tight3 .igrid { gap: 8px 6px; }
 /* an open app: a window that grows out of its icon */
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
 .iwin.off { visibility: hidden; pointer-events: none; }
@@ -541,7 +545,7 @@ function fitBox(t) {
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 11</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 12</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -1600,10 +1604,10 @@ function fitBox(t) {
   }
   /* home: when everything fits on the screen the page cannot be dragged up or down */
   function fitHome() {   // too tall for this screen? use the tighter layout, so no app is pushed off the bottom
-    homeEl.classList.remove('tight', 'tight2');
+    homeEl.classList.remove('tight', 'tight2', 'tight3');
     if (homeEl.hidden) return;
     var over = function () { return homeEl.scrollHeight > homeEl.clientHeight + 1; };
-    if (over()) { homeEl.classList.add('tight'); if (over()) homeEl.classList.add('tight2'); }
+    if (over()) { homeEl.classList.add('tight'); if (over()) { homeEl.classList.add('tight2'); if (over()) homeEl.classList.add('tight3'); } }
   }
   function lockHome() {
     var el = document.documentElement; fitHome();
