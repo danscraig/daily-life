@@ -362,6 +362,18 @@ button:active:not(:disabled) { transform: scale(.97); }
 .aedit input { padding: 10px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font-display); min-width: 0; min-height: 44px; }
 .aedit input:first-child { text-align: center; font-size: 20px; padding-inline: 4px; }
 .bkinfo { margin: 0 2px 10px; font-size: 13px; color: var(--mute); }
+.bkm { position: fixed; inset: 0; z-index: 200; background: rgba(58, 50, 45, .45); display: flex; align-items: flex-start; justify-content: center; padding: calc(16px + env(safe-area-inset-top, 0px)) 12px 16px; }
+.bkm[hidden] { display: none; }
+.bkm:not([hidden]) { animation: irise 200ms var(--ease-out); }
+.bksh { width: 100%; max-width: 480px; max-height: 100%; overflow-y: auto; background: #FBF4EC; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 8px; color: #3A322D; }
+.bksh h2 { margin: 0; font-size: 20px; }
+.bke { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 16px; padding: 10px 12px; }
+.bke .bkt { flex: 1; min-width: 0; }
+.bke .bkt b { font-weight: 600; font-size: 14px; display: block; }
+.bke .bkt small { display: block; color: #7A6E65; font-size: 12px; }
+.bke button, .bksh .bkc { flex: none; padding: 8px 14px; border-radius: 999px; border: 1px solid #E7DDD1; background: #FBF4EC; font-size: 13px; color: #3A322D; }
+.bke button.sure { background: #A9703F; border-color: #A9703F; color: #fff; }
+.bksh .bkc { width: 100%; padding: 12px; font-size: 14px; }
 .syncst { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; min-height: 36px; padding: 0 2px; font: 400 13px var(--font-display); color: var(--mute); }
 .syncst::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--mute); flex: none; }
 .syncst.ok::before { background: #4CAF7A; }
@@ -541,11 +553,11 @@ function fitBox(t) {
     <button id="acct" class="acct" aria-label="Account and cloud sync" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"></circle><path d="M4.8 20c.8-3.8 3.6-5.8 7.2-5.8s6.4 2 7.2 5.8"></path></svg><i class="acdot" hidden></i></button>
     <button id="setb" class="acct setb" aria-label="Settings" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg><i class="acdot" id="bkdot" hidden></i></button>
     <div id="syncbox" class="acpanel" hidden></div>
-    <div id="setbox" class="acpanel setpanel" hidden><p class="bkinfo" id="bkinfo"></p><div class="bk"><button id="bkx">Export backup</button><label for="bki" id="bkl">Import backup</label><input type="file" id="bki" accept="application/json,.json" hidden></div></div>
+    <div id="setbox" class="acpanel setpanel" hidden><p class="bkinfo" id="bkinfo"></p><div class="bk"><button id="bkx">Export backup</button><label for="bki" id="bkl">Import backup</label><input type="file" id="bki" accept="application/json,.json" hidden></div><div class="bk" style="margin-top:8px"><button id="bkauto">Cópias automáticas</button></div><p class="bkinfo" id="bkautoinfo" style="margin:8px 2px 0"></p></div>
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 14</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 15</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -605,6 +617,8 @@ function fitBox(t) {
     <button class="ic" data-app="notes" aria-label="Notes" style="animation-delay:310ms"><span class="sq" style="background:linear-gradient(160deg,#8B7F76,#5B5049)"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><span class="lb">Notes</span></button>
   </nav>
 </div>
+
+<div class="bkm" id="bkm" hidden role="dialog" aria-modal="true" aria-label="Cópias automáticas"><div class="bksh" id="bksh"></div></div>
 
 <div class="iwin off" id="iwin">
   <div class="ihbar" id="ihbar" aria-hidden="true"></div>
@@ -1863,7 +1877,48 @@ function fitBox(t) {
   document.addEventListener('click', function (e) { pairs.forEach(function (x) { if (!x[1].hidden && !x[1].contains(e.target)) closeAll(); }); });
 })();
 </script>
-<script type="module" src="sync.js?v=11"></script>
+<script>
+/* automatic copies: what is kept, and putting one back */
+(function () {
+  var bkm = document.getElementById('bkm'), bksh = document.getElementById('bksh'), ask = '', busy = false;
+  var MON3 = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'], KIND = { d: 'Diária', p: 'Antes de sincronizar', r: 'Antes de restaurar' };
+  function p2(n) { return String(n).padStart(2, '0'); }
+  function fmt(at) {
+    var d = new Date(at), t = new Date(), y = new Date(t); y.setDate(t.getDate() - 1);
+    var day = d.toDateString() === t.toDateString() ? 'Hoje' : d.toDateString() === y.toDateString() ? 'Ontem' : d.getDate() + ' ' + MON3[d.getMonth()];
+    return day + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+  }
+  function sumTxt(s) {
+    s = s || {}; var a = [];
+    if (s.j != null) a.push(s.j + ' dias no Journal'); if (s.n) a.push(s.n + ' notas'); if (s.e) a.push(s.e + ' eventos'); if (s.f) a.push(s.f + ' filmes/livros'); if (s.p) a.push(s.p + ' produtos'); if (s.r) a.push(s.r + ' receitas');
+    return a.join(' · ');
+  }
+  function info() {
+    if (!window.DLBackup) return;
+    window.DLBackup.list(function (l) { var el = document.getElementById('bkautoinfo'); if (el) el.textContent = l.length ? 'Última cópia: ' + fmt(l[0].at) + ' · ' + l.length + ' guardadas' : 'Ainda sem cópias.'; });
+  }
+  function paint() {
+    window.DLBackup.list(function (l) {
+      bksh.innerHTML = '<h2>Cópias automáticas</h2><p class="bkinfo" style="margin:0">Guardadas neste telemóvel: uma por dia (as últimas 14) e uma antes de cada sincronização que muda dados. Restaurar põe os dados desta cópia em todos os teus dispositivos.</p>' +
+        (l.length ? l.map(function (x) { return '<div class="bke"><div class="bkt"><b>' + fmt(x.at) + '</b><small>' + KIND[x.k] + ' · ' + sumTxt(x.sum) + '</small></div><button data-bkr="' + x.id + '"' + (ask === x.id ? ' class="sure"' : '') + '>' + (ask === x.id ? 'Toca de novo' : 'Restaurar') + '</button></div>'; }).join('') : '<p class="bkinfo">Ainda sem cópias.</p>') +
+        '<button class="bkc" id="bkclose">Fechar</button>';
+    });
+  }
+  function close() { bkm.hidden = true; ask = ''; }
+  document.getElementById('bkauto').addEventListener('click', function () { if (!window.DLBackup) return; document.getElementById('setbox').hidden = true; document.getElementById('setb').setAttribute('aria-expanded', 'false'); ask = ''; bkm.hidden = false; paint(); });
+  document.getElementById('setb').addEventListener('click', info); setTimeout(info, 1200);
+  bkm.addEventListener('click', function (e) {
+    if (e.target === bkm || e.target.id === 'bkclose') { close(); return; }
+    var b = e.target.closest('[data-bkr]'); if (!b || busy) return;
+    if (ask !== b.dataset.bkr) { ask = b.dataset.bkr; paint(); return; }
+    busy = true; bksh.insertAdjacentHTML('afterbegin', '<p class="bkinfo" style="margin:0">A restaurar…</p>');
+    window.DLBackup.restore(ask, function (ok) { busy = false; if (ok) location.reload(); else { ask = ''; paint(); } });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bkm.hidden) close(); });
+})();
+</script>
+<script src="backup.js?v=1"></script>
+<script type="module" src="sync.js?v=12"></script>
 
 </body>
 </html>

@@ -156,6 +156,8 @@ async function sync(reloadOk) {
   if (!user) return;
   var snap = await getDoc(ref()), cloud = snap.exists() ? snap.data() : null, local = readLocal(), meta = getMeta();
   var merged = local, changed = false;
+  if (meta.force && Date.now() - meta.force < 216e5) { await push(local); return; }   // a restored copy (see backup.js): send it as it is, no merging
+  if (cloud && window.DLBackup && (meta.uid !== user.uid || cloud.updated > (meta.at || 0))) { try { window.DLBackup.take('p'); } catch (e) {} }   // keep what is here before the cloud changes it
   if (!cloud) { /* first sync of this account: upload what is here */ }
   else if (meta.uid !== user.uid) { merged = union(local, fromCloud(cloud, local)); changed = applyLocal(merged); }
   else if (cloud.updated > (meta.at || 0)) {
