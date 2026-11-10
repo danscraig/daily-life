@@ -68,6 +68,7 @@ input[type="search"] { width: 100%; padding: 14px 18px; border-radius: 999px; bo
 .ov { margin: 0; font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
 input[type="text"], input[type="date"], input[type="number"], select, textarea { width: 100%; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
 select { appearance: none; -webkit-appearance: none; padding-right: 36px; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2394829E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; }
+textarea { resize: none; overflow: hidden; }
 input::placeholder, textarea::placeholder { color: var(--mute); }
 .seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; background: var(--paper); border-radius: 999px; margin: 6px 0 14px; box-shadow: 0 10px 26px -18px var(--shadow); }
 .plv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--paper); border-radius: 999px; margin: 6px 0 12px; box-shadow: 0 10px 26px -18px var(--shadow); }
@@ -186,6 +187,9 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 .cprice input { flex: 1; min-width: 0; }
 .cprice .btn { flex: none; padding: 10px 14px; font-size: 13px; }
 .cyc { background: var(--paper); border-radius: 20px; padding: 12px 16px 14px; margin-bottom: 10px; box-shadow: 0 10px 26px -18px var(--shadow); display: flex; flex-direction: column; gap: 6px; }
+.cyh { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cyt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cyb { flex: none; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: transparent; font-size: 13px; color: var(--ink); }
 .cyc .ct { font: 500 11px var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
 .cyc .cn { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
 .cdone { width: 100%; margin-top: 10px; padding: 14px; }
@@ -263,6 +267,28 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
 #qmic[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); animation: qpulse 1.2s ease-in-out infinite; }
 @keyframes qpulse { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 25%, transparent); } }
 </style>
+<script>
+/* text boxes grow with what is typed. The page position is kept while the box is measured, so nothing jumps up and down. */
+function fitBox(t) {
+  if (!t || t.tagName !== 'TEXTAREA' || !t.getClientRects().length) return;
+  var keep = [], n = t.parentNode, se = document.scrollingElement || document.documentElement;
+  for (; n && n.nodeType === 1; n = n.parentNode) if (n.scrollTop) keep.push([n, n.scrollTop]);
+  keep.push([se, se.scrollTop]);
+  var cs = getComputedStyle(t), bd = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0), pd = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  t.style.height = 'auto';
+  var h = t.scrollHeight + (cs.boxSizing === 'border-box' ? bd : -pd);
+  t.style.height = h + 'px';
+  keep.forEach(function (k) { if (k[0].scrollTop !== k[1]) k[0].scrollTop = k[1]; });
+}
+(function () {
+  function go() {
+    document.addEventListener('input', function (e) { if (e.target.tagName === 'TEXTAREA') fitBox(e.target); });
+    document.addEventListener('focusin', function (e) { if (e.target.tagName === 'TEXTAREA') fitBox(e.target); });
+    new MutationObserver(function (ms) { ms.forEach(function (m) { [].forEach.call(m.addedNodes, function (nd) { if (nd.nodeType === 1) (nd.tagName === 'TEXTAREA' ? [nd] : [].slice.call(nd.querySelectorAll('textarea'))).forEach(fitBox); }); }); }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -387,8 +413,9 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     var head = '', foot = '';
     if (cyc) {
       var isToday = k === ds(new Date()), finished = !!data.cyc.log[k], nextIdx = (data.cyc.idx + 1) % data.cyc.slots.length;
-      head = '<div class="cyc"><span class="ct">' + (isToday ? 'Tonight' : 'That night') + '</span><span class="cn">' + (slot ? esc(slot.n || 'Night') : 'Not recorded') + '</span>' +
-        (isToday && !finished && data.cyc.slots.length > 1 ? '<div class="chipsrow">' + data.cyc.slots.map(function (c, i) { return '<button type="button" data-cs="' + c.id + '" aria-pressed="' + (i === data.cyc.idx % data.cyc.slots.length) + '">' + esc(c.n || 'Night') + '</button>'; }).join('') + '</div>' : '') + '</div>';
+      var canPick = isToday && !finished && data.cyc.slots.length > 1;
+      head = '<div class="cyc"><div class="cyh"><div class="cyt"><span class="ct">' + (isToday ? 'Tonight' : 'That night') + '</span><span class="cn">' + (slot ? esc(slot.n || 'Night') : 'Not recorded') + '</span></div>' + (canPick ? '<button type="button" class="cyb" data-cpick="1" aria-expanded="' + !!cycPick + '">' + (cycPick ? 'Close' : 'Change') + '</button>' : '') + '</div>' +
+        (canPick && cycPick ? '<div class="chipsrow">' + data.cyc.slots.map(function (c, i) { return '<button type="button" data-cs="' + c.id + '" aria-pressed="' + (i === data.cyc.idx % data.cyc.slots.length) + '">' + esc(c.n || 'Night') + '</button>'; }).join('') + '</div>' : '') + '</div>';
       if (isToday) foot = finished ? '<button class="addb" data-cundo="1">Tonight is done ✓ · tap to undo</button>' : '<button class="btn cdone" data-cdone="1">✓ Done for tonight · next: ' + esc(data.cyc.slots[nextIdx].n || 'Night') + '</button>';
     }
     head += todayWarnHTML(today, paused, part === 'am');
@@ -407,6 +434,19 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       if (fire) setTimeout(function () { var c = document.querySelector('.confetti'); if (c) c.remove(); }, 2800);
     }
     tapped = null;
+  }
+  var cycPick = false;   // the list of nights is open on the Tonight card
+  /* ticking every step of tonight closes the night (the cycle moves on); unticking one of them reopens it */
+  function nightAll(k) {
+    var slot = slotFor(k), L = data.pm.filter(function (s) { return s.n.trim() && stepShown(s, slot, k) && !pausedStep(s); }), d = data.log[k] || [];
+    return L.length > 0 && L.every(function (s) { return d.indexOf(s.id) !== -1; });
+  }
+  function closeNight(wasAll) {
+    var c = data.cyc, k = ds(new Date());
+    if (part !== 'pm' || ds(day) !== k || !c.slots.length) return;
+    var now = nightAll(k);
+    if (now && !c.log[k]) { var sl = slotFor(k); if (sl) { c.log[k] = sl.id; c.idx = (c.idx + 1) % c.slots.length; touchCyc(); } }
+    else if (!now && wasAll && c.log[k]) { var ix = c.slots.findIndex(function (x) { return x.id === c.log[k]; }); if (ix !== -1) c.idx = ix; delete c.log[k]; touchCyc(); }
   }
   var tapped = null;   // the step just ticked: it pops, and finishing the last one throws confetti
   function confettiHTML(am) {
@@ -716,19 +756,19 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   var linkMsg = '';
   function sendLink() {
     var inp = $('lnk'), v = inp ? inp.value.trim() : '';
-    if (!/^https?:\/\/\S+$/i.test(v)) { linkMsg = 'Paste a full link, starting with https://'; renderAdd(); return; }
+    if (!/^https?:\/\/\S+$/i.test(v)) { linkMsg = 'Paste a full link (https://…)'; renderAdd(); return; }
     var sk = data.skin = skinProf(); sk.links = sk.links || [];
-    if (sk.links.some(function (x) { return x.url === v; })) { linkMsg = 'That link is already waiting.'; renderAdd(); return; }
-    sk.links.push({ id: uid(), url: v, at: ds(new Date()) }); touchSkin(); linkMsg = 'Link saved. It will be added to your products.'; renderAdd();
+    if (sk.links.some(function (x) { return x.url === v; })) { linkMsg = 'Already saved.'; renderAdd(); return; }
+    sk.links.push({ id: uid(), url: v, at: ds(new Date()) }); touchSkin(); linkMsg = 'Saved.'; renderAdd();
   }
   function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
   function renderAdd() {
     var L = skinProf().links || [];
-    $('v-add').innerHTML = '<div class="sk"><h3>Add a product</h3><p class="hint" style="margin:0">Paste the link of the product page (Stylevana, Notino, Koreanbeauty…). It waits here until it is added to your shelf with its photo, price and ingredients.</p>' +
-      '<form id="lf" style="display:flex;gap:8px"><input type="url" id="lnk" placeholder="https://…" autocapitalize="off" autocomplete="off" aria-label="Product link" style="flex:1"><button type="button" class="btn" data-lsend="1" style="flex:none;width:48px;font-size:22px" aria-label="Send link">+</button></form>' +
+    $('v-add').innerHTML = '<div class="sk"><h3>Add a product</h3>' +
+      '<form id="lf" style="display:flex;gap:8px"><input type="url" id="lnk" placeholder="Paste a link" autocapitalize="off" autocomplete="off" aria-label="Product link" style="flex:1"><button type="button" class="btn" data-lsend="1" style="flex:none;width:48px;font-size:22px" aria-label="Send link">+</button></form>' +
       (linkMsg ? '<p class="hint" style="margin:0">' + esc(linkMsg) + '</p>' : '') + '</div>' +
-      (L.length ? '<h3 class="ihead">Waiting to be added (' + L.length + ')</h3><div class="ilist">' + L.map(function (x) { return '<div class="row irow"><div class="top"><div><b style="font-size:14px">' + esc(hostOf(x.url)) + '</b><p class="hint" style="margin:0;word-break:break-all">' + esc(x.url.length > 90 ? x.url.slice(0, 90) + '…' : x.url) + '</p></div><button class="del" data-ldel="' + x.id + '" aria-label="Remove link">✕</button></div></div>'; }).join('') + '</div>' : '') +
-      '<button class="addb" data-lmanual="1" style="margin-top:12px">Fill in a product by hand</button>';
+      (L.length ? '<h3 class="ihead">Saved links (' + L.length + ')</h3><div class="ilist">' + L.map(function (x) { return '<div class="row irow"><div class="top"><div><b style="font-size:14px">' + esc(hostOf(x.url)) + '</b><p class="hint" style="margin:0;word-break:break-all">' + esc(x.url.length > 50 ? x.url.slice(0, 50) + '…' : x.url) + '</p></div><button class="del" data-ldel="' + x.id + '" aria-label="Remove link">✕</button></div></div>'; }).join('') + '</div>' : '') +
+      '<button class="addb" data-lmanual="1" style="margin-top:12px">Add by hand</button>';
     var f = $('lf'); if (f) f.onsubmit = function (e) { e.preventDefault(); sendLink(); };
   }
 
@@ -747,10 +787,9 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     var strong = out.filter(function (o) { return o.s >= 0.4; }), soft = out.filter(function (o) { return o.s < 0.4; });
     function row(o) { return '<div class="row irow"><div class="top"><div class="ipair">' + pairName(o.a) + '<span class="pl">≈</span>' + pairName(o.b) + '</div><span class="badge ' + (o.s >= 0.6 ? 'bad' : o.s >= 0.4 ? 'warn' : 'ok') + '">' + simLabel(o.s) + ' · ' + Math.round(o.s * 100) + '%</span></div><p class="hint" style="margin:0">In common: ' + esc(o.sh.slice(0, 6).join(', ') || 'a few ingredients') + '</p></div>'; }
     var noIng = data.prods.length - ps.length;
-    return '<p class="hint">Products whose ingredient lists are alike, so you may not need both. Strength is not on the label: check before treating two as the same.</p>' +
-      (strong.length ? '<div class="ilist">' + strong.map(row).join('') + '</div>' : '<div class="empty">No likely dupes on your list.</div>') +
+    return (strong.length ? '<div class="ilist">' + strong.map(row).join('') + '</div>' : '<div class="empty">No likely dupes on your list.</div>') +
       (soft.length ? '<details style="margin-top:10px"><summary class="hint">Somewhat similar (' + soft.length + ')</summary><div class="ilist" style="margin-top:6px">' + soft.map(row).join('') + '</div></details>' : '') +
-      (noIng ? '<p class="hint">' + noIng + ' product' + (noIng === 1 ? ' has' : 's have') + ' no ingredient list and could not be compared.</p>' : '');
+      (noIng ? '<p class="hint">' + noIng + ' without ingredients (not compared).</p>' : '');
   }
   function pairIssue(a, b) {   // [level, label] for the strongest clash between two products, or null
     var x = conf(a), y = conf(b);
@@ -781,11 +820,10 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
       }).join('') + '</div>';
     }
     var rules = [['Retinoid (retinol, retinal) + exfoliating acid (glycolic, lactic, salicylic…)', 'Different nights. Both together can over-dry and irritate.'], ['Two exfoliating acids', 'One per night. Easy to over-exfoliate.'], ['Two retinoids', 'One at a time.'], ['Benzoyl peroxide + retinoid', 'Keep them apart (different times of day).'], ['Pure vitamin C (L-ascorbic acid) + retinoid or acid', 'Vitamin C in the morning, the other at night.'], ['Retinoid or acid without sunscreen the next day', 'Always finish the morning with sunscreen.'], ['Copper peptides + strong acids or pure vitamin C', 'Better on different routines.']];
-    return '<p class="hint">Products that should not be used in the same routine as each other. Keep each pair on different nights (or morning and night).</p>' +
-      (bad.length ? '<div class="wn">⚠️ ' + bad.length + ' of these pair' + (bad.length === 1 ? ' is' : 's are') + ' together in your routine right now (marked ⚠️).</div>' : '<div class="wn ok">✓ Your routine keeps all of these apart.</div>') +
+    return (bad.length ? '<div class="wn">⚠️ ' + bad.length + ' of these pair' + (bad.length === 1 ? ' is' : 's are') + ' together in your routine right now (marked ⚠️).</div>' : '<div class="wn ok">✓ Your routine keeps all of these apart.</div>') +
       '<h3 class="ihead">Do not mix</h3>' + (cards.length ? '<div class="ilist">' + cards.map(card).join('') + '</div>' : '<div class="empty">None of your products clash.</div>') +
       '<h3 class="ihead">The general rules</h3><div class="row"><ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px">' + rules.map(function (r) { return '<li style="font-size:14px"><b>' + esc(r[0]) + '</b><br><span class="hint" style="margin:0">' + esc(r[1]) + '</span></li>'; }).join('') + '</ul></div>' +
-      '<p class="hint">Fine together: niacinamide with almost anything, hyaluronic acid with anything, ceramides and centella with anything. When you are unsure, add one new active at a time and patch-test it.</p>';
+      '<p class="hint">Fine with anything: niacinamide, hyaluronic acid, ceramides, centella.</p>';
   }
   function howTo(p) {
     var c = conf(p), t = p.t, nm = (p.n + ' ' + (p.brand || '')).toLowerCase(), ing = String(p.ing || '').toLowerCase(), L;
@@ -829,7 +867,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
         return '<details class="iuse"><summary class="ilnk"><span class="pi" data-ico="' + typeIcon(p.t) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy">' : typeIcon(p.t)) + '</span><span>' + esc(shortName(p)) + '<small>' + esc((p.brand || '') + (p.brand ? ' · ' : '') + (where.length ? where.join(' · ') : 'Not in a routine yet')) + '</small></span></summary><ol>' + howTo(p).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ol></details>';
       }).join('') + '</div>';
     });
-    return '<p class="hint">Order for any routine: cleanser, toner, essence or serum (thin to thick), eye cream, treatment, moisturiser, and sunscreen as the last step in the morning. Tap a product for how to apply it.</p>' + (h || '<div class="empty">No products on your shelf yet.</div>') + '<p class="hint">General guidance. If the pack says something different, follow the pack.</p>';
+    return '<p class="hint">Tap a product to see how to apply it.</p>' + (h || '<div class="empty">No products on your shelf yet.</div>');
   }
   function renderInfo() {
     var body = iv === 'mix' ? infoMix() : iv === 'use' ? infoUse() : infoDupes();
@@ -873,21 +911,21 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
   function skinSafetyHTML() {
     var f = safeFlags(), t = skinProf().tx || {}, w = txWindow(), tw = '';
     if (w) { var a = new Date(w.from), b = new Date(w.to); tw = '<p class="hint" style="margin:0">Retinoids and exfoliating acids are paused from <b>' + a.getDate() + ' ' + MON[a.getMonth()] + '</b> to <b>' + b.getDate() + ' ' + MON[b.getMonth()] + '</b> (' + w.n + ' days before and after ' + (w.src === 'Laser' ? 'the Laser in your calendar' : 'your treatment') + ' on ' + w.at.getDate() + ' ' + MON[w.at.getMonth()] + ').</p>'; }
-    return '<div class="sk"><h3>Safety check</h3><p class="hint" style="margin:0">Tell the app what applies to you. It will warn you when a product in your routine is a problem. General guidance, not medical advice: ask your doctor or pharmacist when in doubt.</p>' +
+    return '<div class="sk"><h3>Safety check</h3>' +
       '<div class="chipsrow chipscol">' + SAFE_Q.map(function (q) { return '<button type="button" data-sf="' + q[0] + '" aria-pressed="' + !!f[q[0]] + '">' + esc(q[1]) + '</button>'; }).join('') + '</div></div>' +
-      '<div class="sk"><h3>Professional treatment</h3><p class="hint" style="margin:0">Peel, laser, microneedling or waxing? Retinoids and exfoliating acids should stop around it. Add the date and they are hidden from your routine for the right days. Any event called "Laser" in your Calendar is picked up automatically.</p>' +
+      '<div class="sk"><h3>Professional treatment</h3>' +
       '<div class="two"><div><label for="sktxd">Treatment date</label><input type="date" id="sktxd" value="' + esc(t.date || '') + '"></div><div><label>I use</label><div class="chipsrow"><button type="button" data-txrx="1" aria-pressed="' + !!t.rx + '">Prescription retinoid</button></div></div></div>' + tw +
-      '<p class="hint" style="margin:0">Pause: about 2-3 days either side for retinol and acids you buy without a prescription, 5-7 days for a prescription retinoid (tretinoin, adapalene). Your treatment provider\'s advice comes first.</p>' + (t.date ? '<button class="btn ghost" data-txclr="1">Clear treatment</button>' : '') + '</div>' +
-      '<div class="sk"><h3>When to see a dermatologist</h3><p class="hint" style="margin:0">A routine cannot treat these. Book a dermatologist for a spot or mole that is <b>asymmetric</b>, has an uneven <b>border</b> or several <b>colours</b>, is bigger than <b>6 mm</b>, is <b>changing</b>, bleeds or does not heal. Also for acne that scars, a rash that spreads, or a reaction that keeps getting worse. This app is a helper, not a diagnosis.</p></div>';
+      (t.date ? '<button class="btn ghost" data-txclr="1">Clear treatment</button>' : '') + '</div>' +
+      '<div class="sk"><h3>See a dermatologist</h3><p class="hint" style="margin:0">For a spot or mole that changes, bleeds, is asymmetric, over 6 mm or several colours; and for scarring acne or a spreading rash.</p></div>';
   }
   function renderSkin() {
     var sp = skinProf();
-    var h = '<div class="sk"><h3>My skin</h3><p class="hint" style="margin:0">Skin type and concerns. Send me a photo in our chat and I will fill this in for you, or fill it in yourself.</p>' +
+    var h = '<div class="sk"><h3>My skin</h3>' +
       '<div><label for="sktype">Skin type</label><select id="sktype">' + opts(extra(0, SKIN, 'skin'), sp.type, 'Not set') + '</select></div>' +
       '<div><label>Concerns</label><div class="chipsrow">' + extra(0, CONC, 'conc').map(function (v) { return '<button type="button" data-sc="' + esc(v) + '" aria-pressed="' + ((sp.conc || []).indexOf(v) !== -1) + '">' + esc(v) + '</button>'; }).join('') + '</div></div>' +
-      '<div><label for="sknote">What I should know (sensitivity, allergies, observations)</label><textarea id="sknote" rows="3" placeholder="e.g. redness on the cheeks, oily T-zone, reacts to fragrance">' + esc(sp.notes || '') + '</textarea></div>' +
-      (sp.u ? '<p class="hint" style="margin:0">Updated ' + esc(fmtDate(ds(new Date(sp.u)))) + '</p>' : '') + '</div>' + skinSafetyHTML() +
-      '<div class="sk"><h3>Face photos</h3><p class="hint" style="margin:0">Stay on this phone only (they are never synced). Use even light, no makeup, same spot each time.</p>' +
+      '<div><label for="sknote">Notes</label><textarea id="sknote" rows="3" placeholder="Sensitivity, allergies…">' + esc(sp.notes || '') + '</textarea></div>' +
+      '</div>' + skinSafetyHTML() +
+      '<div class="sk"><h3>Face photos</h3><p class="hint" style="margin:0">Only on this phone.</p>' +
       '<label class="filebtn">📷 Take or choose a photo<input type="file" id="skfile" accept="image/*"></label>' + (skMsg ? '<p class="hint" style="margin:0">' + esc(skMsg) + '</p>' : '') + '<div id="skgrid"></div></div>';
     $('v-skin').innerHTML = h;
     var paint = function () {
@@ -1118,10 +1156,11 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     else if (b.id === 'prev' || b.id === 'next') { day.setDate(day.getDate() + (b.id === 'next' ? 1 : -1)); render(); }
     else if (b.id === 'editb') { editing = !editing; render(); }
     else if (b.dataset.sid && b.classList.contains('step')) {
-      var l = logFor(ds(day)), i = l.indexOf(b.dataset.sid);
+      var l = logFor(ds(day)), i = l.indexOf(b.dataset.sid), wasAll = part === 'pm' && nightAll(ds(day));
       tapped = { id: b.dataset.sid, on: i === -1 };
       if (i === -1) l.push(b.dataset.sid); else l.splice(i, 1);
       if (!l.length) delete data.log[ds(day)];
+      closeNight(wasAll);
       save(); renderToday();
     }
     else if (b.dataset.cyct) { cycOpen = !cycOpen; renderToday(); }
@@ -1141,7 +1180,8 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; d
     else if (b.dataset.pkopen) openPick({ sid: b.dataset.pkopen });
     else if (b.hasAttribute('data-pk')) { if (pk) applyPick(b.dataset.pk); }
     else if (b.id === 'pkx') { pk = null; $('sm').hidden = true; }
-    else if (b.dataset.cs) { var cc = data.cyc; if (!cc.log[ds(new Date())]) { cc.idx = Math.max(0, cc.slots.findIndex(function (x) { return x.id === b.dataset.cs; })); touchCyc(); save(); renderToday(); } }
+    else if (b.dataset.cpick) { cycPick = !cycPick; renderToday(); }
+    else if (b.dataset.cs) { cycPick = false; var cc = data.cyc; if (!cc.log[ds(new Date())]) { cc.idx = Math.max(0, cc.slots.findIndex(function (x) { return x.id === b.dataset.cs; })); touchCyc(); save(); renderToday(); } }
     else if (b.dataset.cdone) { var c1 = data.cyc, td = ds(new Date()), sl = slotFor(td); if (sl && !c1.log[td]) { c1.log[td] = sl.id; c1.idx = (c1.idx + 1) % c1.slots.length; touchCyc(); save(); renderToday(); } }
     else if (b.dataset.cundo) { var c2 = data.cyc, td2 = ds(new Date()), id2 = c2.log[td2]; if (id2) { var ix2 = c2.slots.findIndex(function (x) { return x.id === id2; }); if (ix2 !== -1) c2.idx = ix2; delete c2.log[td2]; touchCyc(); save(); renderToday(); } }
     else if (b.dataset.cadd) { data.cyc.slots.push({ id: 'c' + uid(), n: '' }); touchCyc(); save(); renderToday(); var cn = document.querySelectorAll('[data-cn]'); if (cn.length) cn[cn.length - 1].focus(); }

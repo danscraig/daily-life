@@ -443,7 +443,7 @@ html.onhome body::before { display: none; }
 .ihw .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ihw .ring .n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 600; }
 .ihw .sub { margin-top: auto; font-size: 13px; opacity: .92; padding-top: 8px; display: block; }
-.igrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 6px; padding: 0 2px; }
+.igrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 6px; padding: 0 2px; }
 .ic { display: flex; flex-direction: column; align-items: center; gap: 7px; color: #3A322D; transition: transform 140ms var(--ease-out); }
 .ic:active { transform: scale(.92); }
 .ic .sq { width: 62px; height: 62px; border-radius: 22.5%; display: grid; place-items: center; position: relative; overflow: hidden; box-shadow: 0 8px 16px -8px rgba(60, 48, 36, .5), inset 0 1px 0 rgba(255, 255, 255, .35), inset 0 -1px 0 rgba(0, 0, 0, .08); }
@@ -457,16 +457,68 @@ html.onhome body::before { display: none; }
 .idock { margin-top: auto; padding: 14px; border-radius: 34px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: rgba(255, 255, 255, .55); -webkit-backdrop-filter: blur(24px) saturate(1.2); backdrop-filter: blur(24px) saturate(1.2); border: 1px solid rgba(255, 255, 255, .85); }
 .idock .ic .lb { display: none; }
 .idock .ic { gap: 0; }
-#home.intro .ihw .wg, #home.intro .igrid .ic, #home.intro .idock .ic { animation: irise 320ms var(--ease-out) backwards; }
+#home.intro .ihw .wg, #home.intro .igrid .ic { animation: irise 320ms var(--ease-out) backwards; }
 @keyframes irise { from { opacity: 0; transform: translateY(8px); } }
+/* widgets: calendar, meals, skincare, check-in + journal */
+.ihw { gap: 12px; margin: 0; }
+.ihw .wg { min-height: 116px; padding: 12px 13px; min-width: 0; overflow: hidden; border-radius: 24px; align-items: stretch; }
+.ihw .wg > .t { display: block; }
+.ihw .ln { display: flex; align-items: center; gap: 6px; margin-top: 7px; font-size: 13px; line-height: 1.2; min-width: 0; }
+.ihw .ln b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ihw .ln time { flex: none; font-size: 11px; opacity: .7; font-variant-numeric: tabular-nums; }
+.ihw .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.ihw .more { display: block; margin-top: 6px; font-size: 11px; opacity: .65; }
+.ihw .night { display: block; margin-top: 9px; font-size: 14px; font-weight: 500; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ihw .night small { display: block; font-size: 10.5px; font-weight: 400; opacity: .7; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1px; }
+.ihw .chips { display: flex; gap: 6px; margin-top: auto; padding-top: 8px; }
+.ihw .chip { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; height: 26px; border-radius: 13px; font-size: 11.5px; font-weight: 500; background: rgba(58, 50, 45, .08); color: rgba(58, 50, 45, .6); }
+.ihw .chip.on { background: #7F8060; color: #fff; }
+.ihw .chip svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.ihw .hb { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 10px; text-align: left; color: inherit; }
+.ihw .hb .nm { flex: 1; font-size: 13.5px; font-weight: 500; }
+.ihw .tick { flex: none; width: 21px; height: 21px; border-radius: 50%; border: 1.5px solid rgba(58, 50, 45, .25); display: grid; place-items: center; transition: background 160ms ease-out; }
+.ihw .tick.on { background: #7F8060; border-color: #7F8060; }
+.ihw .tick svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.ihw .tick.on svg { opacity: 1; }
+.ihw .fl { display: flex; align-items: center; gap: 2px; font-size: 13px; font-weight: 600; min-width: 36px; justify-content: flex-end; color: rgba(58, 50, 45, .42); }
+.ihw .fl svg { width: 18px; height: 18px; }
+.ihw .fl .o { fill: rgba(58, 50, 45, .2); }
+.ihw .fl .i { fill: rgba(58, 50, 45, .12); }
+.ihw .fl.on { color: #A9703F; }
+.ihw .fl.on .o { fill: #BC6F63; }
+.ihw .fl.on .i { fill: #EBC08F; }
+.igrid { margin-top: auto; gap: 16px 6px; }
 /* an open app: a window that grows out of its icon */
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
-.iwin iframe { flex: 1; width: 100%; border: 0; background: var(--bg); display: block; min-height: 0; }
+.iwin.off { visibility: hidden; pointer-events: none; }
+.iwin iframe { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top, 0px); width: 100%; height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); border: 0; background: var(--bg); display: block; opacity: 0; transition: opacity 200ms ease-out; visibility: hidden; }
 .ihbar { flex: none; height: env(safe-area-inset-bottom, 0px); background: var(--paper); }
 html[data-ac="check"] { --accent: #7A7352; }
 html[data-ac="diary"] { --accent: #8F7376; }
 html[data-ac="notes"] { --accent: #5B5049; }
 </style>
+<script>
+/* text boxes grow with what is typed. The page position is kept while the box is measured, so nothing jumps up and down. */
+function fitBox(t) {
+  if (!t || t.tagName !== 'TEXTAREA' || !t.getClientRects().length) return;
+  var keep = [], n = t.parentNode, se = document.scrollingElement || document.documentElement;
+  for (; n && n.nodeType === 1; n = n.parentNode) if (n.scrollTop) keep.push([n, n.scrollTop]);
+  keep.push([se, se.scrollTop]);
+  var cs = getComputedStyle(t), bd = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0), pd = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  t.style.height = 'auto';
+  var h = t.scrollHeight + (cs.boxSizing === 'border-box' ? bd : -pd);
+  t.style.height = h + 'px';
+  keep.forEach(function (k) { if (k[0].scrollTop !== k[1]) k[0].scrollTop = k[1]; });
+}
+(function () {
+  function go() {
+    document.addEventListener('input', function (e) { if (e.target.tagName === 'TEXTAREA') fitBox(e.target); });
+    document.addEventListener('focusin', function (e) { if (e.target.tagName === 'TEXTAREA') fitBox(e.target); });
+    new MutationObserver(function (ms) { ms.forEach(function (m) { [].forEach.call(m.addedNodes, function (nd) { if (nd.nodeType === 1) (nd.tagName === 'TEXTAREA' ? [nd] : [].slice.call(nd.querySelectorAll('textarea'))).forEach(fitBox); }); }); }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
+})();
+</script>
 </head>
 <body>
 
@@ -479,7 +531,7 @@ html[data-ac="notes"] { --accent: #5B5049; }
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 6</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 8</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -519,27 +571,28 @@ html[data-ac="notes"] { --accent: #5B5049; }
     </button>
   </nav>
 
-  <section class="ihw" aria-label="Today">
-    <button class="wg" data-open="meals" style="animation-delay:40ms"><span class="t">Hoje</span><span class="row"><small>Almoço</small><b id="ih_l"></b></span><span class="row"><small>Lanche</small><b id="ih_s"></b></span></button>
-    <button class="wg" data-open="skincare" style="animation-delay:80ms"><span class="t">Skincare</span><span class="ring" id="ih_ring"></span><span class="sub" id="ih_sub"></span></button>
+  <section class="ihw" aria-label="Hoje">
+    <button class="wg" data-open="calendar" style="animation-delay:40ms"><span class="t" style="color:#BC6F63">Calendário</span><span id="ih_ev"></span></button>
+    <button class="wg" data-open="meals" style="animation-delay:70ms"><span class="t" style="color:#A9703F">Refeições</span><span class="row"><small>Almoço</small><b id="ih_l"></b></span><span class="row"><small>Lanche</small><b id="ih_s"></b></span></button>
+    <button class="wg" data-open="skincare" style="animation-delay:100ms"><span class="t" style="color:#7F8060">Skincare</span><span class="night" id="ih_n"></span><span class="chips" id="ih_chips"></span></button>
+    <div class="wg" style="animation-delay:130ms"><span class="t" style="color:#7A7352">Hoje</span>
+      <button class="hb" data-app="check"><span class="tick" id="ih_ct"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="nm">Check-in</span><span class="fl" id="ih_cf"></span></button>
+      <button class="hb" data-app="diary"><span class="tick" id="ih_jt"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="nm">Journal</span><span class="fl" id="ih_jf"></span></button>
+    </div>
   </section>
 
   <nav class="igrid" aria-label="Apps">
-    <button class="ic" data-app="check" style="animation-delay:110ms"><span class="sq" style="background:linear-gradient(160deg,#A8A17E,#7A7352)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="lb">Check-in</span></button>
-    <button class="ic" data-app="diary" style="animation-delay:150ms"><span class="sq" style="background:linear-gradient(160deg,#C0A7A8,#8F7376)"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.6 7.6"/><circle cx="11" cy="11" r="2"/></svg></span><span class="lb">Journal</span></button>
-    <button class="ic" data-open="movies" style="animation-delay:190ms"><span class="sq" style="background:linear-gradient(160deg,#9FB1AF,#5F7E7C)"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="12.5" rx="3"/><path d="M10 8.5v5l4.2-2.5z" fill="#fff"/><path d="M8 20.5h8"/></svg></span><span class="lb">Movies &amp; Books</span></button>
-  </nav>
-
-  <nav class="idock" aria-label="Favourites">
-    <button class="ic cal" data-open="calendar" aria-label="Calendar" style="animation-delay:260ms"><span class="sq"><span class="wd" id="ih_cw"></span><span class="dn" id="ih_cd"></span></span><span class="lb">Calendar</span></button>
-    <button class="ic" data-open="skincare" aria-label="Skincare" style="animation-delay:290ms"><span class="sq" style="background:linear-gradient(160deg,#B7B79B,#7F8060)"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg></span><span class="lb">Skincare</span></button>
-    <button class="ic" data-open="meals" aria-label="Refeições" style="animation-delay:320ms"><span class="sq" style="background:linear-gradient(160deg,#DDBC9E,#A9703F)"><svg viewBox="0 0 24 24"><path d="M4 11h16v1a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg></span><span class="lb">Refeições</span></button>
-    <button class="ic" data-app="notes" aria-label="Notes" style="animation-delay:350ms"><span class="sq" style="background:linear-gradient(160deg,#8B7F76,#5B5049)"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><span class="lb">Notes</span></button>
+    <button class="ic" data-app="check" style="animation-delay:160ms"><span class="sq" style="background:linear-gradient(160deg,#A8A17E,#7A7352)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="lb">Check-in</span></button>
+    <button class="ic" data-app="diary" style="animation-delay:185ms"><span class="sq" style="background:linear-gradient(160deg,#C0A7A8,#8F7376)"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.6 7.6"/><circle cx="11" cy="11" r="2"/></svg></span><span class="lb">Journal</span></button>
+    <button class="ic cal" data-open="calendar" aria-label="Calendar" style="animation-delay:210ms"><span class="sq"><span class="wd" id="ih_cw"></span><span class="dn" id="ih_cd"></span></span><span class="lb">Calendar</span></button>
+    <button class="ic" data-open="movies" style="animation-delay:235ms"><span class="sq" style="background:linear-gradient(160deg,#9FB1AF,#5F7E7C)"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="12.5" rx="3"/><path d="M10 8.5v5l4.2-2.5z" fill="#fff"/><path d="M8 20.5h8"/></svg></span><span class="lb">Movies</span></button>
+    <button class="ic" data-open="skincare" aria-label="Skincare" style="animation-delay:260ms"><span class="sq" style="background:linear-gradient(160deg,#B7B79B,#7F8060)"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg></span><span class="lb">Skincare</span></button>
+    <button class="ic" data-open="meals" aria-label="Refeições" style="animation-delay:285ms"><span class="sq" style="background:linear-gradient(160deg,#DDBC9E,#A9703F)"><svg viewBox="0 0 24 24"><path d="M4 11h16v1a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg></span><span class="lb">Refeições</span></button>
+    <button class="ic" data-app="notes" aria-label="Notes" style="animation-delay:310ms"><span class="sq" style="background:linear-gradient(160deg,#8B7F76,#5B5049)"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><span class="lb">Notes</span></button>
   </nav>
 </div>
 
-<div class="iwin" id="iwin" hidden>
-  <iframe id="iframe" title="App" allow="microphone; clipboard-write"></iframe>
+<div class="iwin off" id="iwin">
   <div class="ihbar" id="ihbar" aria-hidden="true"></div>
 </div>
 
@@ -766,7 +819,7 @@ html[data-ac="notes"] { --accent: #5B5049; }
     if (v.slice(a, end) === BUL) { t.setSelectionRange(a, end); if (!document.execCommand('delete')) { t.setRangeText('', a, end, 'end'); t.dispatchEvent(new Event('input', { bubbles: true })); } }   // empty bullet: the list ends
     else putText(t, '\n' + BUL);
   });
-  function autosize(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+  function autosize(t) { fitBox(t); }
 
   /* calendar view */
   function streak(test) {
@@ -1600,59 +1653,114 @@ html[data-ac="notes"] { --accent: #5B5049; }
     var b = document.getElementById(!NE.hidden ? 'nback' : 'back'); if (b) b.click();
   }, { any: function () { return homeEl.hidden && !icur && !(!jEl.hidden && view === 'day'); } });   // not on the Day tab, where sideways swipes change the day
   var IAPPS = { calendar: 'calendar.html', movies: 'movies.html', skincare: 'skincare.html', meals: 'meals.html' };
-  var IEASE = 'cubic-bezier(.32,.72,0,1)', iwin = document.getElementById('iwin'), iframe = document.getElementById('iframe'), icur = null, ibusy = false;
+  var IEASE = 'cubic-bezier(.32,.72,0,1)', iwin = document.getElementById('iwin'), ihbarEl = document.getElementById('ihbar'), frames = {}, icur = null, ibusy = false;
   var IWD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var VIVID = {'#8f7376': '#A064B0', '#bc6f63': '#E0568A', '#5f7e7c': '#F0883E', '#a9703f': '#E5B422', '#7f8060': '#4FAE6A', '#7a7352': '#2FA3A8', '#c79b6d': '#4F7FE0', '#5b5049': '#6B6488'};   // same colour set as calendar.html
+  var FLAME = '<svg viewBox="0 0 24 24"><path class="o" d="M12 2c.5 3-1.5 4.8-3 6.7C7.4 10.7 6 12.6 6 15a6 6 0 0 0 12 0c0-2.2-1-3.9-2.2-5.3-.3 1.3-1 2.2-2 2.6.6-3.6-.3-7.8-1.8-10.3z"/><path class="i" d="M12 21a3.2 3.2 0 0 0 3.2-3.2c0-1.6-1.1-2.5-1.8-3.6-.6 1-1.4 1.3-1.6 1.7-.6-.8-.6-1.8-.5-2.7C10 13 8.8 15.5 8.8 17.8A3.2 3.2 0 0 0 12 21z"/></svg>';
+  function esc2(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]; }); }
   function paintIos() {
     var n = new Date(), k = n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate());
     document.getElementById('ih_cw').textContent = IWD[n.getDay()].slice(0, 3); document.getElementById('ih_cd').textContent = n.getDate();
+    /* calendar: today's events, short */
+    var evd = lsGet(EKEY, null), evs = [];
+    if (evd && Array.isArray(evd.items)) evd.items.forEach(function (e) { if (e && !e.del && e.d && occursOn(e, k)) evs.push(e); });
+    evs.sort(function (a, b) { return (a.ad ? 0 : 1) - (b.ad ? 0 : 1) || String(a.st || '').localeCompare(String(b.st || '')); });
+    var eh = evs.slice(0, 3).map(function (e) { var c = e.c ? (VIVID[String(e.c).toLowerCase()] || e.c) : '#A064B0'; return '<span class="ln"><i class="dot" style="background:' + esc2(c) + '"></i>' + (e.ad || !e.st ? '' : '<time>' + esc2(e.st) + '</time>') + '<b>' + esc2(e.t || '(sem título)') + '</b></span>'; }).join('');
+    document.getElementById('ih_ev').innerHTML = evs.length ? eh + (evs.length > 3 ? '<span class="more">+' + (evs.length - 3) + ' mais</span>' : '') : '<span class="ln" style="opacity:.6">Sem eventos hoje</span>';
+    /* meals */
     var ml = lsGet('meals-v1', null), mt = ml && ml.plan && ml.plan[k] ? ml.plan[k] : {};
     function mn(m) { if (!m || m.x) return ''; var r = m.r && ml && Array.isArray(ml.recipes) ? ml.recipes.filter(function (x) { return x.id === m.r; })[0] : null; return r ? r.n : (m.t || ''); }
     [['ih_l', mt.l], ['ih_s', mt.s]].forEach(function (q) { var t = mn(q[1]), el = document.getElementById(q[0]); el.textContent = t || 'Nada planeado'; el.className = t ? '' : 'none'; });
-    var sc = lsGet('skincare-v1', null), st = 0, sd = 0, night = null;
+    /* skincare: tonight's step and whether the morning and the night routines are done */
+    var sc = lsGet('skincare-v1', null), night = null, tot = { am: 0, pm: 0 }, dn = { am: 0, pm: 0 };
     var cyc = sc && sc.cyc && Array.isArray(sc.cyc.slots) && sc.cyc.slots.length ? sc.cyc : null;
     if (cyc) { var lid = cyc.log && cyc.log[k]; night = cyc.slots.filter(function (c) { return c.id === lid; })[0] || cyc.slots[(cyc.idx || 0) % cyc.slots.length]; }
-    if (sc && sc.log) ['am', 'pm'].forEach(function (q) {
+    if (sc) ['am', 'pm'].forEach(function (q) {
       (sc[q] || []).forEach(function (s) {
         var on = q === 'pm' && cyc ? (!s.slot || (night && s.slot === night.id)) : (!s.days || !s.days.length || s.days.indexOf(n.getDay()) !== -1);
-        if (s.n && on) { st++; if ((sc.log[k] || []).indexOf(s.id) !== -1) sd++; }
+        if (s.n && on) { tot[q]++; if (sc.log && (sc.log[k] || []).indexOf(s.id) !== -1) dn[q]++; }
       });
     });
-    var C = 2 * Math.PI * 28, frac = st ? sd / st : 0;
-    document.getElementById('ih_ring').innerHTML = '<svg viewBox="0 0 66 66"><circle cx="33" cy="33" r="28" fill="none" stroke="rgba(58,50,45,.14)" stroke-width="7"/><circle cx="33" cy="33" r="28" fill="none" stroke="#3A322D" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg><span class="n">' + (st ? sd + '/' + st : '–') + '</span>';
-    document.getElementById('ih_sub').textContent = night && night.n ? 'Tonight: ' + night.n : (st ? 'steps today' : 'Set up your routine');
+    document.getElementById('ih_n').innerHTML = sc ? '<small>Esta noite</small>' + esc2(night && night.n ? night.n : (tot.pm ? 'Rotina da noite' : '—')) : '<small>Esta noite</small>Cria a tua rotina';
+    var CK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    document.getElementById('ih_chips').innerHTML = [['am', 'Manhã'], ['pm', 'Noite']].map(function (q) { var ok = tot[q[0]] > 0 && dn[q[0]] >= tot[q[0]]; return '<span class="chip' + (ok ? ' on' : '') + '">' + (ok ? CK : '') + q[1] + '</span>'; }).join('');
+    /* check-in and journal: done today? + streak flame (lit when today is done, dim when it is still to do) */
+    [['diary', 'ih_jt', 'ih_jf'], ['check', 'ih_ct', 'ih_cf']].forEach(function (x) {
+      var done = loaded && hasApp(x[0], n.getFullYear(), n.getMonth() + 1, n.getDate());
+      var sk = loaded ? streak(function (y, m, d) { return hasApp(x[0], y, m, d); }) : 0;
+      document.getElementById(x[1]).className = 'tick' + (done ? ' on' : '');
+      var fe = document.getElementById(x[2]); fe.className = 'fl' + (done ? ' on' : ''); fe.innerHTML = FLAME + '<span>' + sk + '</span>';
+    });
   }
   var _homeInfo = homeInfo;
   homeInfo = function () { _homeInfo(); paintIos(); };
   paintIos();
   setTimeout(function () { homeEl.classList.remove('intro'); }, 1500);   // the icons rise in once, not every time you come back
-  function loadFrame(url) { try { iframe.contentWindow.location.replace(new URL(url, location.href).href); } catch (e) { iframe.src = url; } }   // replace(), not src: no history entry
+  /* Every app sits in its own frame that is loaded quietly in the background after the home screen is up, so opening it shows the real page straight away.
+     When an app is closed all frames are reloaded in the background, so the next one you open is up to date. */
+  function wireFrame(fr) {
+    try {   // inside the window, the app's own "back to Daily Life" link closes the window instead of loading this page again
+      var d = fr.contentDocument; if (!d || d.__wired) return; d.__wired = true;
+      edgeSwipe(d, function () { if (!closeTop(d)) closeIApp(); }, { any: function () { return /\/(skincare|meals)\.html$/.test(d.location.pathname); } });   // Calendar and Movies swipe sideways themselves: edges only there
+      d.addEventListener('click', function (e) { var l = e.target.closest && e.target.closest('a[href="index.html"]'); if (l) { e.preventDefault(); e.stopPropagation(); closeIApp(); } }, true);
+    } catch (x) {}
+  }
+  function ensureFrame(id) {
+    var fr = frames[id]; if (fr) return fr;
+    fr = document.createElement('iframe'); fr.title = id; fr.setAttribute('allow', 'microphone; clipboard-write'); fr.dataset.app = id;
+    fr.addEventListener('load', function () { fr.__ready = true; wireFrame(fr); fr.style.opacity = '1'; });
+    iwin.insertBefore(fr, ihbarEl); frames[id] = fr; fr.src = IAPPS[id]; return fr;
+  }
+  function refreshFrames(delay) {   // reload the frames that are already there, one after the other, while the home screen is showing
+    Object.keys(frames).forEach(function (id, i) {
+      setTimeout(function () {
+        var fr = frames[id]; if (!fr || icur) return;
+        fr.__ready = false; fr.style.opacity = '0';
+        try { fr.contentWindow.location.replace(new URL(IAPPS[id], location.href).href); } catch (e) { fr.src = IAPPS[id]; }   // replace(), not src: no history entry
+      }, delay + i * 350);
+    });
+  }
+  (function () {   // warm up: one app at a time, a little after the home screen has appeared
+    if (navigator.connection && navigator.connection.saveData) return;
+    Object.keys(IAPPS).forEach(function (id, i) { setTimeout(function () { if (!icur) ensureFrame(id); }, 2200 + i * 1200); });
+  })();
   function openIApp(id, from) {
     if (ibusy || icur || !IAPPS[id]) return;
     ibusy = true; icur = id;
+    var fr = ensureFrame(id);
+    Object.keys(frames).forEach(function (k) { frames[k].style.visibility = k === id ? 'visible' : 'hidden'; });
+    fr.style.opacity = fr.__ready ? '1' : '0';   // still loading: it fades in as soon as it is ready instead of flashing
     var r = from.getBoundingClientRect();
     iwin.style.transformOrigin = (r.left + r.width / 2) + 'px ' + (r.top + r.height / 2) + 'px';
-    iwin.hidden = false; loadFrame(IAPPS[id]);
-    var a = iwin.animate([{ transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }, { transform: 'scale(1)', opacity: 1, borderRadius: '0px' }], { duration: 380, easing: IEASE, fill: 'forwards' });
+    iwin.classList.remove('off');
+    var a = iwin.animate([{ transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }, { opacity: 1, offset: .3 }, { transform: 'scale(1)', opacity: 1, borderRadius: '0px' }], { duration: 380, easing: IEASE, fill: 'forwards' });
     homeEl.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.9)', opacity: .35 }], { duration: 380, easing: IEASE, fill: 'forwards' });
     a.onfinish = function () { ibusy = false; };
-    iframe.onload = function () {
-      try {   // inside the window, the app's own "back to Daily Life" link closes the window instead of loading this page again
-        var d = iframe.contentDocument; if (!d || d.__wired) return; d.__wired = true;
-        edgeSwipe(d, function () { if (!closeTop(d)) closeIApp(); }, { any: function () { return /\/(skincare|meals)\.html$/.test(d.location.pathname); } });   // Calendar and Movies swipe sideways themselves: edges only there
-        d.addEventListener('click', function (e) { var l = e.target.closest && e.target.closest('a[href="index.html"]'); if (l) { e.preventDefault(); e.stopPropagation(); closeIApp(); } }, true);
-      } catch (x) {}
-    };
   }
   function closeIApp() {
     if (!icur || ibusy) return; ibusy = true;
-    var a = iwin.animate([{ transform: 'scale(1)', opacity: 1, borderRadius: '0px' }, { transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }], { duration: 300, easing: IEASE, fill: 'forwards' });
+    var a = iwin.animate([{ transform: 'scale(1)', opacity: 1, borderRadius: '0px' }, { opacity: 1, offset: .7 }, { transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }], { duration: 300, easing: IEASE, fill: 'forwards' });
     homeEl.animate([{ transform: 'scale(.9)', opacity: .35 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: IEASE, fill: 'forwards' });
     a.onfinish = function () {
-      iwin.hidden = true; iframe.onload = null; loadFrame('about:blank'); icur = null; ibusy = false;
+      iwin.classList.add('off'); icur = null; ibusy = false;
       iwin.getAnimations().concat(homeEl.getAnimations()).forEach(function (x) { x.cancel(); });
-      homeInfo();
+      homeInfo(); refreshFrames(500);
     };
   }
+  /* the apps that live in this page (Check-in, Journal, Notes) fade and zoom in and out too, instead of cutting */
+  var _show = show, tbusy = false;
+  show = function (s) {
+    var cur = !homeEl.hidden ? 'home' : !jEl.hidden ? 'jr' : !NE.hidden ? 'notes' : 'home', target = (s === 'diary' || s === 'check') ? 'jr' : s;
+    var box = function (x) { return x === 'home' ? homeEl : x === 'notes' ? NE : jEl; };
+    if (tbusy || cur === target || !box(cur).animate || icur) { _show(s); return; }
+    tbusy = true; setTimeout(function () { tbusy = false; }, 900);
+    var out = box(cur), a = out.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: target === 'home' ? 'scale(1.04)' : 'scale(.94)' }], { duration: 130, easing: 'ease-out', fill: 'forwards' });
+    a.onfinish = function () {
+      _show(s); out.getAnimations().forEach(function (x) { x.cancel(); });
+      var b = box(target).animate([{ opacity: 0, transform: target === 'home' ? 'scale(.96)' : 'scale(1.04)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 260, easing: IEASE });
+      b.onfinish = function () { tbusy = false; };
+    };
+  };
   homeEl.addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openIApp(b.dataset.open, b.querySelector('.sq') || b); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeIApp(); });
 

@@ -160,7 +160,7 @@ body.editing .fab { display: none; }
 .sheet input[type="text"], .sheet input[type="date"], .sheet input[type="time"], .sheet textarea, .sheet select {
   width: 100%; padding: 13px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); -webkit-appearance: none; appearance: none; min-height: 48px;
 }
-.sheet textarea { border-radius: 22px; resize: vertical; min-height: 84px; }
+.sheet textarea { border-radius: 22px; resize: none; overflow: hidden; min-height: 84px; }
 .sheet select { background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2394829E' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 16px center; padding-right: 38px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .two > div { min-width: 0; }
@@ -190,6 +190,28 @@ body.editing .fab { display: none; }
 @keyframes dockin { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 .modal.dock:not([hidden]) .sheet { animation: dockin 220ms var(--ease-out); }
 </style>
+<script>
+/* text boxes grow with what is typed. The page position is kept while the box is measured, so nothing jumps up and down. */
+function fitBox(t) {
+  if (!t || t.tagName !== 'TEXTAREA' || !t.getClientRects().length) return;
+  var keep = [], n = t.parentNode, se = document.scrollingElement || document.documentElement;
+  for (; n && n.nodeType === 1; n = n.parentNode) if (n.scrollTop) keep.push([n, n.scrollTop]);
+  keep.push([se, se.scrollTop]);
+  var cs = getComputedStyle(t), bd = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0), pd = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  t.style.height = 'auto';
+  var h = t.scrollHeight + (cs.boxSizing === 'border-box' ? bd : -pd);
+  t.style.height = h + 'px';
+  keep.forEach(function (k) { if (k[0].scrollTop !== k[1]) k[0].scrollTop = k[1]; });
+}
+(function () {
+  function go() {
+    document.addEventListener('input', function (e) { if (e.target.tagName === 'TEXTAREA') fitBox(e.target); });
+    document.addEventListener('focusin', function (e) { if (e.target.tagName === 'TEXTAREA') fitBox(e.target); });
+    new MutationObserver(function (ms) { ms.forEach(function (m) { [].forEach.call(m.addedNodes, function (nd) { if (nd.nodeType === 1) (nd.tagName === 'TEXTAREA' ? [nd] : [].slice.call(nd.querySelectorAll('textarea'))).forEach(fitBox); }); }); }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -218,8 +240,8 @@ body.editing .fab { display: none; }
   var EKEY = 'daily-life-events-v1';
   var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var COLORS = ['#8F7376', '#BC6F63', '#5F7E7C', '#A9703F', '#7F8060', '#7A7352', '#C79B6D', '#5B5049'];
-  var OLDCOL = {'#a064b0': '#8F7376', '#d9709c': '#BC6F63', '#e08a4f': '#5F7E7C', '#c99a2e': '#A9703F', '#5ba06e': '#7F8060', '#3e9da3': '#7A7352', '#5c80d0': '#C79B6D', '#7c7590': '#5B5049'};   // events saved with the old purple-era colours show in the new ones (nothing is rewritten until you edit the event)
+  var COLORS = ['#A064B0', '#E0568A', '#F0883E', '#E5B422', '#4FAE6A', '#2FA3A8', '#4F7FE0', '#6B6488'];
+  var OLDCOL = {'#8f7376': '#A064B0', '#bc6f63': '#E0568A', '#5f7e7c': '#F0883E', '#a9703f': '#E5B422', '#7f8060': '#4FAE6A', '#7a7352': '#2FA3A8', '#c79b6d': '#4F7FE0', '#5b5049': '#6B6488', '#a064b0': '#A064B0', '#d9709c': '#E0568A', '#e08a4f': '#F0883E', '#c99a2e': '#E5B422', '#5ba06e': '#4FAE6A', '#3e9da3': '#2FA3A8', '#5c80d0': '#4F7FE0', '#7c7590': '#6B6488'};   // events saved with earlier colours show in the vivid set (nothing is rewritten until you edit the event)
   var CLABD = ['Personal', 'Birthdays', 'Work & study', 'Appointments', 'Health & sport', 'Travel', 'Family & friends', 'Public holidays'];
   var CLAB = CLABD.slice();   // what each colour is for; she can rename them (kept on this device only, so cloud sync leaves it alone)
   try { var cl = JSON.parse(localStorage.getItem('daily-life-cal-labels')); if (Array.isArray(cl)) cl.forEach(function (x, i) { if (i < CLAB.length && typeof x === 'string' && x.trim()) CLAB[i] = x.trim().slice(0, 30); }); } catch (e) {}
