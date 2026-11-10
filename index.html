@@ -545,7 +545,7 @@ function fitBox(t) {
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 13</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 14</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -711,7 +711,7 @@ function fitBox(t) {
   function entryYears(a) {
     var s = {};
     allEntries(a).forEach(function (e) { s[e.y] = 1; });
-    return Object.keys(s).map(Number);
+    return Object.keys(s).map(Number).filter(function (y) { return isFinite(y); });
   }
   function allEntries(a) {
     a = a || app;
@@ -968,7 +968,7 @@ function fitBox(t) {
       var cv = t.value, cs = t.selectionStart, ca = lineStart(cv, cs), cl = cv.slice(ca, cs);
       if (cl === '- ' || cl === '* ') { t.setSelectionRange(ca, cs); putText(t, BUL); return; }
     }
-    if (t.tagName === 'TEXTAREA') { autosize(t); put(+t.dataset.y, sel.m, sel.d, t.value, t.dataset.f); setStatus('Saving…'); }
+    if (t.tagName === 'TEXTAREA' && t.dataset.y) { autosize(t); put(+t.dataset.y, sel.m, sel.d, t.value, t.dataset.f); setStatus('Saving…'); }
   });
   main.addEventListener('focusout', function (e) { if (e.target.tagName === 'TEXTAREA') { flush(); } });
   main.addEventListener('click', function (e) {
@@ -1844,7 +1844,7 @@ function fitBox(t) {
       mode = 'local';
       try {
         var raw = JSON.parse(localStorage.getItem(LS) || '{}') || {};
-        Object.keys(raw).forEach(function (k) { store[k] = norm(raw[k]); });
+        Object.keys(raw).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k)) store[k] = norm(raw[k]); });   // only real months
         acts = JSON.parse(localStorage.getItem(LSA) || '[]') || []; ensureColors();
         notes = JSON.parse(localStorage.getItem(LSN) || '[]') || [];
       } catch (e) { store = {}; acts = []; }
@@ -1863,7 +1863,7 @@ function fitBox(t) {
   document.addEventListener('click', function (e) { pairs.forEach(function (x) { if (!x[1].hidden && !x[1].contains(e.target)) closeAll(); }); });
 })();
 </script>
-<script type="module" src="sync.js?v=10"></script>
+<script type="module" src="sync.js?v=11"></script>
 
 </body>
 </html>

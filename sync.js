@@ -21,6 +21,9 @@ var auth = getAuth(app), db = getFirestore(app);
 var LS = 'year-after-year-v1', LSA = 'year-after-year-acts-v1', LSN = 'year-after-year-notes-v1', MKEY = 'movies-and-series-v1';
 var EKEY = 'daily-life-events-v1', SKEY = 'skincare-v1', MLKEY = 'meals-v1';
 var WATCH = [LS, LSA, LSN, MKEY, EKEY, SKEY, MLKEY], META = 'daily-life-sync-meta';
+/* the diary is kept as one object per month, named YYYY-MM. Anything else in there is junk (it breaks the Journal) and is dropped on every device and in the cloud. */
+var MONTH = /^\d{4}-\d{2}$/;
+function cleanStore(s) { var o = {}; if (s && typeof s === 'object') Object.keys(s).forEach(function (k) { if (MONTH.test(k)) o[k] = s[k]; }); return o; }
 var rawSet = Storage.prototype.setItem;
 var user = null, applying = false, rev = 0, timer = null, busy = Promise.resolve(), msg = '', msgErr = false;
 
@@ -66,7 +69,7 @@ function unionMl(a, b) {
 /* local data as one object */
 function readLocal() {
   var mv = lsGet(MKEY, null), ev = lsGet(EKEY, null);
-  return { store: lsGet(LS, {}), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [], skincare: normSk(lsGet(SKEY, null)), meals: normMl(lsGet(MLKEY, null)) };
+  return { store: cleanStore(lsGet(LS, {})), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [], skincare: normSk(lsGet(SKEY, null)), meals: normMl(lsGet(MLKEY, null)) };
 }
 function fromCloud(c, local) {
   function p(s, fb) { try { var v = JSON.parse(s); return v == null ? fb : v; } catch (e) { return fb; } }
@@ -76,7 +79,7 @@ function fromCloud(c, local) {
   if (cs && !cs.skin && local.skincare && local.skincare.skin) cs.skin = local.skincare.skin;   // a copy saved before the skin profile existed: keep this device's
   var cm = c.meals === undefined ? null : normMl(p(c.meals, null));   // a copy saved before the meals planner existed: keep this device's
   // an empty cloud skincare never wipes what this device has: it goes up instead (see sync)
-  return { store: p(c.store, {}), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs, meals: (!cm || (mlEmpty(cm) && !mlEmpty(local.meals))) ? local.meals : cm };
+  return { store: cleanStore(p(c.store, {})), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs, meals: (!cm || (mlEmpty(cm) && !mlEmpty(local.meals))) ? local.meals : cm };
 }
 /* write to localStorage without triggering a push; returns true when something changed */
 function applyLocal(d) {
@@ -116,7 +119,7 @@ function unionList(a, b, newer) {
 function union(a, b) {
   var store = {};
   Object.keys(a.store).concat(Object.keys(b.store)).forEach(function (k) {
-    if (store[k]) return;
+    if (store[k] || !MONTH.test(k)) return;
     var x = normMonth(a.store[k]), y = normMonth(b.store[k]);
     ['t', 'm', 'a', 'l'].forEach(function (f) { Object.keys(y[f]).forEach(function (d) { if (!(d in x[f])) x[f][d] = y[f][d]; }); });
     store[k] = x;
@@ -164,7 +167,10 @@ async function sync(reloadOk) {
   var skUp = !!cloud && !skEmpty(merged.skincare) && (!cloudSk || skEmpty(cloudSk));   // skincare written on a device before it was synced
   var cloudMl = null; try { cloudMl = cloud && cloud.meals !== undefined ? normMl(JSON.parse(cloud.meals)) : null; } catch (e) {}
   var mlUp = !!cloud && !mlEmpty(merged.meals) && (!cloudMl || mlEmpty(cloudMl));   // meals written on a device before they were synced
-  var needPush = !cloud || meta.uid !== user.uid || meta.dirty || skUp || mlUp;
+  var junkLocal = Object.keys(lsGet(LS, {}) || {}).some(function (k) { return !MONTH.test(k); }), junkCloud = false;   // invalid months: clean this device and the cloud
+  try { junkCloud = !!cloud && Object.keys(JSON.parse(cloud.store) || {}).some(function (k) { return !MONTH.test(k); }); } catch (e) {}
+  if (junkLocal || junkCloud) changed = applyLocal(merged) || changed;
+  var needPush = !cloud || meta.uid !== user.uid || meta.dirty || skUp || mlUp || junkLocal || junkCloud;
   if (needPush) await push(merged);
   if (changed && reloadOk && !sessionStorage.getItem('daily-life-synced')) { try { sessionStorage.setItem('daily-life-synced', '1'); } catch (e) {} location.reload(); }
 }
