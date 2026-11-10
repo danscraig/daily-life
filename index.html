@@ -545,7 +545,7 @@ function fitBox(t) {
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 12</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 13</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -1648,6 +1648,7 @@ function fitBox(t) {
     function edgeDone(d, dy) { mode = ''; hide(); if ((d > 60 || (d > 36 && d / Math.max(1, Date.now() - st) > 0.35)) && dy < d * 0.9) onBack(); }
     doc.addEventListener('touchstart', function (e) {
       var t = e.touches[0]; mode = '';
+      if (opts && opts.on && !opts.on()) return;   // this page: no swipe at all on the home screen
       if (e.touches.length !== 1) return;
       if (t.clientX <= EDGE) { mode = 'edge'; side = 1; }
       else if (opts && opts.any && opts.any() && !(e.target.closest && e.target.closest('input, textarea, select, [contenteditable], .ncard, .npage')) && !hscroll(e.target)) mode = 'any';
@@ -1671,7 +1672,7 @@ function fitBox(t) {
     if (!homeEl.hidden || icur) return;
     if (closeTop(document)) return;
     var b = document.getElementById(!NE.hidden ? 'nback' : 'back'); if (b) b.click();
-  }, { any: function () { return homeEl.hidden && !icur && !(!jEl.hidden && view === 'day'); } });   // not on the Day tab, where sideways swipes change the day
+  }, { on: function () { return !homeEl.hidden ? false : !icur; }, any: function () { return homeEl.hidden && !icur && !(!jEl.hidden && view === 'day'); } });   // not on the Day tab, where sideways swipes change the day
   var IAPPS = { calendar: 'calendar.html', movies: 'movies.html', skincare: 'skincare.html', meals: 'meals.html' };
   var IEASE = 'cubic-bezier(.32,.72,0,1)', iwin = document.getElementById('iwin'), ihbarEl = document.getElementById('ihbar'), frames = {}, icur = null, ibusy = false;
   var IWD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
