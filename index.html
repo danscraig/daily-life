@@ -435,9 +435,9 @@ html.onhome body::before { display: none; }
   background: rgba(255, 255, 255, .58); -webkit-backdrop-filter: blur(22px) saturate(1.2); backdrop-filter: blur(22px) saturate(1.2); border: 1px solid rgba(255, 255, 255, .85); box-shadow: 0 14px 30px -18px rgba(70, 58, 44, .4); transition: transform 140ms var(--ease-out); }
 .ihw .wg:active { transform: scale(.97); }
 .ihw .t { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
-.ihw .row { margin-top: 10px; font-size: 14px; line-height: 1.25; display: block; }
-.ihw .row small { display: block; font-size: 11px; opacity: .75; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1px; }
-.ihw .row b { font-weight: 500; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ihw .mr { margin-top: 9px; font-size: 14px; line-height: 1.25; display: block; }
+.ihw .mr small { display: block; font-size: 11px; opacity: .75; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1px; }
+.ihw .mr b { font-weight: 500; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ihw .none { opacity: .6; }
 .ihw .ring { margin: 10px 0 0; position: relative; width: 66px; height: 66px; display: block; }
 .ihw .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -461,7 +461,7 @@ html.onhome body::before { display: none; }
 @keyframes irise { from { opacity: 0; transform: translateY(8px); } }
 /* widgets: calendar, meals, skincare, check-in + journal */
 .ihw { gap: 12px; margin: 0; }
-.ihw .wg { min-height: 116px; padding: 12px 13px; min-width: 0; overflow: hidden; border-radius: 24px; align-items: stretch; }
+.ihw .wg { min-height: 108px; padding: 11px 13px; min-width: 0; overflow: hidden; border-radius: 24px; align-items: stretch; }
 .ihw .wg > .t { display: block; }
 .ihw .ln { display: flex; align-items: center; gap: 6px; margin-top: 7px; font-size: 13px; line-height: 1.2; min-width: 0; }
 .ihw .ln b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -487,7 +487,17 @@ html.onhome body::before { display: none; }
 .ihw .fl.on { color: #A9703F; }
 .ihw .fl.on .o { fill: #BC6F63; }
 .ihw .fl.on .i { fill: #EBC08F; }
-.igrid { margin-top: auto; gap: 16px 6px; }
+.igrid { margin-top: auto; gap: 16px 6px; padding-top: 12px; }
+#home.ios.tight .hello { padding-bottom: 6px; }
+#home.ios.tight #vtag { display: none; }
+#home.ios.tight .ihw { gap: 8px; }
+#home.ios.tight .ihw .wg { min-height: 0; padding: 9px 12px; border-radius: 20px; }
+#home.ios.tight .ihw .ln, #home.ios.tight .ihw .mr, #home.ios.tight .ihw .hb, #home.ios.tight .ihw .night { margin-top: 5px; }
+#home.ios.tight .ic .sq { width: 54px; height: 54px; }
+#home.ios.tight .igrid { gap: 10px 6px; padding-top: 8px; }
+#home.ios.tight2 .ihw .ln:nth-child(n+3), #home.ios.tight2 .ihw .more { display: none; }
+#home.ios.tight2 .ihw .chips { padding-top: 4px; }
+#home.ios.tight2 .hello .hdate { display: none; }
 /* an open app: a window that grows out of its icon */
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
 .iwin.off { visibility: hidden; pointer-events: none; }
@@ -531,7 +541,7 @@ function fitBox(t) {
     <p class="hdate" id="hdate"></p>
     <h1>Hi, <span class="nm2">Daniela!</span></h1>
     <button class="syncst" id="syncst" hidden></button>
-    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 8</div>
+    <div id="vtag" style="margin-top:2px;font-size:10px;opacity:.55">v 10 nov · 10</div>
   </header>
   <nav class="apps" aria-label="Your apps" hidden>
     <button class="app" data-app="check">
@@ -573,7 +583,7 @@ function fitBox(t) {
 
   <section class="ihw" aria-label="Hoje">
     <button class="wg" data-open="calendar" style="animation-delay:40ms"><span class="t" style="color:#BC6F63">Calendário</span><span id="ih_ev"></span></button>
-    <button class="wg" data-open="meals" style="animation-delay:70ms"><span class="t" style="color:#A9703F">Refeições</span><span class="row"><small>Almoço</small><b id="ih_l"></b></span><span class="row"><small>Lanche</small><b id="ih_s"></b></span></button>
+    <button class="wg" data-open="meals" style="animation-delay:70ms"><span class="t" style="color:#A9703F">Refeições</span><span class="mr"><small>Almoço</small><b id="ih_l"></b></span><span class="mr"><small>Lanche</small><b id="ih_s"></b></span></button>
     <button class="wg" data-open="skincare" style="animation-delay:100ms"><span class="t" style="color:#7F8060">Skincare</span><span class="night" id="ih_n"></span><span class="chips" id="ih_chips"></span></button>
     <div class="wg" style="animation-delay:130ms"><span class="t" style="color:#7A7352">Hoje</span>
       <button class="hb" data-app="check"><span class="tick" id="ih_ct"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="nm">Check-in</span><span class="fl" id="ih_cf"></span></button>
@@ -1589,8 +1599,14 @@ function fitBox(t) {
     lockHome();
   }
   /* home: when everything fits on the screen the page cannot be dragged up or down */
+  function fitHome() {   // too tall for this screen? use the tighter layout, so no app is pushed off the bottom
+    homeEl.classList.remove('tight', 'tight2');
+    if (homeEl.hidden) return;
+    var over = function () { return homeEl.scrollHeight > homeEl.clientHeight + 1; };
+    if (over()) { homeEl.classList.add('tight'); if (over()) homeEl.classList.add('tight2'); }
+  }
   function lockHome() {
-    var el = document.documentElement;
+    var el = document.documentElement; fitHome();
     el.style.overflow = ''; document.body.style.overflow = '';
     if (!homeEl.hidden && el.scrollHeight <= window.innerHeight + 1) { el.style.overflow = 'hidden'; document.body.style.overflow = 'hidden'; }
   }
@@ -1693,7 +1709,7 @@ function fitBox(t) {
     });
   }
   var _homeInfo = homeInfo;
-  homeInfo = function () { _homeInfo(); paintIos(); };
+  homeInfo = function () { _homeInfo(); paintIos(); lockHome(); };
   paintIos();
   setTimeout(function () { homeEl.classList.remove('intro'); }, 1500);   // the icons rise in once, not every time you come back
   /* Every app sits in its own frame that is loaded quietly in the background after the home screen is up, so opening it shows the real page straight away.
@@ -1742,7 +1758,7 @@ function fitBox(t) {
     var a = iwin.animate([{ transform: 'scale(1)', opacity: 1, borderRadius: '0px' }, { opacity: 1, offset: .7 }, { transform: 'scale(.16)', opacity: 0, borderRadius: '90px' }], { duration: 300, easing: IEASE, fill: 'forwards' });
     homeEl.animate([{ transform: 'scale(.9)', opacity: .35 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: IEASE, fill: 'forwards' });
     a.onfinish = function () {
-      iwin.classList.add('off'); icur = null; ibusy = false;
+      iwin.classList.add('off'); Object.keys(frames).forEach(function (k) { frames[k].style.visibility = 'hidden'; }); icur = null; ibusy = false;
       iwin.getAnimations().concat(homeEl.getAnimations()).forEach(function (x) { x.cancel(); });
       homeInfo(); refreshFrames(500);
     };
