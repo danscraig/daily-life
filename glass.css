@@ -104,3 +104,11 @@ html[data-ac] { --accent: #2F2F2E; }
 :root { padding-bottom: 0; }
 .iwin iframe { height: calc(100% - env(safe-area-inset-top, 0px)); }
 .ihbar { display: none; }
+
+/* bottom bars sit right on the bottom edge of the screen (the home indicator area is part of the bar) */
+.navbar, .tabs {
+  left: 0; right: 0; bottom: 0; max-width: none; margin: 0; border-radius: 28px 28px 0 0;
+  padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px));
+  box-shadow: var(--rim), 0 -14px 30px -18px rgba(40, 40, 38, .5);
+}
+.navbar .tabbar, .tabs .in { max-width: 520px; margin: 0 auto; }
