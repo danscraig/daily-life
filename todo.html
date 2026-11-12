@@ -223,6 +223,8 @@ input::placeholder { color: var(--mute); }
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('m').hidden) closeM(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && $('m').hidden) { data = load(); render(); } });
+  /* the browser Back button (see index.html): close the sheet, or go from a topic back to the topics */
+  window.__dlBack = function () { if (!$('m').hidden) { closeM(); return true; } if (cur) { cur = ''; render(); window.scrollTo(0, 0); return true; } return false; };
   render();
 })();
 </script>

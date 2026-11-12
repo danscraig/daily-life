@@ -1476,6 +1476,16 @@ function fitBox(t) {
     document.execCommand(li.parentNode.tagName === 'OL' ? 'insertOrderedList' : 'insertUnorderedList');
     nbChanged(); return true;
   }
+  /* "- " (or "* ") at the start of a line turns it into a bullet */
+  nmain.addEventListener('input', function (e) {
+    if (e.target.id !== 'nb' || e.inputType !== 'insertText' || !/^[  ]$/.test(e.data || '')) return;
+    var cb = curBlock(), s = getSelection(); if (!cb || !s.rangeCount || !s.isCollapsed || !/^(DIV|P)$/.test(cb.tagName)) return;
+    var r = document.createRange(); r.selectNodeContents(cb); r.setEnd(s.anchorNode, s.anchorOffset);
+    if (!/^[-*][  ]$/.test(r.toString())) return;
+    r.deleteContents();
+    document.execCommand('insertUnorderedList');
+    nbChanged();
+  });
   nmain.addEventListener('beforeinput', function (e) {
     if (e.target.id !== 'nb' || e.inputType !== 'deleteContentBackward') return;
     leaveList(e);
@@ -1862,6 +1872,36 @@ function fitBox(t) {
   };
   homeEl.addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openIApp(b.dataset.open, b.querySelector('.sq') || b); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeIApp(); });
+
+  /* The browser's Back button (and the phone's Back gesture) do what the "‹" does: close a sheet, go one level up, leave the app to the home screen.
+     Opening an app puts one entry in the history; Back uses it up and the page puts a new one while there is still somewhere to go back to. */
+  (function () {
+    if (/[?&]embed=1/.test(location.search)) return;
+    var pushed = false, skip = false;
+    function deep() { return !!icur || homeEl.hidden; }
+    function goBack() {
+      if (icur) {
+        var fr = frames[icur], w = null, d = null; try { w = fr.contentWindow; d = fr.contentDocument; } catch (e) {}
+        try { if (w && w.__dlBack && w.__dlBack()) return; } catch (e) {}
+        if (d && closeTop(d)) return;
+        closeIApp(); return;
+      }
+      if (homeEl.hidden) { if (closeTop(document)) return; var b = document.getElementById(!NE.hidden ? 'nback' : 'back'); if (b) b.click(); }
+    }
+    function sync() {
+      if (deep() && !pushed) { try { history.pushState({ dl: 1 }, ''); pushed = true; } catch (e) {} }
+      else if (!deep() && pushed) { pushed = false; skip = true; try { history.back(); } catch (e) { skip = false; } }
+    }
+    window.addEventListener('popstate', function () {
+      if (skip) { skip = false; return; }
+      pushed = false;
+      if (!deep()) return;
+      goBack(); setTimeout(sync, 0); setTimeout(sync, 500);
+    });
+    var mo = new MutationObserver(sync);
+    mo.observe(homeEl, { attributes: true, attributeFilter: ['hidden'] });
+    mo.observe(iwin, { attributes: true, attributeFilter: ['class'] });
+  })();
 
   /* swipe left or right on the Day tab to change the day (left = next day, right = previous day) */
   (function () {
