@@ -240,8 +240,8 @@ function fitBox(t) {
   var EKEY = 'daily-life-events-v1';
   var MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var COLORS = ['#A064B0', '#E0568A', '#F0883E', '#E5B422', '#4FAE6A', '#2FA3A8', '#4F7FE0', '#6B6488'];
-  var OLDCOL = {'#8f7376': '#A064B0', '#bc6f63': '#E0568A', '#5f7e7c': '#F0883E', '#a9703f': '#E5B422', '#7f8060': '#4FAE6A', '#7a7352': '#2FA3A8', '#c79b6d': '#4F7FE0', '#5b5049': '#6B6488', '#a064b0': '#A064B0', '#d9709c': '#E0568A', '#e08a4f': '#F0883E', '#c99a2e': '#E5B422', '#5ba06e': '#4FAE6A', '#3e9da3': '#2FA3A8', '#5c80d0': '#4F7FE0', '#7c7590': '#6B6488'};   // events saved with earlier colours show in the vivid set (nothing is rewritten until you edit the event)
+  var COLORS = ['#A77CB3', '#D9799A', '#E59E6C', '#D8B04E', '#7FB28C', '#6FADB0', '#7A98D6', '#7E7894'];
+  var OLDCOL = {'#8f7376': '#A77CB3', '#bc6f63': '#D9799A', '#5f7e7c': '#E59E6C', '#a9703f': '#D8B04E', '#7f8060': '#7FB28C', '#7a7352': '#6FADB0', '#c79b6d': '#7A98D6', '#5b5049': '#7E7894', '#a064b0': '#A77CB3', '#d9709c': '#D9799A', '#e08a4f': '#E59E6C', '#c99a2e': '#D8B04E', '#5ba06e': '#7FB28C', '#3e9da3': '#6FADB0', '#5c80d0': '#7A98D6', '#7c7590': '#7E7894', '#e0568a': '#D9799A', '#f0883e': '#E59E6C', '#e5b422': '#D8B04E', '#4fae6a': '#7FB28C', '#2fa3a8': '#6FADB0', '#4f7fe0': '#7A98D6', '#6b6488': '#7E7894'};   // events saved with earlier colours show in the vivid set (nothing is rewritten until you edit the event)
   var CLABD = ['Personal', 'Birthdays', 'Work & study', 'Appointments', 'Health & sport', 'Travel', 'Family & friends', 'Public holidays'];
   var CLAB = CLABD.slice();   // what each colour is for; she can rename them (kept on this device only, so cloud sync leaves it alone)
   try { var cl = JSON.parse(localStorage.getItem('daily-life-cal-labels')); if (Array.isArray(cl)) cl.forEach(function (x, i) { if (i < CLAB.length && typeof x === 'string' && x.trim()) CLAB[i] = x.trim().slice(0, 30); }); } catch (e) {}
