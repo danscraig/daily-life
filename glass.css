@@ -112,3 +112,6 @@ html[data-ac] { --accent: #2F2F2E; }
   box-shadow: var(--rim), 0 -14px 30px -18px rgba(40, 40, 38, .5);
 }
 .navbar .tabbar, .tabs .in { max-width: 520px; margin: 0 auto; }
+
+/* while typing, the bottom bar steps aside so the field has room above the keyboard */
+.kb .navbar, .kb .tabs { display: none; }

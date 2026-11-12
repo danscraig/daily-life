@@ -548,7 +548,7 @@ function fitBox(t) {
   if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
 })();
 </script>
-<link rel="stylesheet" href="glass.css?v=3">
+<link rel="stylesheet" href="glass.css?v=4">
 </head>
 <body>
 
@@ -2008,6 +2008,15 @@ function fitBox(t) {
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bkm.hidden) close(); });
 })();
 </script>
+<script>
+/* while the keyboard is open the app window shrinks to the part of the screen that is left, so nothing slides under it */
+(function(){var vv=window.visualViewport,iw=document.getElementById("iwin");if(!vv||!iw)return;
+function fit(){var open=vv.scale<=1.02&&window.innerHeight-vv.height>120&&!iw.classList.contains("off");
+if(open){iw.style.bottom="auto";iw.style.top=vv.offsetTop+"px";iw.style.height=vv.height+"px";}
+else{iw.style.bottom="";iw.style.top="";iw.style.height="";}}
+vv.addEventListener("resize",fit);vv.addEventListener("scroll",fit);})();
+</script>
+<script src="kb.js?v=1"></script>
 <script src="backup.js?v=1"></script>
 <script type="module" src="sync.js?v=13"></script>
 
