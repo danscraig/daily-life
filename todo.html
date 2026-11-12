@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
+<meta name="theme-color" content="#EEF1F5">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>To do</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1F5; --paper: #FCFDFE; --ink: #2F3640; --mute: #727C89; --line: #DDE2E9; --accent: #5B7799; --accent-ink: #FFFFFF;
+  --s0: #A9B2BE; --s1: #E0A23B; --s2: #3E9D6A;
+  --shadow: rgba(47, 54, 64, .14); --bad: #C0392B; --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; overscroll-behavior-y: none; }
+html, body, button, a, input, select, label, textarea { touch-action: manipulation; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font); padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(40px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); -webkit-text-size-adjust: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; transition: transform 140ms var(--ease-out), background-color 150ms ease, color 150ms ease; }
+button:active { transform: scale(.97); }
+[hidden] { display: none !important; }
+.wrap { max-width: 640px; margin: 0 auto; }
+.top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
+.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ibtn { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: grid; place-items: center; font-size: 22px; color: var(--ink); text-decoration: none; line-height: 1; }
+input[type="text"], select { width: 100%; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
+input::placeholder { color: var(--mute); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { padding: 12px 18px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 14px; }
+.btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.btn.bad { background: var(--bad); }
+.btn.full { width: 100%; padding: 14px; font-size: 15px; }
+.addrow { display: flex; gap: 8px; margin-bottom: 14px; }
+.addrow .btn { flex: none; width: 48px; padding: 0; font-size: 22px; line-height: 1; }
+.empty { text-align: center; color: var(--mute); padding: 34px 10px; }
+
+/* topics */
+.tcard { display: block; width: 100%; text-align: left; background: var(--paper); border-radius: 20px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.tcard .row { display: flex; align-items: baseline; gap: 10px; }
+.tcard b { flex: 1; min-width: 0; font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
+.tcard .n { flex: none; color: var(--mute); font-size: 13px; }
+.bar { display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: var(--bg); margin: 10px 0 8px; }
+.bar i { display: block; height: 100%; }
+.bar .a0 { background: var(--s0); } .bar .a1 { background: var(--s1); } .bar .a2 { background: var(--s2); }
+.cnt { display: flex; gap: 14px; font-size: 12.5px; color: var(--mute); }
+.cnt span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--c); }
+
+/* inside a topic */
+.filt { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; padding-bottom: 2px; }
+.filt::-webkit-scrollbar { display: none; }
+.filt button { flex: none; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 13.5px; color: var(--mute); }
+.filt button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.h { margin: 16px 4px 8px; font-size: 13px; font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; gap: 8px; }
+.h::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.task { display: flex; align-items: center; background: var(--paper); border-radius: 16px; margin-bottom: 6px; box-shadow: 0 8px 20px -18px var(--shadow); }
+.task .st { flex: none; width: 52px; height: 52px; display: grid; place-items: center; }
+.task .st span { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--s0); display: grid; place-items: center; transition: background-color 160ms ease, border-color 160ms ease; }
+.task .st svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.task[data-s="1"] .st span { border-color: var(--s1); background: linear-gradient(90deg, var(--s1) 50%, transparent 50%); }
+.task[data-s="2"] .st span { border-color: var(--s2); background: var(--s2); }
+.task[data-s="2"] .st svg { opacity: 1; }
+.task .tx { flex: 1; min-width: 0; text-align: left; padding: 12px 14px 12px 0; overflow-wrap: anywhere; }
+.task[data-s="2"] .tx { color: var(--mute); text-decoration: line-through; }
+
+/* sheets */
+.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: color-mix(in srgb, var(--ink) 45%, transparent); padding: calc(16px + env(safe-area-inset-top, 0px)) 12px 16px; }
+.modal:not([hidden]) { animation: fadein 160ms var(--ease-out); }
+.modal:not([hidden]) .sheet { animation: sheetin 220ms var(--ease-out); }
+.sheet { width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; background: var(--bg); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sheet h2 { margin: 0; font-size: 20px; }
+.sheet label { font-size: 13px; color: var(--mute); display: block; margin: 0 0 4px 4px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.seg button { padding: 11px 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; color: var(--mute); }
+.seg button[aria-pressed="true"] { color: #fff; border-color: transparent; background: var(--c); }
+.acts { display: flex; gap: 8px; }
+.acts .btn { flex: 1; }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes sheetin { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="ibtn" id="home" href="index.html" aria-label="Voltar ao Daily Life">‹</a>
+    <button class="ibtn" id="up" aria-label="Voltar aos tópicos" hidden>‹</button>
+    <h1 id="ttl">To do</h1>
+    <button class="ibtn" id="more" aria-label="Opções do tópico" hidden style="font-size:20px">⋯</button>
+  </header>
+  <main id="main"></main>
+</div>
+<div class="modal" id="m" hidden><div class="sheet" id="sh"></div></div>
+
+<script src="backup.js?v=1"></script>
+<script type="module" src="sync.js?v=13"></script>
+<script>
+(function () {
+  'use strict';
+  var LS = 'todo-v1';
+  /* { lists: [{id, n, u, del?}], tasks: [{id, l (list id), t, s (0 por começar, 1 ongoing, 2 done), u, del?}] }
+     Nothing is really deleted (del), and every edit carries u: that is what lets the cloud merge two devices without losing anything. */
+  var ST = [{ n: 'Por começar', c: '#A9B2BE' }, { n: 'Ongoing', c: '#E0A23B' }, { n: 'Done', c: '#3E9D6A' }];
+  var data = load(), cur = '', flt = -1;   // flt: -1 all, 0..2 one status
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function load() {
+    var d = null; try { d = JSON.parse(localStorage.getItem(LS)); } catch (e) {}
+    d = d && typeof d === 'object' ? d : {};
+    return { lists: Array.isArray(d.lists) ? d.lists : [], tasks: Array.isArray(d.tasks) ? d.tasks : [] };
+  }
+  function save() {
+    try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {}
+    try { var mt = JSON.parse(localStorage.getItem('daily-life-sync-meta') || '{}') || {}; mt.dirty = true; localStorage.setItem('daily-life-sync-meta', JSON.stringify(mt)); } catch (e) {}
+  }
+  function lists() { return data.lists.filter(function (l) { return !l.del; }); }
+  function listById(id) { return data.lists.filter(function (l) { return l.id === id && !l.del; })[0]; }
+  function tasksOf(id) { return data.tasks.filter(function (t) { return t.l === id && !t.del; }); }
+  function taskById(id) { return data.tasks.filter(function (t) { return t.id === id; })[0]; }
+  var CK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  function render() {
+    var l = cur ? listById(cur) : null; if (cur && !l) cur = '';
+    $('home').hidden = !!cur; $('up').hidden = !cur; $('more').hidden = !cur;
+    $('ttl').textContent = cur ? l.n : 'To do';
+    $('main').innerHTML = cur ? topicHTML(l) : topicsHTML();
+  }
+  function topicsHTML() {
+    var ls = lists().sort(function (a, b) { return (b.u || 0) - (a.u || 0); });
+    var h = '<form class="addrow" id="addl"><input type="text" id="nl" placeholder="Novo tópico (ex.: Casa, Trabalho, Viagem)" autocomplete="off" enterkeyhint="done"><button class="btn" aria-label="Adicionar tópico">+</button></form>';
+    if (!ls.length) return h + '<div class="empty">Ainda não tens tópicos.<br>Cria um para começares a listar tarefas.</div>';
+    return h + ls.map(function (l) {
+      var ts = tasksOf(l.id), c = [0, 0, 0]; ts.forEach(function (t) { c[t.s || 0]++; });
+      return '<button class="tcard" data-l="' + l.id + '"><span class="row"><b>' + esc(l.n) + '</b><span class="n">' + ts.length + (ts.length === 1 ? ' tarefa' : ' tarefas') + '</span></span>' +
+        (ts.length ? '<span class="bar">' + c.map(function (n, i) { return n ? '<i class="a' + i + '" style="width:' + (n / ts.length * 100) + '%"></i>' : ''; }).join('') + '</span>' +
+          '<span class="cnt">' + c.map(function (n, i) { return '<span style="--c:' + ST[i].c + '">' + n + ' ' + ST[i].n.toLowerCase() + '</span>'; }).join('') + '</span>' : '') + '</button>';
+    }).join('');
+  }
+  function topicHTML(l) {
+    var ts = tasksOf(l.id), c = [0, 0, 0]; ts.forEach(function (t) { c[t.s || 0]++; });
+    var h = '<form class="addrow" id="addt"><input type="text" id="nt" placeholder="Nova tarefa" autocomplete="off" enterkeyhint="done"><button class="btn" aria-label="Adicionar tarefa">+</button></form>';
+    h += '<div class="filt">' + [[-1, 'Todas', ts.length]].concat(ST.map(function (s, i) { return [i, s.n, c[i]]; })).map(function (f) { return '<button data-f="' + f[0] + '" aria-pressed="' + (flt === f[0]) + '">' + f[1] + ' · ' + f[2] + '</button>'; }).join('') + '</div>';
+    if (!ts.length) return h + '<div class="empty">Sem tarefas neste tópico.</div>';
+    var order = [1, 0, 2], any = false;
+    order.forEach(function (s) {
+      if (flt !== -1 && flt !== s) return;
+      var g = ts.filter(function (t) { return (t.s || 0) === s; }).sort(function (a, b) { return (a.c || a.u || 0) - (b.c || b.u || 0); });
+      if (!g.length) return; any = true;
+      if (flt === -1) h += '<div class="h" style="--c:' + ST[s].c + '">' + ST[s].n + ' · ' + g.length + '</div>';
+      h += g.map(function (t) { return '<div class="task" data-s="' + (t.s || 0) + '" data-id="' + t.id + '"><button class="st" data-act="cyc" aria-label="Mudar estado: ' + ST[t.s || 0].n + '"><span>' + CK + '</span></button><button class="tx" data-act="edit">' + esc(t.t) + '</button></div>'; }).join('');
+    });
+    return h + (any ? '' : '<div class="empty">Nenhuma tarefa com este estado.</div>');
+  }
+
+  function openM(html) { $('sh').innerHTML = html; $('m').hidden = false; }
+  function closeM() { $('m').hidden = true; $('sh').innerHTML = ''; }
+  function editTask(t) {
+    var opts = lists().map(function (l) { return '<option value="' + l.id + '"' + (l.id === t.l ? ' selected' : '') + '>' + esc(l.n) + '</option>'; }).join('');
+    openM('<h2>Tarefa</h2><input type="text" id="et" value="' + esc(t.t) + '" autocomplete="off" aria-label="Tarefa">' +
+      '<div class="seg" id="es">' + ST.map(function (s, i) { return '<button data-s="' + i + '" style="--c:' + s.c + '" aria-pressed="' + ((t.s || 0) === i) + '">' + s.n + '</button>'; }).join('') + '</div>' +
+      '<div><label for="el">Tópico</label><select id="el">' + opts + '</select></div>' +
+      '<div class="acts"><button class="btn ghost" data-m="del" id="edel">Apagar</button><button class="btn" data-m="ok">Guardar</button></div>');
+    $('sh').dataset.id = t.id; $('sh').dataset.s = String(t.s || 0);
+  }
+  function listMenu(l) {
+    openM('<h2>Tópico</h2><input type="text" id="rl" value="' + esc(l.n) + '" autocomplete="off" aria-label="Nome do tópico">' +
+      '<div class="acts"><button class="btn ghost" data-m="dell" id="dell">Apagar tópico</button><button class="btn" data-m="okl">Guardar</button></div>');
+    $('sh').dataset.id = l.id;
+  }
+
+  document.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (e.target.id === 'addl') {
+      var v = $('nl').value.trim(); if (!v) return;
+      var l = { id: uid(), n: v, u: Date.now() }; data.lists.push(l); save(); cur = l.id; flt = -1; render(); var i = $('nt'); if (i) i.focus();
+    } else if (e.target.id === 'addt') {
+      var t = $('nt').value.trim(); if (!t) return;
+      data.tasks.push({ id: uid(), l: cur, t: t, s: 0, c: Date.now(), u: Date.now() }); touchList(cur); save(); render(); $('nt').focus();
+    }
+  });
+  function touchList(id) { var l = listById(id); if (l) l.u = Date.now(); }
+  $('main').addEventListener('click', function (e) {
+    var tc = e.target.closest('[data-l]'); if (tc) { cur = tc.dataset.l; flt = -1; render(); window.scrollTo(0, 0); return; }
+    var f = e.target.closest('[data-f]'); if (f) { flt = Number(f.dataset.f); render(); return; }
+    var row = e.target.closest('.task'), b = e.target.closest('[data-act]'); if (!row || !b) return;
+    var t = taskById(row.dataset.id); if (!t) return;
+    if (b.dataset.act === 'cyc') { t.s = ((t.s || 0) + 1) % 3; t.u = Date.now(); touchList(t.l); save(); render(); }
+    else editTask(t);
+  });
+  $('up').addEventListener('click', function () { cur = ''; render(); window.scrollTo(0, 0); });
+  $('more').addEventListener('click', function () { var l = listById(cur); if (l) listMenu(l); });
+  var askDel = false;
+  $('m').addEventListener('click', function (e) {
+    if (e.target === $('m')) { closeM(); return; }
+    var sb = e.target.closest('#es [data-s]');
+    if (sb) { $('sh').dataset.s = sb.dataset.s; [].forEach.call($('es').children, function (x) { x.setAttribute('aria-pressed', String(x === sb)); }); return; }
+    var b = e.target.closest('[data-m]'); if (!b) return;
+    var id = $('sh').dataset.id, now = Date.now();
+    if (b.dataset.m === 'ok') {
+      var t = taskById(id), v = $('et').value.trim(); if (!t) { closeM(); return; }
+      if (!v) { $('et').focus(); return; }
+      t.t = v; t.s = Number($('sh').dataset.s) || 0; t.l = $('el').value; t.u = now; touchList(t.l); save(); closeM(); render();
+    } else if (b.dataset.m === 'del') {
+      if (!askDel) { askDel = true; b.textContent = 'Apagar?'; b.classList.remove('ghost'); b.classList.add('bad'); setTimeout(function () { askDel = false; }, 4000); return; }
+      askDel = false; var t2 = taskById(id); if (t2) { t2.del = true; t2.u = now; save(); } closeM(); render();
+    } else if (b.dataset.m === 'okl') {
+      var l = listById(id), n = $('rl').value.trim(); if (!l) { closeM(); return; }
+      if (!n) { $('rl').focus(); return; } l.n = n; l.u = now; save(); closeM(); render();
+    } else if (b.dataset.m === 'dell') {
+      if (!askDel) { askDel = true; b.textContent = 'Apagar com as tarefas?'; b.classList.remove('ghost'); b.classList.add('bad'); setTimeout(function () { askDel = false; }, 4000); return; }
+      askDel = false; var l2 = listById(id);
+      if (l2) { l2.del = true; l2.u = now; tasksOf(id).forEach(function (x) { x.del = true; x.u = now; }); save(); }
+      cur = ''; closeM(); render();
+    }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('m').hidden) closeM(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && $('m').hidden) { data = load(); render(); } });
+  render();
+})();
+</script>
+</body>
+</html>

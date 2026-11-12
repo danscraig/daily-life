@@ -499,6 +499,12 @@ html.onhome body::before { display: none; }
 .ihw .fl.on { color: #A9703F; }
 .ihw .fl.on .o { fill: #BC6F63; }
 .ihw .fl.on .i { fill: #EBC08F; }
+.ihw .wg.bdw { grid-column: 1 / -1; min-height: 0; flex-direction: row; align-items: center; gap: 12px; padding: 11px 14px; }
+.ihw .bdw .t { flex: none; }
+.ihw .bdl { flex: 1; min-width: 0; text-align: right; font-size: 13.5px; font-weight: 500; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ihw .bdl.none { font-weight: 400; opacity: .7; }
+.ihw .bdl small { font-weight: 400; opacity: .75; font-size: 12px; }
+.ihw .bdl.today { color: #BC6F63; font-weight: 600; }
 .igrid { margin-top: auto; gap: 16px 6px; padding-top: 12px; }
 #home.ios.tight .hello { padding-bottom: 6px; }
 #home.ios.tight #vtag { display: none; }
@@ -598,6 +604,7 @@ function fitBox(t) {
   </nav>
 
   <section class="ihw" aria-label="Hoje">
+    <button class="wg bdw" data-open="calendar" style="animation-delay:20ms"><span class="t" style="color:#BC6F63">Aniversários</span><span class="bdl" id="ih_bd"></span></button>
     <button class="wg" data-open="calendar" style="animation-delay:40ms"><span class="t" style="color:#BC6F63">Calendário</span><span id="ih_ev"></span></button>
     <button class="wg" data-open="meals" style="animation-delay:70ms"><span class="t" style="color:#A9703F">Refeições</span><span class="mr"><small>Almoço</small><b id="ih_l"></b></span><span class="mr"><small>Lanche</small><b id="ih_s"></b></span></button>
     <button class="wg" data-open="skincare" style="animation-delay:100ms"><span class="t" style="color:#7F8060">Skincare</span><span class="night" id="ih_n"></span><span class="chips" id="ih_chips"></span></button>
@@ -614,6 +621,7 @@ function fitBox(t) {
     <button class="ic" data-open="movies" style="animation-delay:235ms"><span class="sq" style="background:linear-gradient(160deg,#9FB1AF,#5F7E7C)"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="12.5" rx="3"/><path d="M10 8.5v5l4.2-2.5z" fill="#fff"/><path d="M8 20.5h8"/></svg></span><span class="lb">Movies</span></button>
     <button class="ic" data-open="skincare" aria-label="Skincare" style="animation-delay:260ms"><span class="sq" style="background:linear-gradient(160deg,#B7B79B,#7F8060)"><svg viewBox="0 0 24 24"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V5h4v4M9 3h6"/></svg></span><span class="lb">Skincare</span></button>
     <button class="ic" data-open="meals" aria-label="Refeições" style="animation-delay:285ms"><span class="sq" style="background:linear-gradient(160deg,#DDBC9E,#A9703F)"><svg viewBox="0 0 24 24"><path d="M4 11h16v1a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg></span><span class="lb">Refeições</span></button>
+    <button class="ic" data-open="todo" aria-label="To do" style="animation-delay:335ms"><span class="sq" style="background:linear-gradient(160deg,#93A9C4,#5B7799)"><svg viewBox="0 0 24 24"><path d="M4 7l2 2 3.5-3.5"/><path d="M12 7.5h8"/><path d="M4 16l2 2 3.5-3.5"/><path d="M12 16.5h8"/></svg></span><span class="lb">To do</span></button>
     <button class="ic" data-app="notes" aria-label="Notes" style="animation-delay:310ms"><span class="sq" style="background:linear-gradient(160deg,#8B7F76,#5B5049)"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></span><span class="lb">Notes</span></button>
   </nav>
 </div>
@@ -1154,10 +1162,18 @@ function fitBox(t) {
   var PIN = '<svg class="pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z"/></svg>';
   function placeTb() {   // keep the formatting bar glued to the bottom edge, above the keyboard when it is open
     var tb = document.getElementById('ntb'); if (!tb) return;
-    var vv = window.visualViewport, kb = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0;
-    tb.style.bottom = kb + 'px'; tb.classList.toggle('kb', kb > 80);
+    var vv = window.visualViewport; if (!vv) return;
+    vmax = Math.max(vmax, vv.height + vv.offsetTop, window.innerHeight);
+    /* placed from the top edge of the visible area: this follows the keyboard on iPhone and Android alike */
+    tb.style.bottom = 'auto'; tb.style.top = Math.max(0, vv.offsetTop + vv.height - tb.offsetHeight) + 'px';
+    tb.classList.toggle('kb', vmax - (vv.height + vv.offsetTop) > 80);
   }
-  if (window.visualViewport) { visualViewport.addEventListener('resize', placeTb); visualViewport.addEventListener('scroll', placeTb); }
+  var vmax = 0, pollEnd = 0, polling = false;
+  function pollTb() {   // the keyboard slides in over ~0.5 s and the phone does not always say so: follow it frame by frame for a moment
+    pollEnd = Date.now() + 1200; if (polling) return; polling = true;
+    (function step() { placeTb(); if (Date.now() < pollEnd) requestAnimationFrame(step); else polling = false; })();
+  }
+  if (window.visualViewport) { visualViewport.addEventListener('resize', pollTb); visualViewport.addEventListener('scroll', placeTb); }
   window.addEventListener('scroll', placeTb, { passive: true });
   /* typing in any text field: the line you are writing stays in view, above the keyboard and the formatting bar (phone and computer) */
   var MIRROR = ['boxSizing', 'width', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'textTransform', 'wordSpacing', 'textIndent', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'tabSize'];
@@ -1198,8 +1214,8 @@ function fitBox(t) {
   function followCaret() { clearTimeout(caretTimer); caretTimer = setTimeout(function () { placeTb(); ensureCaret(); }, 30); }
   document.addEventListener('input', followCaret, true);
   document.addEventListener('keyup', function (e) { if (/^(Arrow|Page|Home|End|Enter)/.test(e.key)) followCaret(); }, true);
-  document.addEventListener('focusin', function () { [0, 150, 400, 800].forEach(function (ms) { setTimeout(followCaret, ms); }); });   // the keyboard takes a moment to open
-  document.addEventListener('focusout', function () { setTimeout(placeTb, 50); setTimeout(placeTb, 400); });
+  document.addEventListener('focusin', function () { pollTb(); [0, 150, 400, 800].forEach(function (ms) { setTimeout(followCaret, ms); }); });   // the keyboard takes a moment to open
+  document.addEventListener('focusout', function () { pollTb(); });
   if (window.visualViewport) visualViewport.addEventListener('resize', followCaret);
   function headActs() {   // top-right buttons: search on the main list; pin + delete inside a page or a note
     var h = document.getElementById('nhact'), it = nview === 'edit' ? noteById(ncur) : ngp ? noteById(ngp) : null, del = nview === 'edit' ? ndel : ndelp, s = '';
@@ -1442,7 +1458,27 @@ function fitBox(t) {
   nmain.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' || e.target.id !== 'nb') return;
     var cb = curBlock();
+    var li0 = listStart(); if (li0 && !li0.textContent.trim()) { leaveList(e); return; }   // Enter on an empty bullet ends the list
     if (cb && cb.classList.contains('ck') && !cb.textContent.trim()) { e.preventDefault(); cb.classList.remove('ck', 'on'); nbChanged(); }
+  });
+  /* Backspace at the very start of a bullet or numbered line takes that line out of the list (the phone keyboard does not always do it by itself) */
+  function listStart() {
+    var s = getSelection(); if (!s.rangeCount || !s.isCollapsed) return null;
+    var nb = document.getElementById('nb'), nd = s.anchorNode; if (!nb || !nd || !nb.contains(nd)) return null;
+    var el = nd.nodeType === 3 ? nd.parentNode : nd, li = el.closest ? el.closest('li') : null; if (!li || !nb.contains(li)) return null;
+    var r = document.createRange(); r.selectNodeContents(li); r.setEnd(s.anchorNode, s.anchorOffset);
+    return r.toString().replace(/​/g, '') === '' ? li : null;
+  }
+  function leaveList(e) {
+    var li = listStart(); if (!li) return false;
+    e.preventDefault();
+    document.getElementById('nb').focus();
+    document.execCommand(li.parentNode.tagName === 'OL' ? 'insertOrderedList' : 'insertUnorderedList');
+    nbChanged(); return true;
+  }
+  nmain.addEventListener('beforeinput', function (e) {
+    if (e.target.id !== 'nb' || e.inputType !== 'deleteContentBackward') return;
+    leaveList(e);
   });
   nmain.addEventListener('paste', function (e) {
     if (e.target.id !== 'nb') return;
@@ -1476,6 +1512,7 @@ function fitBox(t) {
     try { var ev = JSON.parse(localStorage.getItem(EKEY)); if (ev && Array.isArray(ev.items)) data.events = ev.items; } catch (e) {}
     try { var sk0 = JSON.parse(localStorage.getItem('skincare-v1')); if (sk0 && typeof sk0 === 'object') data.skincare = sk0; } catch (e) {}
     try { var ml0 = JSON.parse(localStorage.getItem('meals-v1')); if (ml0 && typeof ml0 === 'object') data.meals = ml0; } catch (e) {}
+    try { var td0 = JSON.parse(localStorage.getItem('todo-v1')); if (td0 && typeof td0 === 'object') data.todo = td0; } catch (e) {}
     var txt = JSON.stringify(data), name = 'daily-life-backup-' + TY + '-' + pad(TM) + '-' + pad(TD) + '.json';
     var dl = null;
     try { if (onClaude) dl = await window.claude.use('downloads'); } catch (e) {}
@@ -1549,6 +1586,13 @@ function fitBox(t) {
           sk.log = sk.log && typeof sk.log === 'object' ? sk.log : {};
           Object.keys(rs.log || {}).forEach(function (k) { var a = sk.log[k] = sk.log[k] || []; (rs.log[k] || []).forEach(function (id) { if (a.indexOf(id) === -1) a.push(id); }); });
           localStorage.setItem('skincare-v1', JSON.stringify(sk));
+        }
+        if (r.todo && typeof r.todo === 'object') {   // to do: add the topics and tasks this device does not have yet
+          var td = lsGet('todo-v1', null) || {}, rt = r.todo;
+          td.lists = Array.isArray(td.lists) ? td.lists : []; td.tasks = Array.isArray(td.tasks) ? td.tasks : [];
+          (Array.isArray(rt.lists) ? rt.lists : []).forEach(function (x) { if (x && x.id && !td.lists.some(function (y) { return y.id === x.id; })) td.lists.push(x); });
+          (Array.isArray(rt.tasks) ? rt.tasks : []).forEach(function (x) { if (x && x.id && !td.tasks.some(function (y) { return y.id === x.id; })) td.tasks.push(x); });
+          localStorage.setItem('todo-v1', JSON.stringify(td));
         }
         if (r.meals && typeof r.meals === 'object') {   // meals: add recipes and planned days this device does not have yet
           var ml = lsGet('meals-v1', null) || {}, rm = r.meals;
@@ -1687,7 +1731,7 @@ function fitBox(t) {
     if (closeTop(document)) return;
     var b = document.getElementById(!NE.hidden ? 'nback' : 'back'); if (b) b.click();
   }, { on: function () { return !homeEl.hidden ? false : !icur; }, any: function () { return homeEl.hidden && !icur && !(!jEl.hidden && view === 'day'); } });   // not on the Day tab, where sideways swipes change the day
-  var IAPPS = { calendar: 'calendar.html', movies: 'movies.html', skincare: 'skincare.html', meals: 'meals.html' };
+  var IAPPS = { calendar: 'calendar.html', movies: 'movies.html', skincare: 'skincare.html', meals: 'meals.html', todo: 'todo.html' };
   var IEASE = 'cubic-bezier(.32,.72,0,1)', iwin = document.getElementById('iwin'), ihbarEl = document.getElementById('ihbar'), frames = {}, icur = null, ibusy = false;
   var IWD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var VIVID = {'#8f7376': '#A064B0', '#bc6f63': '#E0568A', '#5f7e7c': '#F0883E', '#a9703f': '#E5B422', '#7f8060': '#4FAE6A', '#7a7352': '#2FA3A8', '#c79b6d': '#4F7FE0', '#5b5049': '#6B6488'};   // same colour set as calendar.html
@@ -1698,10 +1742,23 @@ function fitBox(t) {
     document.getElementById('ih_cw').textContent = IWD[n.getDay()].slice(0, 3); document.getElementById('ih_cd').textContent = n.getDate();
     /* calendar: today's events, short */
     var evd = lsGet(EKEY, null), evs = [];
-    if (evd && Array.isArray(evd.items)) evd.items.forEach(function (e) { if (e && !e.del && e.d && occursOn(e, k)) evs.push(e); });
+    if (evd && Array.isArray(evd.items)) evd.items.forEach(function (e) { if (e && !e.del && !e.bd && e.d && occursOn(e, k)) evs.push(e); });   // birthdays have their own widget
     evs.sort(function (a, b) { return (a.ad ? 0 : 1) - (b.ad ? 0 : 1) || String(a.st || '').localeCompare(String(b.st || '')); });
     var eh = evs.slice(0, 3).map(function (e) { var c = e.c ? (VIVID[String(e.c).toLowerCase()] || e.c) : '#A064B0'; return '<span class="ln"><i class="dot" style="background:' + esc2(c) + '"></i>' + (e.ad || !e.st ? '' : '<time>' + esc2(e.st) + '</time>') + '<b>' + esc2(e.t || '(sem título)') + '</b></span>'; }).join('');
     document.getElementById('ih_ev').innerHTML = evs.length ? eh + (evs.length > 3 ? '<span class="more">+' + (evs.length - 3) + ' mais</span>' : '') : '<span class="ln" style="opacity:.6">Sem eventos hoje</span>';
+    /* birthdays: who has one today, or else the next one */
+    var bds = evd && Array.isArray(evd.items) ? evd.items.filter(function (e) { return e && !e.del && e.bd && e.d; }) : [], bel = document.getElementById('ih_bd'), bt = [];
+    bds.forEach(function (e) { if (occursOn(e, k)) bt.push(e.t || '(sem nome)'); });
+    if (bt.length) { bel.className = 'bdl today'; bel.textContent = bt.join(', '); }
+    else {
+      var nx = null, MS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+      for (var di = 1; di <= 366 && !nx && bds.length; di++) {
+        var dd = new Date(n.getFullYear(), n.getMonth(), n.getDate() + di), ds2 = dd.getFullYear() + '-' + pad(dd.getMonth() + 1) + '-' + pad(dd.getDate()), nm = [];
+        bds.forEach(function (e) { if (occursOn(e, ds2)) nm.push(e.t || '(sem nome)'); });
+        if (nm.length) nx = { n: nm.join(', '), d: dd.getDate() + ' ' + MS[dd.getMonth()] };
+      }
+      bel.className = 'bdl none'; bel.innerHTML = 'Ninguém faz anos hoje' + (nx ? ' · <small>próximo: ' + esc2(nx.n) + ', ' + nx.d + '</small>' : '');
+    }
     /* meals */
     var ml = lsGet('meals-v1', null), mt = ml && ml.plan && ml.plan[k] ? ml.plan[k] : {};
     function mn(m) { if (!m || m.x) return ''; var r = m.r && ml && Array.isArray(ml.recipes) ? ml.recipes.filter(function (x) { return x.id === m.r; })[0] : null; return r ? r.n : (m.t || ''); }
@@ -1737,7 +1794,7 @@ function fitBox(t) {
     try {   // inside the window, the app's own "back to Daily Life" link closes the window instead of loading this page again
       var d = fr.contentDocument; if (!d || d.__wired) return; d.__wired = true;
       edgeSwipe(d, function () { if (!closeTop(d)) closeIApp(); }, { any: function () {
-        var pn = d.location.pathname; if (/\/(skincare|meals)\.html$/.test(pn)) return true;
+        var pn = d.location.pathname; if (/\/(skincare|meals|todo)\.html$/.test(pn)) return true;
         if (/\/movies\.html$/.test(pn)) {   // Movies swipes sideways between its lists: going back by swipe works on Search, and on the first list
           var sb = d.querySelector('#nav [data-view=search]'); if (sb && sb.getAttribute('aria-pressed') === 'true') return true;
           var t1 = d.querySelector('[data-tab]'); return !t1 || t1.getAttribute('aria-pressed') === 'true';
@@ -1918,7 +1975,7 @@ function fitBox(t) {
 })();
 </script>
 <script src="backup.js?v=1"></script>
-<script type="module" src="sync.js?v=12"></script>
+<script type="module" src="sync.js?v=13"></script>
 
 </body>
 </html>

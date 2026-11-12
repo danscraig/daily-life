@@ -19,8 +19,8 @@ var app = initializeApp({
 var auth = getAuth(app), db = getFirestore(app);
 
 var LS = 'year-after-year-v1', LSA = 'year-after-year-acts-v1', LSN = 'year-after-year-notes-v1', MKEY = 'movies-and-series-v1';
-var EKEY = 'daily-life-events-v1', SKEY = 'skincare-v1', MLKEY = 'meals-v1';
-var WATCH = [LS, LSA, LSN, MKEY, EKEY, SKEY, MLKEY], META = 'daily-life-sync-meta';
+var EKEY = 'daily-life-events-v1', SKEY = 'skincare-v1', MLKEY = 'meals-v1', TDKEY = 'todo-v1';
+var WATCH = [LS, LSA, LSN, MKEY, EKEY, SKEY, MLKEY, TDKEY], META = 'daily-life-sync-meta';
 /* the diary is kept as one object per month, named YYYY-MM. Anything else in there is junk (it breaks the Journal) and is dropped on every device and in the cloud. */
 var MONTH = /^\d{4}-\d{2}$/;
 function cleanStore(s) { var o = {}; if (s && typeof s === 'object') Object.keys(s).forEach(function (k) { if (MONTH.test(k)) o[k] = s[k]; }); return o; }
@@ -66,10 +66,18 @@ function unionMl(a, b) {
   return { recipes: unionList(a.recipes, b.recipes, true), plan: plan, chk: chk, extra: unionList(a.extra, b.extra, true) };
 }
 
+/* to do: { lists: [{id, n, u, del?}], tasks: [{id, l, t, s, c, u, del?}] }. Nothing is really deleted (del); the newer edit of each list or task wins. */
+function normTd(o) {
+  o = (o && typeof o === 'object') ? o : {};
+  return { lists: Array.isArray(o.lists) ? o.lists : [], tasks: Array.isArray(o.tasks) ? o.tasks : [] };
+}
+function tdEmpty(t) { return !t.lists.length && !t.tasks.length; }
+function unionTd(a, b) { a = normTd(a); b = normTd(b); return { lists: unionList(a.lists, b.lists, true), tasks: unionList(a.tasks, b.tasks, true) }; }
+
 /* local data as one object */
 function readLocal() {
   var mv = lsGet(MKEY, null), ev = lsGet(EKEY, null);
-  return { store: cleanStore(lsGet(LS, {})), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [], skincare: normSk(lsGet(SKEY, null)), meals: normMl(lsGet(MLKEY, null)) };
+  return { store: cleanStore(lsGet(LS, {})), acts: lsGet(LSA, []), notes: lsGet(LSN, []), movies: (mv && Array.isArray(mv.items)) ? mv.items : [], events: (ev && Array.isArray(ev.items)) ? ev.items : [], skincare: normSk(lsGet(SKEY, null)), meals: normMl(lsGet(MLKEY, null)), todo: normTd(lsGet(TDKEY, null)) };
 }
 function fromCloud(c, local) {
   function p(s, fb) { try { var v = JSON.parse(s); return v == null ? fb : v; } catch (e) { return fb; } }
@@ -78,8 +86,9 @@ function fromCloud(c, local) {
   if (cs && !cs.cyc && local.skincare && local.skincare.cyc) cs.cyc = local.skincare.cyc;   // a copy saved before the night cycle existed: keep this device's
   if (cs && !cs.skin && local.skincare && local.skincare.skin) cs.skin = local.skincare.skin;   // a copy saved before the skin profile existed: keep this device's
   var cm = c.meals === undefined ? null : normMl(p(c.meals, null));   // a copy saved before the meals planner existed: keep this device's
+  var ct = c.todo === undefined ? null : normTd(p(c.todo, null));   // a copy saved before the to do list existed: keep this device's
   // an empty cloud skincare never wipes what this device has: it goes up instead (see sync)
-  return { store: cleanStore(p(c.store, {})), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs, meals: (!cm || (mlEmpty(cm) && !mlEmpty(local.meals))) ? local.meals : cm };
+  return { store: cleanStore(p(c.store, {})), acts: p(c.acts, []), notes: p(c.notes, []), movies: p(c.movies, []), events: c.events === undefined ? local.events : p(c.events, []), skincare: (!cs || (skEmpty(cs) && !skEmpty(local.skincare))) ? local.skincare : cs, meals: (!cm || (mlEmpty(cm) && !mlEmpty(local.meals))) ? local.meals : cm, todo: (!ct || (tdEmpty(ct) && !tdEmpty(local.todo))) ? local.todo : ct };
 }
 /* write to localStorage without triggering a push; returns true when something changed */
 function applyLocal(d) {
@@ -97,6 +106,8 @@ function applyLocal(d) {
     if (!skEmpty(sk) || localStorage.getItem(SKEY) !== null) put(SKEY, sk);
     var ml = normMl(d.meals);
     if (!mlEmpty(ml) || localStorage.getItem(MLKEY) !== null) put(MLKEY, ml);
+    var td = normTd(d.todo);
+    if (!tdEmpty(td) || localStorage.getItem(TDKEY) !== null) put(TDKEY, td);
   } finally { applying = false; }
   return changed;
 }
@@ -124,7 +135,7 @@ function union(a, b) {
     ['t', 'm', 'a', 'l'].forEach(function (f) { Object.keys(y[f]).forEach(function (d) { if (!(d in x[f])) x[f][d] = y[f][d]; }); });
     store[k] = x;
   });
-  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true), events: unionList(a.events, b.events, true), skincare: unionSk(a.skincare, b.skincare), meals: unionMl(a.meals, b.meals) };
+  return { store: store, acts: unionList(a.acts, b.acts), notes: unionList(a.notes, b.notes, true), movies: unionList(a.movies, b.movies, true), events: unionList(a.events, b.events, true), skincare: unionSk(a.skincare, b.skincare), meals: unionMl(a.meals, b.meals), todo: unionTd(a.todo, b.todo) };
 }
 function unionSk(a, b) {   // steps and products by id (the newer edit wins); a day's ticks are joined
   a = normSk(a); b = normSk(b);
@@ -147,8 +158,8 @@ function unionSk(a, b) {   // steps and products by id (the newer edit wins); a 
 function ref() { return doc(db, 'users', user.uid); }
 async function push(d) {
   var r0 = rev, at = Date.now();
-  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies), events: JSON.stringify(d.events), skincare: JSON.stringify(normSk(d.skincare)), meals: JSON.stringify(normMl(d.meals)) };
-  if (body.store.length + body.acts.length + body.notes.length + body.movies.length + body.events.length + body.skincare.length + body.meals.length > 900000) throw new Error('too big');
+  var body = { updated: at, store: JSON.stringify(d.store), acts: JSON.stringify(d.acts), notes: JSON.stringify(d.notes), movies: JSON.stringify(d.movies), events: JSON.stringify(d.events), skincare: JSON.stringify(normSk(d.skincare)), meals: JSON.stringify(normMl(d.meals)), todo: JSON.stringify(normTd(d.todo)) };
+  if (body.store.length + body.acts.length + body.notes.length + body.movies.length + body.events.length + body.skincare.length + body.meals.length + body.todo.length > 900000) throw new Error('too big');
   await setDoc(ref(), body, { merge: true });   // merge: a page that does not know a newer field yet never wipes it
   setMeta({ uid: user.uid, at: at, dirty: rev !== r0 });
 }
@@ -169,10 +180,12 @@ async function sync(reloadOk) {
   var skUp = !!cloud && !skEmpty(merged.skincare) && (!cloudSk || skEmpty(cloudSk));   // skincare written on a device before it was synced
   var cloudMl = null; try { cloudMl = cloud && cloud.meals !== undefined ? normMl(JSON.parse(cloud.meals)) : null; } catch (e) {}
   var mlUp = !!cloud && !mlEmpty(merged.meals) && (!cloudMl || mlEmpty(cloudMl));   // meals written on a device before they were synced
+  var cloudTd = null; try { cloudTd = cloud && cloud.todo !== undefined ? normTd(JSON.parse(cloud.todo)) : null; } catch (e) {}
+  var tdUp = !!cloud && !tdEmpty(merged.todo) && (!cloudTd || tdEmpty(cloudTd));   // to do items written on a device before they were synced
   var junkLocal = Object.keys(lsGet(LS, {}) || {}).some(function (k) { return !MONTH.test(k); }), junkCloud = false;   // invalid months: clean this device and the cloud
   try { junkCloud = !!cloud && Object.keys(JSON.parse(cloud.store) || {}).some(function (k) { return !MONTH.test(k); }); } catch (e) {}
   if (junkLocal || junkCloud) changed = applyLocal(merged) || changed;
-  var needPush = !cloud || meta.uid !== user.uid || meta.dirty || skUp || mlUp || junkLocal || junkCloud;
+  var needPush = !cloud || meta.uid !== user.uid || meta.dirty || skUp || mlUp || tdUp || junkLocal || junkCloud;
   if (needPush) await push(merged);
   if (changed && reloadOk && !sessionStorage.getItem('daily-life-synced')) { try { sessionStorage.setItem('daily-life-synced', '1'); } catch (e) {} location.reload(); }
 }

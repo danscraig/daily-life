@@ -4,7 +4,7 @@
    - kind r: a copy just before a copy is restored (the last 3 are kept)
    Plain script, no network: it works offline and does not depend on the cloud sync. */
 (function () {
-  var KEYS = ['year-after-year-v1', 'year-after-year-acts-v1', 'year-after-year-notes-v1', 'movies-and-series-v1', 'daily-life-events-v1', 'skincare-v1', 'meals-v1'];
+  var KEYS = ['year-after-year-v1', 'year-after-year-acts-v1', 'year-after-year-notes-v1', 'movies-and-series-v1', 'daily-life-events-v1', 'skincare-v1', 'meals-v1', 'todo-v1'];
   var META = 'daily-life-sync-meta', DBN = 'daily-life-backups', ST = 's', KEEP = { d: 14, p: 3, r: 3 };
 
   function dbOpen(cb) {
