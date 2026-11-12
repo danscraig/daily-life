@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
-<meta name="theme-color" content="#EEF1F5">
+<meta name="theme-color" content="#E3E2DF">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
 <style>
 :root {
   --bg: #EEF1F5; --paper: #FCFDFE; --ink: #2F3640; --mute: #727C89; --line: #DDE2E9; --accent: #5B7799; --accent-ink: #FFFFFF;
-  --s0: #A9B2BE; --s1: #E0A23B; --s2: #3E9D6A;
+  --s0: #A9A8A4; --s1: #B79B52; --s2: #6C9378;
   --shadow: rgba(47, 54, 64, .14); --bad: #C0392B; --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
   --ease-out: cubic-bezier(.23, 1, .32, 1);
   color-scheme: light;
@@ -86,6 +86,7 @@ input::placeholder { color: var(--mute); }
 @keyframes sheetin { from { opacity: 0; transform: translateY(12px) scale(.98); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
+<link rel="stylesheet" href="glass.css?v=1">
 </head>
 <body>
 <div class="wrap">
@@ -107,7 +108,7 @@ input::placeholder { color: var(--mute); }
   var LS = 'todo-v1';
   /* { lists: [{id, n, u, del?}], tasks: [{id, l (list id), t, s (0 por começar, 1 ongoing, 2 done), u, del?}] }
      Nothing is really deleted (del), and every edit carries u: that is what lets the cloud merge two devices without losing anything. */
-  var ST = [{ n: 'Por começar', c: '#A9B2BE' }, { n: 'Ongoing', c: '#E0A23B' }, { n: 'Done', c: '#3E9D6A' }];
+  var ST = [{ n: 'Por começar', c: '#A9A8A4' }, { n: 'Ongoing', c: '#B79B52' }, { n: 'Done', c: '#6C9378' }];
   var data = load(), cur = '', flt = -1;   // flt: -1 all, 0..2 one status
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -135,7 +136,7 @@ input::placeholder { color: var(--mute); }
   }
   function topicsHTML() {
     var ls = lists().sort(function (a, b) { return (b.u || 0) - (a.u || 0); });
-    var h = '<form class="addrow" id="addl"><input type="text" id="nl" placeholder="Novo tópico (ex.: Casa, Trabalho, Viagem)" autocomplete="off" enterkeyhint="done"><button class="btn" aria-label="Adicionar tópico">+</button></form>';
+    var h = '<form class="addrow" id="addl"><input type="text" id="nl" placeholder="Novo tópico" autocomplete="off" enterkeyhint="done"><button class="btn" aria-label="Adicionar tópico">+</button></form>';
     if (!ls.length) return h + '<div class="empty">Ainda não tens tópicos.<br>Cria um para começares a listar tarefas.</div>';
     return h + ls.map(function (l) {
       var ts = tasksOf(l.id), c = [0, 0, 0]; ts.forEach(function (t) { c[t.s || 0]++; });
