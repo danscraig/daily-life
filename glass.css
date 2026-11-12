@@ -99,3 +99,8 @@ html[data-ac] { --accent: #2F2F2E; }
 /* floating panels and menus sit over other content: solid, so the words under them never show through */
 .setpanel, .acpanel, .nmenu, .nsortm, #home.ios .acpanel { background: linear-gradient(180deg, #F8F7F5, #ECEBE8); box-shadow: var(--rim), 0 24px 44px -20px rgba(40, 40, 38, .6); border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .ntb { background: linear-gradient(180deg, #F8F7F5, #ECEBE8); box-shadow: var(--rim), 0 -12px 30px -16px rgba(40, 40, 38, .5); }
+
+/* use the whole screen: the app windows run down to the bottom edge (each page keeps its own bar clear of the home indicator), and the page itself has no extra bottom padding */
+:root { padding-bottom: 0; }
+.iwin iframe { height: calc(100% - env(safe-area-inset-top, 0px)); }
+.ihbar { display: none; }
