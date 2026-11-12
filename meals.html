@@ -686,7 +686,7 @@ function fitBox(t) {
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
   document.addEventListener('change', function (e) { var t = e.target; if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; } });
-  window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); if ($('m').hidden) render(); } });
+  window.addEventListener('storage', function (e) { if (e.key === LS) { var y = window.scrollY; data = load(); if ($('m').hidden) render(); window.scrollTo(0, y); } });
   var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
   if (sh) {
     var shared = sh[1]; try { shared = decodeURIComponent(shared); } catch (e) {}

@@ -1289,7 +1289,7 @@ function fitBox(t) {
   $('sm').addEventListener('click', function (e) { if (e.target === $('sm')) { pk = null; $('sm').hidden = true; } });
   $('vm').addEventListener('click', function (e) { if (e.target === $('vm')) { pvR = null; $('vm').hidden = true; } });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('cm').hidden) $('cm').hidden = true; else if (!$('pm').hidden) closeProd(); else if (!$('vm').hidden) { pvR = null; $('vm').hidden = true; } } });
-  window.addEventListener('storage', function (e) { if (e.key === LS) { data = load(); render(); } else if (e.key === EKEY) render(); });
+  window.addEventListener('storage', function (e) { var y = window.scrollY; if (e.key === LS) { data = load(); render(); } else if (e.key === EKEY) render(); else return; window.scrollTo(0, y); });   // a change made in another window must not throw the page back to the top
   try { var rawNow = JSON.parse(localStorage.getItem(LS)); if (!rawNow || !rawNow.cyc) save(); } catch (e) {}   // store the night cycle once, so the home card can show tonight's night
   /* once the morning routine is all ticked, opening the app again lands on the night routine (and a new day starts on the morning) */
   var openK = ds(new Date());

@@ -1870,6 +1870,7 @@ function fitBox(t) {
      Opening an app puts one entry in the history; Back uses it up and the page puts a new one while there is still somewhere to go back to. */
   (function () {
     if (/[?&]embed=1/.test(location.search)) return;
+    try { history.scrollRestoration = 'manual'; } catch (e) {}   // going back must never restore an old scroll position
     var pushed = false, skip = false;
     function deep() { return !!icur || homeEl.hidden; }
     function goBack() {
