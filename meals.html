@@ -116,6 +116,17 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .dsum .dmc span { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: var(--mute); gap: 2px; }
 .dsum .dmc b { font-size: 17px; font-weight: 600; color: var(--ink); }
 .dsum .dmc i { font-style: normal; font-size: 11px; font-weight: 400; color: var(--mute); margin-left: 1px; }
+.goalchip { display: block; width: 100%; margin: 0 0 10px; padding: 10px 14px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line); font-size: 13px; color: var(--mute); text-align: left; }
+.dg { display: flex; flex-direction: column; gap: 8px; margin: 0 0 8px; }
+.dgr .dgt { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--mute); }
+.dgr .dgt b { color: var(--ink); font-weight: 600; margin-left: auto; }
+.dgr .dgt em { font-style: normal; min-width: 92px; text-align: right; }
+.dgr .dgb { height: 6px; border-radius: 999px; background: rgba(0,0,0,.07); margin-top: 4px; overflow: hidden; }
+.dgr .dgb i { display: block; height: 100%; border-radius: 999px; background: #B9A36B; }
+.dgr.ok .dgb i { background: #5E9B72; }
+.dgr.ok .dgt em { color: #3F7D56; font-weight: 600; }
+.dgr.over .dgb i { background: #C9805A; }
+.dgr.over .dgt em { color: #B3603A; font-weight: 600; }
 .dmiss { margin: -4px 4px 8px; font-size: 12px; color: var(--mute); }
 .mac { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .mac label { margin: 0 0 3px 2px; font-size: 11px; }
@@ -312,31 +323,9 @@ function fitBox(t) {
   function setSlot(k, s, v) {
     var d = data.plan[k] || (data.plan[k] = {}), old = d[s], now = Date.now();
     d[s] = v ? Object.assign({}, v, { u: now }) : { x: 1, u: now };   // a cleared meal is kept as a marker so the clearing syncs
-    if (k.charAt(0) === 'T') followTpl(+k.slice(1), s, old, v, now);
     save();
   }
-  /* the usual week ("semana-tipo"): stored as plan['T0'..'T6'] (Monday = T0), so it syncs like any other day.
-     Every week from this one on starts as a copy of it; the empty slots are filled in when the week is shown. */
-  var TK = ['T0', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6'], TD = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-  function tplHas() { return TK.some(function (k) { return SL.some(function (s) { return !!slotOf(k, s[0]); }); }); }
   function mealSig(m) { return m && !m.x ? entries(m).map(function (e) { return (e.r || '') + '|' + (e.t || ''); }).join('||') : ''; }
-  function fillFromTpl(mon) {   // slots with nothing in them get the usual meal; a slot you cleared by hand stays empty
-    if (ds(mon) < ds(monday(new Date())) || !tplHas()) return;
-    var n = 0, now = Date.now();
-    for (var i = 0; i < 7; i++) SL.forEach(function (s) {
-      var k = ds(addDays(mon, i)), t = slotOf(TK[i], s[0]), cur = data.plan[k] && data.plan[k][s[0]];
-      if (t && !cur) { var d = data.plan[k] || (data.plan[k] = {}); d[s[0]] = Object.assign(JSON.parse(JSON.stringify(t)), { u: now }); n++; }
-    });
-    if (n) save();
-  }
-  function followTpl(i, s, old, v, now) {   // weeks that still hold the old usual meal take the new one
-    var from = ds(monday(new Date()));
-    Object.keys(data.plan).forEach(function (key) {
-      if (!/^\d{4}-\d\d-\d\d$/.test(key) || key < from || (new Date(key + 'T12:00:00').getDay() + 6) % 7 !== i) return;
-      var cur = data.plan[key][s]; if (!cur || mealSig(cur) !== mealSig(old)) return;
-      data.plan[key][s] = v ? Object.assign({}, v, { u: now }) : { x: 1, u: now };
-    });
-  }
   function strip(m) { var o = JSON.parse(JSON.stringify(m)); delete o.u; return o; }
   function swapDays(a, b) {
     if (a === b) return;
@@ -347,7 +336,7 @@ function fitBox(t) {
     });
   }
   function openSwap() {
-    var o = pmode === 'tpl' ? TK.map(function (k, i) { return [k, TD[i]]; }) : [0, 1, 2, 3, 4, 5, 6].map(function (i) { var d = addDays(wk, i); return [ds(d), DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]]; });
+    var o = [0, 1, 2, 3, 4, 5, 6].map(function (i) { var d = addDays(wk, i); return [ds(d), DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]]; });
     var opt = function (sel) { return o.map(function (x, i) { return '<option value="' + x[0] + '"' + (i === sel ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join(''); };
     $('sh').innerHTML = '<h2>Trocar dois dias</h2><div class="two"><div><label for="sw1">Dia</label><select id="sw1">' + opt(0) + '</select></div><div><label for="sw2">Com</label><select id="sw2">' + opt(1) + '</select></div></div>' +
       '<button class="btn full" data-swgo="1">Trocar</button><button class="btn ghost full" data-close="1">Fechar</button>';
@@ -356,19 +345,17 @@ function fitBox(t) {
 
   /* plan */
   function renderWeek() {
-    fillFromTpl(wk);
     var days = [0, 1, 2, 3, 4, 5, 6].map(function (i) { return addDays(wk, i); }), end = days[6], now = ds(new Date());
     var sameMonth = wk.getMonth() === end.getMonth();
     var cur = ds(monday(new Date())) === ds(wk);
     var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Semana anterior">‹</button><div class="lab">' + wk.getDate() + (sameMonth ? '' : ' ' + MON[wk.getMonth()]) + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + (cur ? 'Esta semana' : '<button data-wk="0" class="pill">Voltar a esta semana</button>') + '</small></div><button class="r" data-wk="1" aria-label="Semana seguinte">›</button></div>';
+    var gl = goal(); h += '<button type="button" class="goalchip" data-goal="1">Meta diária: ' + gl.kcal + ' kcal · ' + gl.p + ' g proteína</button>';
     h += days.map(function (d) {
       var k = ds(d);
       return '<div class="day' + (k === now ? ' today' : '') + '"><h3>' + DAYS[d.getDay()] + '<span>' + d.getDate() + ' ' + MON[d.getMonth()] + '</span></h3>' + dayMacros(k) + SL.map(function (s) { return slotBtn(k, s); }).join('') + '</div>';
     }).join('');
     h += '<button class="btn ghost full" data-swap="1">Trocar dois dias</button>';
-    h += '<button class="btn ghost full" style="margin-top:8px" data-usetpl="1">' + (ask === 'usetpl' ? 'Toca de novo para substituir a semana-tipo' : 'Usar esta semana como semana-tipo') + '</button>';
-    if (tplHas()) h += '<button class="btn ghost full" style="margin-top:8px" data-reset="1">' + (ask === 'reset' ? 'Toca de novo para substituir esta semana' : 'Repor esta semana com a semana-tipo') + '</button>';
-    h += '<button class="btn ghost full" style="margin-top:8px" data-copy="1">Copiar a semana anterior para os espaços vazios</button>';
+    h += '<button class="btn ghost full" style="margin-top:8px" data-copy="1">Copiar a semana anterior</button>';
     return h;
   }
   function entThumb(e) {   // the recipe's picture (or its coloured initial) at the end of the row
@@ -379,18 +366,10 @@ function fitBox(t) {
     var es = entries(slotOf(k, s[0]));
     return '<button class="slot" data-k="' + k + '" data-s="' + s[0] + '"><span class="sl">' + s[1] + '</span>' + (es.length ? '<span class="st">' + es.map(function (e) { var t = entText(e) || ['', '']; return '<span class="se"><span class="sx">' + esc(t[0]) + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') + '</span>' + entThumb(e) + '</span>'; }).join('') + '</span>' : '<span class="st empty">+ adicionar</span>') + '</button>';
   }
-  function renderPlan() {
-    var seg = '<div class="chipsrow pmseg"><button data-pm="week" aria-pressed="' + (pmode === 'week') + '">Semana</button><button data-pm="tpl" aria-pressed="' + (pmode === 'tpl') + '">Semana-tipo</button></div>', h;
-    if (pmode === 'tpl') {
-      h = '<p class="dm" style="margin:0 4px 10px">Repete-se todas as semanas.</p>' +
-        TK.map(function (k, i) { return '<div class="day"><h3>' + TD[i] + '</h3>' + SL.map(function (s) { return slotBtn(k, s); }).join('') + '</div>'; }).join('') +
-        '<button class="btn ghost full" data-swap="1">Trocar dois dias</button>';
-    } else h = renderWeek();
-    $('v-plan').innerHTML = seg + h;
-  }
+  function renderPlan() { $('v-plan').innerHTML = renderWeek(); }
   function openSlot(k, s) {
     slotCtx = { k: k, s: s, q: '', all: false };
-    var tpl = k.charAt(0) === 'T', d = tpl ? null : new Date(k + 'T12:00:00'), lab = (tpl ? TD[+k.slice(1)] : DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]) + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
+    var d = new Date(k + 'T12:00:00'), lab = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
     var cur = slotOf(k, s), es = entries(cur);
     $('sh').innerHTML = '<h2>' + esc(lab) + '</h2>' + (es.length ? '<div class="scur">' + es.map(function (e, i) { var t = entText(e) || ['', '']; return '<div class="srow"><span>' + esc(t[0]) + '</span><button type="button" class="x" data-srm="' + i + '" aria-label="Tirar">✕</button></div>'; }).join('') + '</div><label>Acrescentar</label>' : '') + '<input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="chipsrow" id="sfil"></div><div class="pick" id="spick"></div>' +
       '<div><label for="sfree">Ou escreve</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value=""><button class="btn" data-sfree="1">Usar</button></div></div>' +
@@ -621,7 +600,7 @@ function fitBox(t) {
     if (!x) { x = { id: id, k: 'have', wk: wkey, key: key }; data.extra.push(x); }
     x.s = st || ''; x.a = amt || ''; x.del = !st; x.u = Date.now(); save();
   }
-  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link' && x.k !== 'qty' && x.k !== 'meal' && x.k !== 'nut' && x.k !== 'lib' && x.k !== 'have'; }); }
+  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link' && x.k !== 'qty' && x.k !== 'meal' && x.k !== 'nut' && x.k !== 'lib' && x.k !== 'have' && x.k !== 'goal'; }); }
   /* ---- macros: what each ingredient is worth per 100 g is remembered (data.extra, k:'nut') after you pick the matching food once ---- */
   var FDC = 'https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&dataType=' + encodeURIComponent('Foundation,SR Legacy') + '&pageSize=10&query=';
   var TR = [['pimenta de caiena', 'cayenne pepper'], ['pimenta preta', 'black pepper'], ['coxas de frango', 'chicken thigh raw'], ['coxa de frango', 'chicken thigh raw'], ['peito de frango', 'chicken breast raw'], ['batata-doce', 'sweet potato raw'], ['batata doce', 'sweet potato raw'],
@@ -892,10 +871,28 @@ function fitBox(t) {
     });
     return out;
   }
+  function goal() { var g = data.extra.filter(function (x) { return x.k === 'goal' && !x.del; })[0]; return { kcal: g && g.kcal > 0 ? g.kcal : 1200, p: g && g.p > 0 ? g.p : 85 }; }
+  function goalRows(t) {   // is the day on target? calories: within 5% of the goal; protein: reached
+    var g = goal(), kc = Math.round(t.k), pr = Math.round(t.p), st, tx;
+    var kr = kc / g.kcal; if (kr < 0.95) { st = 'low'; tx = 'faltam ' + (g.kcal - kc) + ' kcal'; } else if (kr <= 1.05) { st = 'ok'; tx = 'meta atingida'; } else { st = 'over'; tx = kc - g.kcal + ' kcal acima'; }
+    var pr0 = pr >= g.p ? ['ok', 'meta atingida'] : ['low', 'faltam ' + (g.p - pr) + ' g'];
+    var row = function (lab, val, tgt, unit, cls, txt, pct) { return '<div class="dgr ' + cls + '"><div class="dgt"><span>' + lab + '</span><b>' + val + ' / ' + tgt + ' ' + unit + '</b><em>' + txt + '</em></div><div class="dgb"><i style="width:' + Math.min(100, Math.round(pct * 100)) + '%"></i></div></div>'; };
+    return '<div class="dg">' + row('Calorias', kc, g.kcal, 'kcal', st, tx, kr) + row('Proteína', pr, g.p, 'g', pr0[0], pr0[1], pr / g.p) + '</div>';
+  }
+  function openGoal() {
+    var g = goal();
+    $('sh').innerHTML = '<h2>Meta diária</h2><p style="margin:0;color:var(--mute);font-size:14px">Conta as refeições do plano (pequeno-almoço, almoço e lanche).</p><div class="two"><div><label for="gk">Calorias (kcal)</label><input type="text" inputmode="numeric" id="gk" value="' + g.kcal + '"></div><div><label for="gp">Proteína (g)</label><input type="text" inputmode="numeric" id="gp" value="' + g.p + '"></div></div><button class="btn full" data-gsave="1">Guardar</button><button class="btn ghost full" data-close="1">Cancelar</button>';
+    $('m').hidden = false;
+  }
+  function saveGoal() {
+    var k = num($('gk').value), p = num($('gp').value); if (!(k > 0)) { $('gk').focus(); return; } if (!(p > 0)) { $('gp').focus(); return; }
+    var x = data.extra.filter(function (y) { return y.id === 'goal'; })[0]; if (!x) { x = { id: 'goal', k: 'goal' }; data.extra.push(x); }
+    x.kcal = Math.round(k); x.p = Math.round(p); x.del = false; x.u = Date.now(); save(); closeM(); render();
+  }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
     SL.forEach(function (s) { entries(slotOf(k, s[0])).forEach(function (e) { var r = e.r ? recById(e.r) : null, mm = r ? macOf(r) : null; if (mm) { n++; t.k += mm.k; t.p += mm.p; t.c += mm.c; t.f += mm.f; } else miss++; }); });
-    return n ? '<div class="dsum"><div class="dk"><b>' + Math.round(t.k) + '</b><span>kcal</span></div><div class="dmc"><span><b>' + Math.round(t.p) + '<i>g</i></b>proteína</span><span><b>' + Math.round(t.c) + '<i>g</i></b>hidratos</span><span><b>' + Math.round(t.f) + '<i>g</i></b>gordura</span></div></div>' + (miss ? '<p class="dmiss">+ ' + miss + (miss === 1 ? ' refeição sem macros' : ' refeições sem macros') + '</p>' : '') : '';
+    return n ? '<div class="dsum"><div class="dk"><b>' + Math.round(t.k) + '</b><span>kcal</span></div><div class="dmc"><span><b>' + Math.round(t.p) + '<i>g</i></b>proteína</span><span><b>' + Math.round(t.c) + '<i>g</i></b>hidratos</span><span><b>' + Math.round(t.f) + '<i>g</i></b>gordura</span></div></div>' + goalRows(t) + (miss ? '<p class="dmiss">+ ' + miss + (miss === 1 ? ' refeição sem macros' : ' refeições sem macros') + '</p>' : '') : '';
   }
   function savedMeals(q) { return data.extra.filter(function (x) { return x.k === 'meal' && !x.del && (!q || nrm(x.t).indexOf(q) !== -1); }).sort(function (a, b) { return a.t.localeCompare(b.t); }); }
   function saveMeal(t) {   // remember what was typed, so next time it is one tap away
@@ -949,7 +946,6 @@ function fitBox(t) {
     lmsg = r === 'ok' ? 'Link guardado ✓' : 'Esse link já está na lista'; i.value = ''; openLinks();
   }
   function renderShop() {
-    fillFromTpl(swk);
     var wkey = ds(swk), items = weekItems(swk), end = addDays(swk, 6), hm = haveMap(wkey), qm = qtyMap(wkey);
     var thisMon = ds(monday(new Date())), nextMon = ds(addDays(monday(new Date()), 7)), sub = wkey === nextMon ? 'Próxima semana' : wkey === thisMon ? 'Esta semana · conta com o teu stock' : '<button data-wk="0" class="pill">Ir para a próxima semana</button>';
     var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Semana anterior">‹</button><div class="lab">' + swk.getDate() + ' ' + MON[swk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + sub + '</small></div><button class="r" data-wk="1" aria-label="Semana seguinte">›</button></div>';
@@ -985,11 +981,10 @@ function fitBox(t) {
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
     var D = b.dataset, wasAsk = ask; ask = '';
-    if (D.pm) { pmode = D.pm; render(); }
+    if (D.goal) openGoal();
+    else if (D.gsave) saveGoal();
     else if (D.swap) openSwap();
     else if (D.swgo) { swapDays($('sw1').value, $('sw2').value); closeM(); render(); }
-    else if (D.usetpl) { if (wasAsk !== 'usetpl') { ask = 'usetpl'; renderPlan(); } else { for (var ti = 0; ti < 7; ti++) SL.forEach(function (s) { var m = slotOf(ds(addDays(wk, ti)), s[0]); setSlot(TK[ti], s[0], m ? strip(m) : null); }); pmode = 'tpl'; render(); } }
-    else if (D.reset) { if (wasAsk !== 'reset') { ask = 'reset'; renderPlan(); } else { for (var ri = 0; ri < 7; ri++) SL.forEach(function (s) { var t = slotOf(TK[ri], s[0]); setSlot(ds(addDays(wk, ri)), s[0], t ? strip(t) : null); }); render(); } }
     else if (D.hv) { var hw = ds(swk), hit = weekItems(swk).filter(function (i) { return i.key === D.hv; })[0]; if (hit) { var hq = qtyMap(hw)[hit.key] || fmtAmt(hit), hr = haveMap(hw)[hit.key], same = hr && hr.a === hq && hr.s === D.hs; setHave(hw, hit.key, same ? '' : D.hs, hq); renderShop(); } }
     else if (D.v) { view = D.v; lmsg = ''; render(); window.scrollTo(0, 0); }
     else if (D.wk !== undefined) { if (view === 'shop') swk = D.wk === '0' ? addDays(monday(new Date()), 7) : addDays(swk, 7 * Number(D.wk)); else wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
