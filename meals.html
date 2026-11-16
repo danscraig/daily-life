@@ -98,7 +98,7 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .sheet h2 { margin: 0; font-size: 20px; }
 .sheet label { font-size: 13px; color: var(--mute); display: block; margin: 0 0 4px 4px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pick { max-height: 34vh; overflow-y: auto; }
+.pick { max-height: 46vh; overflow-y: auto; padding: 2px 2px 14px; margin: -2px -2px 0; }
 .dm { margin: -2px 0 6px; font-size: 12px; color: var(--mute); }
 .mac { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .mac label { margin: 0 0 3px 2px; font-size: 11px; }
@@ -359,7 +359,7 @@ function fitBox(t) {
   }
   function fillPick() {
     var q = nrm(slotCtx.q), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Sem receitas ainda.') + '</div>';
+    $('spick').innerHTML = l.length ? '<div class="rgrid">' + l.map(function (r) { return recCard(r, 'data-rpick'); }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Sem receitas ainda.') + '</div>';
     $('spick').innerHTML = $('spick').innerHTML + savedHTML(q);
   }
   function copyWeek() {
@@ -416,11 +416,14 @@ function fitBox(t) {
     return { k: Math.round(t.k / sv), p: r1(t.p / sv), c: r1(t.c / sv), f: r1(t.f / sv), ok: ok, tot: tot };
   }
   function recTone(n) { var T = ['#E3D9E8', '#D9E3DD', '#E8DFD3', '#D8E1EA', '#EBD9D9', '#E2E4D2'], h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997; return T[h % T.length]; }
+  function recCard(r, attr) {
+    return '<button class="rc" ' + attr + '="' + r.id + '">' + (pcache[r.id] ? '<img class="rimg" alt="" src="' + esc(pcache[r.id]) + '">' : '<span class="rin" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span>') + '<b>' + esc(r.n) + '</b><span class="rmeta"><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small><span class="rmac">' + (function () { var m = macOf(r); return m ? '<b>' + m.k + ' kcal</b><small>P ' + m.p + ' · H ' + m.c + ' · G ' + m.f + ' g</small>' : '<small>Sem macros</small>'; })() + '</span></span></button>';
+  }
   function renderRec() {
     var q = nrm(rq), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
     var h = '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas"><button class="btn full" data-newr="1">+ Nova receita</button></div>';
     h += l.length ? '<div class="rgrid">' + l.map(function (r) {
-      return '<button class="rc" data-er="' + r.id + '">' + (pcache[r.id] ? '<img class="rimg" alt="" src="' + esc(pcache[r.id]) + '">' : '<span class="rin" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span>') + '<b>' + esc(r.n) + '</b><span class="rmeta"><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small><span class="rmac">' + (function () { var m = macOf(r); return m ? '<b>' + m.k + ' kcal</b><small>P ' + m.p + ' · H ' + m.c + ' · G ' + m.f + ' g</small>' : '<small>Sem macros</small>'; })() + '</span></span></button>';
+      return recCard(r, 'data-er');
     }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Sem receitas ainda.') + '</div>';
     $('v-rec').innerHTML = h; updLinkBadge();
   }
