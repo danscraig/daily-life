@@ -29,7 +29,7 @@ button:active { transform: scale(.97); }
 .wrap { max-width: 640px; margin: 0 auto; }
 .top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
 .top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; flex: 1; }
-.ibtn { width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: grid; place-items: center; font-size: 22px; color: var(--ink); text-decoration: none; line-height: 1; }
+.ibtn { position: relative; width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: grid; place-items: center; font-size: 22px; color: var(--ink); text-decoration: none; line-height: 1; }
 input[type="text"], input[type="search"], input[type="number"], textarea { width: 100%; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
 textarea { resize: none; overflow: hidden; min-height: 110px; }
 input::placeholder, textarea::placeholder { color: var(--mute); }
@@ -54,6 +54,15 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .slot .st.empty { color: var(--mute); }
 .slot .st small { display: block; color: var(--mute); font-size: 12px; }
 .card { display: block; width: 100%; text-align: left; background: var(--paper); border-radius: 18px; padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.bdg { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font: 600 11px/18px var(--font); text-align: center; }
+.rgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .rgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.rc { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 156px; padding: 14px; border-radius: 24px; text-align: left; background: var(--glass); box-shadow: var(--rim), var(--drop); }
+.rc .rin { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 400 21px/1 var(--serif); color: var(--ink); }
+.rc b { font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.rc .rmeta { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+.rc small { color: var(--mute); font-size: 12.5px; }
+.rc .rk { font-size: 12.5px; color: var(--ink); }
 .card b { font-weight: 600; display: block; }
 .card small { color: var(--mute); font-size: 13px; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -187,7 +196,7 @@ function fitBox(t) {
   <header class="top">
     <a class="ibtn" href="index.html" aria-label="Voltar ao Daily Life">‹</a>
     <h1>Refeições</h1>
-    <!-- INFO-ICON --><button class="ibtn" data-info="1" aria-label="Como partilhar um link aqui" style="font: 600 18px/1 var(--font)">i</button><!-- /INFO-ICON -->
+    <button class="ibtn" data-links="1" aria-label="Adicionar o link de uma receita"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span class="bdg" id="lkn" hidden></span></button>
   </header>
   <section id="v-plan"></section>
   <section id="v-rec" hidden></section>
@@ -348,15 +357,14 @@ function fitBox(t) {
 
   /* recipes */
   function allTags() { var o = BASE_TAGS.slice(); recs().forEach(function (r) { (r.tags || []).forEach(function (t) { if (o.indexOf(t) === -1) o.push(t); }); }); return o; }
+  function recTone(n) { var T = ['#E3D9E8', '#D9E3DD', '#E8DFD3', '#D8E1EA', '#EBD9D9', '#E2E4D2'], h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997; return T[h % T.length]; }
   function renderRec() {
-    var q = nrm(rq), l = recs().filter(function (r) { return (!rtag || (r.tags || []).indexOf(rtag) !== -1) && (!q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1); }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    var keepL = $('lin') ? $('lin').value : '';
-    var h = linksHTML() + '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas">' +
-      (recs().length ? '<div class="chipsrow">' + allTags().map(function (t) { return '<button type="button" data-rt="' + esc(t) + '" aria-pressed="' + (rtag === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
-      '<button class="btn full" data-newr="1">+ Nova receita</button></div>';
-    h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'As tuas receitas ficam aqui.<br>Toca em “Nova receita” para acrescentar a primeira.') + '</div>';
-    $('v-rec').innerHTML = h; if (keepL && $('lin')) $('lin').value = keepL;
-    var s = $('rq'); if (s && document.activeElement === document.body && rq) { /* keep typing focus handled by input event */ }
+    var q = nrm(rq), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    var h = '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas"><button class="btn full" data-newr="1">+ Nova receita</button></div>';
+    h += l.length ? '<div class="rgrid">' + l.map(function (r) {
+      return '<button class="rc" data-er="' + r.id + '"><span class="rin" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span><b>' + esc(r.n) + '</b><span class="rmeta"><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small>' + (r.mac && r.mac.k != null ? '<span class="rk">≈ ' + r.mac.k + ' kcal / porção</span>' : '') + '</span></button>';
+    }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'As tuas receitas ficam aqui.<br>Toca em “Nova receita” para acrescentar a primeira.') + '</div>';
+    $('v-rec').innerHTML = h; updLinkBadge();
   }
   function openView(id) {
     var r = recById(id); if (!r) return;
@@ -404,8 +412,7 @@ function fitBox(t) {
     edItems = r ? (Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine)) : [];
     edItems.forEach(function (x) { if (!String(x.q).trim() && x.u !== 'a gosto') x.u = ''; });
     $('sh').innerHTML = '<h2>' + (r ? 'Editar receita' : 'Nova receita') + '</h2><div><label for="rn">Nome</label><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="ex.: frango com arroz"></div>' +
-      '<div class="two"><div><label for="rm">Minutos</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div><label for="rt">Acrescentar etiqueta</label><input type="text" id="rt" placeholder="ex.: crianças"></div></div>' +
-      '<div class="chipsrow" id="rtags"></div>' +
+      '<div class="two" style="grid-template-columns:1fr"><div><label for="rm">Minutos</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div hidden><input type="text" id="rt"><div id="rtags"></div></div></div>' +
       '<div><label>Ingredientes</label><div class="irows" id="irows"></div><button type="button" class="btn ghost full" data-iadd="1">+ Acrescentar ingrediente</button></div>' +
       '<div><label for="rs">Passos</label><textarea id="rs">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
       '<div><label>Macros por porção (escreve-os, ou usa “Macros” na receita para os calcular)</label><div class="mac"><div><label for="rmk">kcal</label><input type="text" inputmode="decimal" id="rmk" value="' + esc(r && r.mac && r.mac.k != null ? r.mac.k : '') + '"></div><div><label for="rmp">proteína</label><input type="text" inputmode="decimal" id="rmp" value="' + esc(r && r.mac && r.mac.p != null ? r.mac.p : '') + '"></div><div><label for="rmc">hidratos</label><input type="text" inputmode="decimal" id="rmc" value="' + esc(r && r.mac && r.mac.c != null ? r.mac.c : '') + '"></div><div><label for="rmf">gordura</label><input type="text" inputmode="decimal" id="rmf" value="' + esc(r && r.mac && r.mac.f != null ? r.mac.f : '') + '"></div></div></div><div><label for="rsv">Porções</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div>' +
@@ -704,10 +711,14 @@ function fitBox(t) {
   }
   function links() { return data.extra.filter(function (x) { return x.k === 'link' && !x.del; }); }   // recipe links waiting to be turned into recipes
   function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
-  function linksHTML() {
+  function updLinkBadge() { var n = links().length, b = $('lkn'); if (b) { b.hidden = !n; b.textContent = n; } }
+  function openLinks() {
     var L = links();
-    return '<form class="addrow" id="lf" autocomplete="off"><input type="text" id="lin" inputmode="url" placeholder="Cola o link de uma receita" aria-label="Link da receita"><button class="btn" type="submit">+</button></form>' + (lmsg ? '<p style="margin:-4px 4px 10px;font-size:13px;color:var(--mute)">' + esc(lmsg) + '</p>' : '') +
-      (L.length ? '<div class="h" style="margin-top:0">À espera de virar receita (' + L.length + ')</div>' + L.map(function (x) { return '<div class="item"><span class="tx">' + esc(hostOf(x.url)) + '<small>' + esc(x.url) + '</small></span><button class="x" data-ld="' + x.id + '" aria-label="Remover link">✕</button></div>'; }).join('') + '<div style="height:10px"></div>' : '');
+    $('sh').innerHTML = '<h2>Adicionar link de uma receita</h2><p style="margin:0;color:var(--mute);font-size:14px">Cola o link (TikTok, Instagram, um site…). Fica aqui à espera de ser transformado em receita.</p>' +
+      '<form class="addrow" id="lf" autocomplete="off"><input type="text" id="lin" inputmode="url" placeholder="Cola o link de uma receita" aria-label="Link da receita"><button class="btn" type="submit">+</button></form>' + (lmsg ? '<p style="margin:-4px 4px 4px;font-size:13px;color:var(--mute)">' + esc(lmsg) + '</p>' : '') +
+      (L.length ? '<div class="h" style="margin:4px 0 0">À espera de virar receita (' + L.length + ')</div>' + L.map(function (x) { return '<div class="item"><span class="tx">' + esc(hostOf(x.url)) + '<small>' + esc(x.url) + '</small></span><button class="x" data-ld="' + x.id + '" aria-label="Remover link">✕</button></div>'; }).join('') : '') +
+      '<button class="btn ghost full" data-close="1">Fechar</button>';
+    $('m').hidden = false; updLinkBadge(); setTimeout(function () { var i = $('lin'); if (i) i.focus(); }, 60);
   }
   var lmsg = '';
   function saveLink(v) {   // 'ok' | 'dup' | 'bad'
@@ -721,7 +732,7 @@ function fitBox(t) {
   function addLink() {
     var i = $('lin'), r = saveLink(i.value); if (!i.value.trim()) return;
     if (r === 'bad') { i.focus(); return; }
-    lmsg = r === 'ok' ? 'Link guardado ✓' : 'Esse link já está na lista'; i.value = ''; renderRec();
+    lmsg = r === 'ok' ? 'Link guardado ✓' : 'Esse link já está na lista'; i.value = ''; openLinks();
   }
   function renderShop() {
     fillFromTpl(swk);
@@ -749,23 +760,6 @@ function fitBox(t) {
     $('v-shop').innerHTML = h;
   }
 
-  /* INFO-ICON: how to send a TikTok link straight into the app (iPhone Shortcut) */
-  var SHARE_URL = 'https://danscraig.github.io/daily-life/meals.html#add=';
-  function openInfo() {
-    $('sh').innerHTML = '<h2>Partilhar o link de uma receita para a app</h2>' +
-      '<p style="margin:0;color:var(--mute);font-size:14px">No iPhone, cria um Atalho uma só vez. Depois, no TikTok toca em Partilhar e escolhe “Receita”: o link fica na lista “À espera de virar receita”.</p>' +
-      '<ol style="margin:0;padding-left:20px;font-size:15px;display:flex;flex-direction:column;gap:6px">' +
-      '<li>Abre a app <b>Shortcuts</b> (Atalhos), toca em <b>+</b> e chama-lhe <b>Receita</b>.</li>' +
-      '<li>Toca em <b>(i)</b> e liga <b>Show in Share Sheet</b>. Deixa só <b>URLs</b> e <b>Text</b> como tipos aceites.</li>' +
-      '<li>Acrescenta a ação <b>Text</b>. Cola o endereço em baixo e, logo a seguir, insere a variável <b>Shortcut Input</b>.</li>' +
-      '<li>Acrescenta a ação <b>Open URLs</b> com esse Text como entrada.</li>' +
-      '<li>No TikTok: <b>Share</b> (Partilhar) e depois <b>Receita</b>.</li></ol>' +
-      '<div><label>Endereço para colar na ação Text</label><input type="text" id="shareurl" readonly value="' + esc(SHARE_URL) + '"></div>' +
-      '<button class="btn full" data-copyurl="1">Copiar o endereço</button>' +
-      '<p style="margin:0;color:var(--mute);font-size:13px">O link abre no Safari, por isso o Safari tem de ter a sessão iniciada na conta da nuvem (ecrã inicial do Daily Life, Cloud sync) para chegar aos outros aparelhos. Depois pede ao Claude para transformar os links à espera em receitas.</p>' +
-      '<button class="btn ghost full" data-close="1">Fechar</button>';
-    $('m').hidden = false;
-  }
   function closeM() { $('m').hidden = true; slotCtx = null; edId = null; }
   function render() {
     $('v-plan').hidden = view !== 'plan'; $('v-rec').hidden = view !== 'rec'; $('v-shop').hidden = view !== 'shop'; $('v-food').hidden = view !== 'food';
@@ -791,12 +785,12 @@ function fitBox(t) {
     else if (D.mpick && slotCtx) { var sm = data.extra.filter(function (y) { return y.id === D.mpick; })[0]; if (sm) { sm.u = Date.now(); setSlot(slotCtx.k, slotCtx.s, { t: sm.t }); closeM(); render(); } }
     else if (D.mdel && slotCtx) { var dm = data.extra.filter(function (y) { return y.id === D.mdel; })[0]; if (dm) { dm.del = true; dm.u = Date.now(); save(); fillPick(); } }
     else if (D.copy) copyWeek();
-    else if (D.info) openInfo();
-    else if (D.copyurl) { var cu = $('shareurl'); cu.focus(); cu.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (x) {} if (!ok && navigator.clipboard) { navigator.clipboard.writeText(SHARE_URL).catch(function () {}); ok = true; } b.textContent = ok ? 'Copiado ✓' : 'Seleciona o endereço e copia-o'; }
+    else if (D.links) { lmsg = ''; openLinks(); }
+
     else if (D.close) closeM();
     else if (D.rt !== undefined) { rtag = rtag === D.rt ? '' : D.rt; renderRec(); }
     else if (D.newr) openRec('');
-    else if (D.ld) { var lk = data.extra.filter(function (y) { return y.id === D.ld; })[0]; if (lk) { lk.del = true; lk.u = Date.now(); save(); renderRec(); } }
+    else if (D.ld) { var lk = data.extra.filter(function (y) { return y.id === D.ld; })[0]; if (lk) { lk.del = true; lk.u = Date.now(); save(); openLinks(); } }
     else if (D.er) openView(D.er);
     else if (D.edit) openRec(D.edit);
     else if (D.macros) openMacros(D.macros);
@@ -861,6 +855,8 @@ function fitBox(t) {
   }
   migrateLib();
   render();
+  updLinkBadge();
+  if (sh) openLinks();
 })();
 </script>
 </body>
