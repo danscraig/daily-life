@@ -99,7 +99,13 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .mtot { background: var(--paper); border-radius: 18px; padding: 12px 14px; font-size: 15px; }
 .mtot b { font-weight: 600; }
 .mtot small { display: block; color: var(--mute); font-size: 12px; margin-top: 4px; }
-.mres button { display: block; width: 100%; text-align: left; background: var(--paper); border-radius: 14px; padding: 10px 12px; margin-bottom: 6px; }
+.th { width: 44px; height: 44px; flex: none; border-radius: 10px; background: rgba(0,0,0,.05); object-fit: contain; display: inline-block; }
+.ipr .th { width: 28px; height: 28px; border-radius: 8px; }
+.mres .tx, .lrow .tx { flex: 1; min-width: 0; }
+.lrow { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 14px; padding: 8px 10px; margin-bottom: 6px; }
+.lrow small { display: block; color: var(--mute); font-size: 12px; }
+.lrow .x { flex: none; width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
+.mres button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--paper); border-radius: 14px; padding: 10px 12px; margin-bottom: 6px; }
 .mres small { display: block; color: var(--mute); font-size: 12px; }
 .irows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 .irow { display: grid; grid-template-columns: 1fr 1.3fr 36px; gap: 6px; background: var(--paper); border-radius: 16px; padding: 8px; }
@@ -329,7 +335,7 @@ function fitBox(t) {
     var keepL = $('lin') ? $('lin').value : '';
     var h = linksHTML() + '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas">' +
       (recs().length ? '<div class="chipsrow">' + allTags().map(function (t) { return '<button type="button" data-rt="' + esc(t) + '" aria-pressed="' + (rtag === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
-      '<button class="btn full" data-newr="1">+ Nova receita</button></div>';
+      '<button class="btn full" data-newr="1">+ Nova receita</button><button class="btn ghost full" data-lopen="1">Biblioteca de alimentos (' + libs().length + ')</button></div>';
     h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'As tuas receitas ficam aqui.<br>Toca em “Nova receita” para acrescentar a primeira.') + '</div>';
     $('v-rec').innerHTML = h; if (keepL && $('lin')) $('lin').value = keepL;
     var s = $('rq'); if (s && document.activeElement === document.body && rq) { /* keep typing focus handled by input event */ }
@@ -363,7 +369,7 @@ function fitBox(t) {
   function prodLine(it, i) {   // the supermarket product chosen for this ingredient (remembered by ingredient name)
     var n = String(it.n || '').trim(); if (it.u === 'a gosto') return '';
     var rec = n ? nutRec(nutKey(n)) : null;
-    return rec ? '<span>🛒 ' + esc(rec.d || 'manual') + ' · ' + rec.kcal + ' kcal/100 g</span><button type="button" data-ifind="' + i + '">mudar</button>' : '<span>Sem produto escolhido</span><button type="button" data-ifind="' + i + '">Escolher produto</button>';
+    return rec ? (rec.img ? thumb(rec.img) : '') + '<span>🛒 ' + esc(rec.d || 'manual') + ' · ' + rec.kcal + ' kcal/100 g</span><button type="button" data-ifind="' + i + '">mudar</button>' : '<span>Sem produto escolhido</span><button type="button" data-ifind="' + i + '">Escolher produto</button>';
   }
   function snapDraft() {
     readRows(); var v = function (id) { var e = $(id); return e ? e.value : ''; };
@@ -447,7 +453,7 @@ function fitBox(t) {
     if (!x) { x = { id: id, k: 'have', wk: wkey, key: key }; data.extra.push(x); }
     x.s = st || ''; x.a = amt || ''; x.del = !st; x.u = Date.now(); save();
   }
-  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link' && x.k !== 'qty' && x.k !== 'meal' && x.k !== 'nut' && x.k !== 'have'; }); }
+  function extras() { return data.extra.filter(function (x) { return !x.del && x.k !== 'link' && x.k !== 'qty' && x.k !== 'meal' && x.k !== 'nut' && x.k !== 'lib' && x.k !== 'have'; }); }
   /* ---- macros: what each ingredient is worth per 100 g is remembered (data.extra, k:'nut') after you pick the matching food once ---- */
   var FDC = 'https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&dataType=' + encodeURIComponent('Foundation,SR Legacy') + '&pageSize=10&query=';
   var TR = [['pimenta de caiena', 'cayenne pepper'], ['pimenta preta', 'black pepper'], ['coxas de frango', 'chicken thigh raw'], ['coxa de frango', 'chicken thigh raw'], ['peito de frango', 'chicken breast raw'], ['batata-doce', 'sweet potato raw'], ['batata doce', 'sweet potato raw'],
@@ -462,7 +468,7 @@ function fitBox(t) {
   function saveNut(key, name, o) {
     var id = 'nu|' + key, x = data.extra.filter(function (y) { return y.id === id; })[0];
     if (!x) { x = { id: id, k: 'nut' }; data.extra.push(x); }
-    x.n = name; x.d = o.d; x.kcal = o.kcal; x.p = o.p; x.c = o.c; x.f = o.f; x.del = false; x.u = Date.now(); if (o.g > 0) x.g = o.g; save(); return x;
+    x.n = name; x.d = o.d; x.kcal = o.kcal; x.p = o.p; x.c = o.c; x.f = o.f; x.del = false; x.u = Date.now(); if (o.g > 0) x.g = o.g; x.img = o.img || ''; addLib({ d: o.d === 'escrito por ti' || !o.d ? name : o.d, kcal: o.kcal, p: o.p, c: o.c, f: o.f, img: o.img }); return x;
   }
   function num(v) { var n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; }
   function r1(n) { return Math.round(n * 10) / 10; }
@@ -478,15 +484,16 @@ function fitBox(t) {
   }
   function offSearch(q) {   // Open Food Facts: products sold in Portugal (supermarket own brands included), values per 100 g
     var ac = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 12000), code = /^d{8,14}$/.test(q.trim());
-    var url = code ? 'https://world.openfoodfacts.org/api/v2/product/' + q.trim() + '.json?fields=product_name,brands,nutriments'
-      : 'https://pt.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&tagtype_0=countries&tag_contains_0=contains&tag_0=portugal&fields=product_name,brands,nutriments&search_terms=' + encodeURIComponent(q);
+    var url = code ? 'https://world.openfoodfacts.org/api/v2/product/' + q.trim() + '.json?fields=product_name,brands,nutriments,image_front_small_url,image_small_url'
+      : 'https://pt.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&tagtype_0=countries&tag_contains_0=contains&tag_0=portugal&fields=product_name,brands,nutriments,image_front_small_url,image_small_url&search_terms=' + encodeURIComponent(q);
     return fetch(url, ac ? { signal: ac.signal } : {}).then(function (r) { clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
       var l = code ? (j.product ? [j.product] : []) : (j.products || []);
       return l.map(function (pr) {
         var n = pr.nutriments || {}, k = n['energy-kcal_100g'], p = n.proteins_100g, c = n.carbohydrates_100g, fa = n.fat_100g;
         if (k == null && n['energy-kj_100g'] != null) k = n['energy-kj_100g'] / 4.184;
         if (k == null || p == null || c == null || fa == null || !pr.product_name) return null;   // incomplete label: skip
-        return { d: pr.product_name + (pr.brands ? ' (' + String(pr.brands).split(',')[0].trim() + ')' : ''), kcal: Math.round(k), p: r1(p), c: r1(c), f: r1(fa) };
+        var im = pr.image_front_small_url || pr.image_small_url || ''; if (im.indexOf('https://') !== 0) im = '';
+        return { img: im, d: pr.product_name + (pr.brands ? ' (' + String(pr.brands).split(',')[0].trim() + ')' : ''), kcal: Math.round(k), p: r1(p), c: r1(c), f: r1(fa) };
       }).filter(Boolean);
     });
   }
@@ -534,16 +541,16 @@ function fitBox(t) {
     var t = mxTotals(), el = $('mtot'); if (!el) return;
     el.innerHTML = '<b>Por porção</b> (' + t.s + ' ' + (t.s === 1 ? 'porção' : 'porções') + '): ' + t.k + ' kcal · P ' + t.p + ' g · H ' + t.c + ' g · G ' + t.f + ' g<small>Contados ' + t.ok + ' de ' + t.tot + ' ingredientes.' + (t.miss.length ? ' Em falta: ' + esc(t.miss.join(', ')) + '.' : '') + '</small>';
   }
-  function openMatch(key, name, draft) {
-    mctx = { key: key, name: name, res: [], src: 'off', draft: draft || null };
-    $('sh').innerHTML = '<h2>Que alimento é “' + esc(name) + '”?</h2><p style="margin:0;color:var(--mute);font-size:14px">Escolhe o mais parecido. Podes pesquisar pelo nome ou pelo código de barras.</p>' +
+  function openMatch(key, name, draft, lib) {
+    mctx = { key: key, name: name, res: [], src: 'off', draft: draft || null, lib: !!lib };
+    $('sh').innerHTML = '<h2>' + (lib ? 'Adicionar à biblioteca' : 'Que alimento é “' + esc(name) + '”?') + '</h2><p style="margin:0;color:var(--mute);font-size:14px">Escolhe o mais parecido. Podes pesquisar pelo nome ou pelo código de barras.</p>' +
       '<div class="chipsrow" id="msrc"></div>' +
       '<div class="addrow" style="margin:0"><input type="text" id="mq" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
-      '<details id="mmanual" hidden open><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Escreve tu os valores por 100 g (do rótulo)</summary><div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
+      '<details id="mmanual" hidden open><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Escreve tu os valores por 100 g (do rótulo)</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
       '<button class="btn ghost full" data-mbackm="1">Voltar</button>';
-    paintSrc(); mSearch();
+    paintSrc(); if (name) mSearch(); else $('mres').innerHTML = '<p style="color:var(--mute)">Escreve o nome do produto, ou o código de barras, e carrega em Pesquisar.</p>';
   }
-  function mDone() { if (mctx && mctx.draft) { var d = mctx.draft; mctx = null; openRec(d.id, d); } else renderMacros(); }   // back to where the choice was started
+  function mDone() { if (mctx && mctx.lib) { mctx = null; openLib(); return; } if (mctx && mctx.draft) { var d = mctx.draft; mctx = null; openRec(d.id, d); } else renderMacros(); }   // back to where the choice was started
   function paintSrc() {
     $('msrc').innerHTML = [['off', 'Produtos em Portugal'], ['usda', 'Alimentos genéricos (USDA, inglês)']].map(function (x) { return '<button type="button" data-msrc="' + x[0] + '" aria-pressed="' + (mctx.src === x[0]) + '">' + x[1] + '</button>'; }).join('');
   }
@@ -551,9 +558,48 @@ function fitBox(t) {
     var q = $('mq').value.trim(); if (!q) return; $('mmanual').hidden = true; $('mres').innerHTML = '<p style="color:var(--mute)">A pesquisar…</p>';
     var src = mctx.src;
     (src === 'off' ? offSearch(q) : fdcSearch(q)).then(function (res) {
-      if (!mctx || mctx.src !== src) return; mctx.res = res; $('mmanual').hidden = res.length > 0; $('mres').innerHTML = res.length ? res.map(function (x, i) { return '<button data-mxpick="' + i + '">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></button>'; }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra' + (src === 'usda' ? ' (em inglês)' : ', a outra fonte acima') + ', ou escreve tu os valores.</p>';
+      if (!mctx || mctx.src !== src) return; mctx.res = res; $('mmanual').hidden = res.length > 0; $('mres').innerHTML = res.length ? res.map(function (x, i) { return resRow(x, 'data-mxpick="' + i + '"'); }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra' + (src === 'usda' ? ' (em inglês)' : ', a outra fonte acima') + ', ou escreve tu os valores.</p>';
     }).catch(function () { if (!mctx || mctx.src !== src) return; $('mmanual').hidden = false; $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui chegar à base de dados de alimentos (sem ligação, ou demasiadas pesquisas por agora). Tenta daqui a pouco, ou escreve tu os valores.</p>'; });
   }
+  /* ---- food library: products you use often (data.extra, k:'lib'); recipes pick from here, the database is only used to fill it ---- */
+  function thumb(img) { return img ? '<img class="th" src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : '<span class="th"></span>'; }
+  function resRow(x, attr) { return '<button type="button" ' + attr + '>' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span></button>'; }
+  function libs() { return data.extra.filter(function (x) { return x.k === 'lib' && !x.del; }).sort(function (a, b) { return a.d.localeCompare(b.d); }); }
+  function addLib(o) {
+    var id = 'lib|' + nrm(o.d), x = data.extra.filter(function (y) { return y.id === id; })[0];
+    if (!x) { x = { id: id, k: 'lib' }; data.extra.push(x); }
+    x.d = o.d; x.kcal = o.kcal; x.p = o.p; x.c = o.c; x.f = o.f; x.img = o.img || ''; x.del = false; x.u = Date.now(); save(); return x;
+  }
+  function migrateLib() {   // foods already chosen for ingredients also go into the library (once; a food you remove stays removed)
+    var ch = false;
+    data.extra.slice().forEach(function (x) {
+      if (x.k !== 'nut' || x.del) return;
+      var d = x.d && x.d !== 'escrito por ti' ? x.d : x.n; if (!d) return;
+      var id = 'lib|' + nrm(d); if (data.extra.some(function (y) { return y.id === id; })) return;
+      data.extra.push({ id: id, k: 'lib', d: d, kcal: x.kcal, p: x.p, c: x.c, f: x.f, img: x.img || '', del: false, u: Date.now() }); ch = true;
+    });
+    if (ch) save();
+  }
+  var pctx = null, lq = '';
+  function fillLib() {
+    var q = nrm(lq), all = libs(), l = all.filter(function (x) { return !q || nrm(x.d).indexOf(q) !== -1; });
+    $('lres').innerHTML = l.length ? l.map(function (x) { return '<div class="lrow">' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar da biblioteca">✕</button></div>'; }).join('') : '<p style="color:var(--mute)">' + (all.length ? 'Nada com esse nome.' : 'A biblioteca ainda está vazia. Acrescenta os produtos que usas.') + '</p>';
+  }
+  function openLib() {
+    pctx = null; mctx = null;
+    $('sh').innerHTML = '<h2>Biblioteca de alimentos</h2><p style="margin:0;color:var(--mute);font-size:14px">Os produtos que usas normalmente. Nas receitas escolhes daqui.</p><input type="search" id="lq" placeholder="Pesquisar na biblioteca" value="' + esc(lq) + '" autocomplete="off" aria-label="Pesquisar na biblioteca"><div id="lres"></div><button class="btn full" data-ladd="1">+ Adicionar à biblioteca</button><button class="btn ghost full" data-close="1">Fechar</button>';
+    fillLib(); $('m').hidden = false;
+  }
+  function fillPickLib() {
+    var q = nrm(pctx.q), all = libs(), l = all.filter(function (x) { return !q || nrm(x.d).indexOf(q) !== -1; });
+    $('pres').innerHTML = l.length ? l.map(function (x) { return resRow(x, 'data-ppick="' + esc(x.id) + '"'); }).join('') : '<p style="color:var(--mute)">' + (all.length ? 'Nada na biblioteca com esse nome.' : 'A tua biblioteca ainda está vazia.') + '</p>';
+  }
+  function openPick(key, name, draft) {
+    pctx = { key: key, name: name, draft: draft || null, q: name };
+    $('sh').innerHTML = '<h2>Que produto é “' + esc(name) + '”?</h2><p style="margin:0;color:var(--mute);font-size:14px">Escolhe da tua biblioteca.</p><input type="search" id="pq" value="' + esc(name) + '" placeholder="Pesquisar na biblioteca" autocomplete="off" aria-label="Pesquisar na biblioteca"><div class="mres" id="pres"></div><button class="btn ghost full" data-pdb="1">Não está aqui? Procurar na base de dados</button><button class="btn ghost full" data-pback="1">Voltar</button>';
+    fillPickLib(); $('m').hidden = false;
+  }
+  function pDone() { var d = pctx && pctx.draft; pctx = null; if (d) openRec(d.id, d); else renderMacros(); }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
     SL.forEach(function (s) { var m = slotOf(k, s[0]); if (!m) return; var r = m.r ? recById(m.r) : null; if (r && r.mac && r.mac.k != null) { n++; t.k += r.mac.k; t.p += r.mac.p; t.c += r.mac.c; t.f += r.mac.f; } else miss++; });
@@ -683,13 +729,19 @@ function fitBox(t) {
     else if (D.edit) openRec(D.edit);
     else if (D.macros) openMacros(D.macros);
     else if (D.mclose) { if (mx) openView(mx.id); }
-    else if (D.mfind) openMatch(D.mfind, D.mn);
-    else if (D.ifind !== undefined) { var dr = snapDraft(), it0 = dr.items[Number(D.ifind)]; if (it0 && String(it0.n).trim()) openMatch(nutKey(it0.n), it0.n.trim(), dr); else { var nn = document.querySelectorAll('#irows .in-n')[Number(D.ifind)]; if (nn) nn.focus(); } }
+    else if (D.mfind) openPick(D.mfind, D.mn);
+    else if (D.ppick && pctx) { var li = data.extra.filter(function (y) { return y.id === D.ppick; })[0]; if (li) { saveNut(pctx.key, pctx.name, li); pDone(); } }
+    else if (D.pdb && pctx) { var pc = pctx; pctx = null; openMatch(pc.key, pc.name, pc.draft); }
+    else if (D.pback) pDone();
+    else if (D.lopen) openLib();
+    else if (D.ladd) openMatch('', '', null, true);
+    else if (D.ldel) { var ld = data.extra.filter(function (y) { return y.id === D.ldel; })[0]; if (ld) { ld.del = true; ld.u = Date.now(); save(); fillLib(); } }
+    else if (D.ifind !== undefined) { var dr = snapDraft(), it0 = dr.items[Number(D.ifind)]; if (it0 && String(it0.n).trim()) openPick(nutKey(it0.n), it0.n.trim(), dr); else { var nn = document.querySelectorAll('#irows .in-n')[Number(D.ifind)]; if (nn) nn.focus(); } }
     else if (D.msearch) mSearch();
     else if (D.msrc && mctx) { mctx.src = D.msrc; $('mq').value = D.msrc === 'usda' ? enGuess(mctx.name) : mctx.name; paintSrc(); mSearch(); }
     else if (D.mbackm) mDone();
-    else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { saveNut(mctx.key, mctx.name, pk); mDone(); } }
-    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value); if (mk1 != null) { saveNut(mctx.key, mctx.name, { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }); mDone(); } else $('mmk').focus(); }
+    else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { if (mctx.lib) addLib(pk); else saveNut(mctx.key, mctx.name, pk); mDone(); } }
+    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mv = { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }; if (mctx.lib) { mv.d = mnm; addLib(mv); } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
     else if (D.msave && mx) { var t = mxTotals(), rr = recById(mx.id); if (rr) { rr.serv = t.s; rr.mac = { k: t.k, p: t.p, c: t.c, f: t.f, cov: t.ok + '/' + t.tot }; rr.u = Date.now(); save(); } openView(mx.id); render(); }
     else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var ns = document.querySelectorAll('#irows .in-n'); if (ns.length) ns[ns.length - 1].focus(); }
     else if (D.irm !== undefined) { readRows(); edItems.splice(Number(D.irm), 1); paintRows(); }
@@ -705,6 +757,8 @@ function fitBox(t) {
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.id === 'lq') { lq = t.value; fillLib(); return; }
+    if (t.id === 'pq' && pctx) { pctx.q = t.value; fillPickLib(); return; }
     if (t.id === 'mserv' && mx) { mx.serv = t.value; paintTot(); return; }
     if (t.dataset && t.dataset.mg && mx) { var rc = nutRec(t.dataset.mg), gv = num(t.value); if (rc && gv > 0) { rc.g = gv; rc.u = Date.now(); save(); paintTot(); } return; }
     if (t.id === 'rq') { rq = t.value; var pos = t.selectionStart; renderRec(); var n = $('rq'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} }
@@ -716,6 +770,7 @@ function fitBox(t) {
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !$('m').hidden) closeM();
+    if (e.key === 'Enter' && e.target.id === 'mq') { e.preventDefault(); mSearch(); }
     if (e.key === 'Enter' && e.target.id === 'rt') { e.preventDefault(); addTag(); }
     if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('in-n')) { e.preventDefault(); var ab = document.querySelector('[data-iadd]'); if (ab) ab.click(); }
     if (e.key === 'Enter' && e.target.id === 'sfree') { e.preventDefault(); var b = document.querySelector('[data-sfree]'); if (b) b.click(); }
@@ -731,6 +786,7 @@ function fitBox(t) {
     var sr = saveLink(shared); view = 'rec';
     lmsg = sr === 'ok' ? 'Link guardado ✓' : sr === 'dup' ? 'Esse link já está na lista' : 'Isso não parece um link';
   }
+  migrateLib();
   render();
 })();
 </script>
