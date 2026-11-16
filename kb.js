@@ -49,3 +49,19 @@
     try { t.focus(); } catch (x) {}
   }, true);
 })();
+
+/* Windows (sheets, pop-ups) only close on a deliberate click outside: if the mouse went down inside the window (for instance to select text)
+   and was released over the dimmed area, that click is swallowed. Works for every page that closes a window by clicking its backdrop. */
+(function () {
+  var downT = null;
+  function down(e) { downT = e.target; }
+  document.addEventListener('mousedown', down, true);
+  document.addEventListener('touchstart', down, true);
+  document.addEventListener('keydown', function () { downT = null; }, true);
+  document.addEventListener('click', function (e) {
+    var t = e.target, d = downT; downT = null;
+    if (!d || !t || t === d || !t.contains || !t.contains(d)) return;   // the press started on a descendant of the element that got the click
+    var pos = ''; try { pos = getComputedStyle(t).position; } catch (x) {}
+    if (pos === 'fixed' || /(^|\s)(modal|pop|scrim|overlay|backdrop)(\s|$)/.test(t.className || '')) { e.stopImmediatePropagation(); e.preventDefault(); }
+  }, true);
+})();
