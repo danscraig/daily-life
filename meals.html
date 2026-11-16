@@ -463,6 +463,20 @@ function fitBox(t) {
       });
     });
   }
+  function offSearch(q) {   // Open Food Facts: products sold in Portugal (supermarket own brands included), values per 100 g
+    var ac = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 12000), code = /^d{8,14}$/.test(q.trim());
+    var url = code ? 'https://world.openfoodfacts.org/api/v2/product/' + q.trim() + '.json?fields=product_name,brands,nutriments'
+      : 'https://pt.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&tagtype_0=countries&tag_contains_0=contains&tag_0=portugal&fields=product_name,brands,nutriments&search_terms=' + encodeURIComponent(q);
+    return fetch(url, ac ? { signal: ac.signal } : {}).then(function (r) { clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
+      var l = code ? (j.product ? [j.product] : []) : (j.products || []);
+      return l.map(function (pr) {
+        var n = pr.nutriments || {}, k = n['energy-kcal_100g'], p = n.proteins_100g, c = n.carbohydrates_100g, fa = n.fat_100g;
+        if (k == null && n['energy-kj_100g'] != null) k = n['energy-kj_100g'] / 4.184;
+        if (k == null || p == null || c == null || fa == null || !pr.product_name) return null;   // incomplete label: skip
+        return { d: pr.product_name + (pr.brands ? ' (' + String(pr.brands).split(',')[0].trim() + ')' : ''), kcal: Math.round(k), p: r1(p), c: r1(c), f: r1(fa) };
+      }).filter(Boolean);
+    });
+  }
   var UMAP = { 'g': 1, 'kg': 1000, 'ml': 1, 'l': 1000, 'c. sopa': 15, 'c. chá': 5, 'chávena': 240, 'pitada': 0.4 };   // millilitres counted as grams
   function recItems(r) { return Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine); }
   function gramsOf(it, rec) {
@@ -508,18 +522,23 @@ function fitBox(t) {
     el.innerHTML = '<b>Por porção</b> (' + t.s + ' ' + (t.s === 1 ? 'porção' : 'porções') + '): ' + t.k + ' kcal · P ' + t.p + ' g · H ' + t.c + ' g · G ' + t.f + ' g<small>Contados ' + t.ok + ' de ' + t.tot + ' ingredientes.' + (t.miss.length ? ' Em falta: ' + esc(t.miss.join(', ')) + '.' : '') + '</small>';
   }
   function openMatch(key, name) {
-    mctx = { key: key, name: name, res: [] };
-    $('sh').innerHTML = '<h2>Que alimento é “' + esc(name) + '”?</h2><p style="margin:0;color:var(--mute);font-size:14px">A pesquisar na base de dados de alimentos da USDA (em inglês). Escolhe o mais parecido.</p>' +
-      '<div class="addrow" style="margin:0"><input type="text" id="mq" value="' + esc(enGuess(name)) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
+    mctx = { key: key, name: name, res: [], src: 'off' };
+    $('sh').innerHTML = '<h2>Que alimento é “' + esc(name) + '”?</h2><p style="margin:0;color:var(--mute);font-size:14px">Escolhe o mais parecido. Podes pesquisar pelo nome ou pelo código de barras.</p>' +
+      '<div class="chipsrow" id="msrc"></div>' +
+      '<div class="addrow" style="margin:0"><input type="text" id="mq" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
       '<details><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Ou escreve tu os valores por 100 g</summary><div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
       '<button class="btn ghost full" data-mbackm="1">Voltar</button>';
-    mSearch();
+    paintSrc(); mSearch();
+  }
+  function paintSrc() {
+    $('msrc').innerHTML = [['off', 'Produtos em Portugal'], ['usda', 'Alimentos genéricos (USDA, inglês)']].map(function (x) { return '<button type="button" data-msrc="' + x[0] + '" aria-pressed="' + (mctx.src === x[0]) + '">' + x[1] + '</button>'; }).join('');
   }
   function mSearch() {
     var q = $('mq').value.trim(); if (!q) return; $('mres').innerHTML = '<p style="color:var(--mute)">A pesquisar…</p>';
-    fdcSearch(q).then(function (res) {
-      mctx.res = res; $('mres').innerHTML = res.length ? res.map(function (x, i) { return '<button data-mxpick="' + i + '">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></button>'; }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra (em inglês), ou escreve tu os valores.</p>';
-    }).catch(function () { $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui chegar à base de dados de alimentos (sem ligação, ou demasiadas pesquisas por agora). Tenta daqui a pouco, ou escreve tu os valores.</p>'; });
+    var src = mctx.src;
+    (src === 'off' ? offSearch(q) : fdcSearch(q)).then(function (res) {
+      if (mctx.src !== src) return; mctx.res = res; $('mres').innerHTML = res.length ? res.map(function (x, i) { return '<button data-mxpick="' + i + '">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></button>'; }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra' + (src === 'usda' ? ' (em inglês)' : ', a outra fonte acima') + ', ou escreve tu os valores.</p>';
+    }).catch(function () { if (mctx.src !== src) return; $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui chegar à base de dados de alimentos (sem ligação, ou demasiadas pesquisas por agora). Tenta daqui a pouco, ou escreve tu os valores.</p>'; });
   }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
@@ -652,6 +671,7 @@ function fitBox(t) {
     else if (D.mclose) { if (mx) openView(mx.id); }
     else if (D.mfind) openMatch(D.mfind, D.mn);
     else if (D.msearch) mSearch();
+    else if (D.msrc && mctx) { mctx.src = D.msrc; $('mq').value = D.msrc === 'usda' ? enGuess(mctx.name) : mctx.name; paintSrc(); mSearch(); }
     else if (D.mbackm) renderMacros();
     else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { saveNut(mctx.key, mctx.name, pk); renderMacros(); } }
     else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value); if (mk1 != null) { saveNut(mctx.key, mctx.name, { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }); renderMacros(); } else $('mmk').focus(); }
