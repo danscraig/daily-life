@@ -51,6 +51,14 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .slot { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; padding: 9px 4px; border-top: 1px solid var(--line); min-height: 44px; }
 .slot .sl { flex: none; width: 78px; font-size: 12px; line-height: 1.3; color: var(--mute); text-transform: uppercase; letter-spacing: .04em; }
 .slot .st { flex: 1; min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+.slot .sth { flex: none; width: 48px; height: 48px; border-radius: 14px; object-fit: cover; display: grid; place-items: center; font: 400 22px/1 var(--serif); color: var(--ink); background: rgba(0,0,0,.05); }
+.scur { display: flex; flex-direction: column; gap: 6px; }
+.srow { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--paper); }
+.srow span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.srow .x { width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
+.slot .st:not(.empty) { display: flex; flex-direction: column; gap: 8px; }
+.slot .se { display: flex; align-items: center; gap: 10px; }
+.slot .sx { flex: 1; min-width: 0; }
 .slot .st.empty { color: var(--mute); padding: 0; margin: 0; text-align: left; border: 0; background: none; box-shadow: none; }
 .slot .st small { display: block; color: var(--mute); font-size: 12px; }
 .card { display: block; width: 100%; text-align: left; background: var(--paper); border-radius: 18px; padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 10px 26px -18px var(--shadow); }
@@ -286,11 +294,21 @@ function fitBox(t) {
   function recs() { return data.recipes.filter(function (r) { return !r.del; }); }   // a deleted recipe stays in the data (so the other devices learn about it) but is hidden
   function cleanLines(t) { return String(t || '').split('\n').map(function (l) { return l.replace(/^\s*[-•*]\s*/, '').trim(); }).filter(Boolean); }
   function slotOf(k, s) { var d = data.plan[k]; return d && d[s] && !d[s].x ? d[s] : null; }   // {x:1} = cleared
-  function slotText(m) {   // [title, subtitle] for a planned meal
-    if (!m) return null;
-    if (m.r) { var r = recById(m.r); return r ? [r.n, r.min ? r.min + ' min' : ''] : [m.t || 'Receita apagada', '']; }
-    return m.t ? [m.t, ''] : null;
+  function entries(m) {   // everything planned in one meal: [{r|t}, ...]
+    if (!m || m.x) return []; var o = []; if (m.r || m.t) o.push({ r: m.r, t: m.t });
+    (m.more || []).forEach(function (e) { o.push({ r: e.r, t: e.t }); }); return o;
   }
+  function putEntries(k, s, arr) {
+    if (!arr.length) { setSlot(k, s, null); return; }
+    var clean = function (e) { var o = {}; if (e.r) o.r = e.r; if (e.t) o.t = e.t; return o; }, v = clean(arr[0]);
+    if (arr.length > 1) v.more = arr.slice(1).map(clean); setSlot(k, s, v);
+  }
+  function addEntry(k, s, e) { var arr = entries(slotOf(k, s)); arr.push(e); putEntries(k, s, arr); }
+  function entText(e) {   // [title, subtitle] for one planned item
+    if (e.r) { var r = recById(e.r); if (!r) return [e.t || 'Receita apagada', '']; var mm = macOf(r); return [r.n, [r.min ? r.min + ' min' : '', mm ? mm.k + ' kcal' : ''].filter(Boolean).join(' · ')]; }
+    return e.t ? [e.t, ''] : null;
+  }
+  function slotText(m) { var es = entries(m); return es.length ? entText(es[0]) : null; }
   function setSlot(k, s, v) {
     var d = data.plan[k] || (data.plan[k] = {}), old = d[s], now = Date.now();
     d[s] = v ? Object.assign({}, v, { u: now }) : { x: 1, u: now };   // a cleared meal is kept as a marker so the clearing syncs
@@ -301,7 +319,7 @@ function fitBox(t) {
      Every week from this one on starts as a copy of it; the empty slots are filled in when the week is shown. */
   var TK = ['T0', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6'], TD = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
   function tplHas() { return TK.some(function (k) { return SL.some(function (s) { return !!slotOf(k, s[0]); }); }); }
-  function mealSig(m) { return m && !m.x ? (m.r || '') + '|' + (m.t || '') : ''; }
+  function mealSig(m) { return m && !m.x ? entries(m).map(function (e) { return (e.r || '') + '|' + (e.t || ''); }).join('||') : ''; }
   function fillFromTpl(mon) {   // slots with nothing in them get the usual meal; a slot you cleared by hand stays empty
     if (ds(mon) < ds(monday(new Date())) || !tplHas()) return;
     var n = 0, now = Date.now();
@@ -345,10 +363,7 @@ function fitBox(t) {
     var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Semana anterior">‹</button><div class="lab">' + wk.getDate() + (sameMonth ? '' : ' ' + MON[wk.getMonth()]) + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + (cur ? 'Esta semana' : '<button data-wk="0" class="pill">Voltar a esta semana</button>') + '</small></div><button class="r" data-wk="1" aria-label="Semana seguinte">›</button></div>';
     h += days.map(function (d) {
       var k = ds(d);
-      return '<div class="day' + (k === now ? ' today' : '') + '"><h3>' + DAYS[d.getDay()] + '<span>' + d.getDate() + ' ' + MON[d.getMonth()] + '</span></h3>' + dayMacros(k) + SL.map(function (s) {
-        var t = slotText(slotOf(k, s[0]));
-        return '<button class="slot" data-k="' + k + '" data-s="' + s[0] + '"><span class="sl">' + s[1] + '</span><span class="st' + (t ? '' : ' empty') + '">' + (t ? esc(t[0]) + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '+ adicionar') + '</span></button>';
-      }).join('') + '</div>';
+      return '<div class="day' + (k === now ? ' today' : '') + '"><h3>' + DAYS[d.getDay()] + '<span>' + d.getDate() + ' ' + MON[d.getMonth()] + '</span></h3>' + dayMacros(k) + SL.map(function (s) { return slotBtn(k, s); }).join('') + '</div>';
     }).join('');
     h += '<button class="btn ghost full" data-swap="1">Trocar dois dias</button>';
     h += '<button class="btn ghost full" style="margin-top:8px" data-usetpl="1">' + (ask === 'usetpl' ? 'Toca de novo para substituir a semana-tipo' : 'Usar esta semana como semana-tipo') + '</button>';
@@ -356,9 +371,13 @@ function fitBox(t) {
     h += '<button class="btn ghost full" style="margin-top:8px" data-copy="1">Copiar a semana anterior para os espaços vazios</button>';
     return h;
   }
+  function entThumb(e) {   // the recipe's picture (or its coloured initial) at the end of the row
+    var r = e.r ? recById(e.r) : null; if (!r) return '';
+    return pcache[r.id] ? '<img class="sth" alt="" src="' + esc(pcache[r.id]) + '">' : '<span class="sth ini" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span>';
+  }
   function slotBtn(k, s) {
-    var t = slotText(slotOf(k, s[0]));
-    return '<button class="slot" data-k="' + k + '" data-s="' + s[0] + '"><span class="sl">' + s[1] + '</span><span class="st' + (t ? '' : ' empty') + '">' + (t ? esc(t[0]) + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') : '+ adicionar') + '</span></button>';
+    var es = entries(slotOf(k, s[0]));
+    return '<button class="slot" data-k="' + k + '" data-s="' + s[0] + '"><span class="sl">' + s[1] + '</span>' + (es.length ? '<span class="st">' + es.map(function (e) { var t = entText(e) || ['', '']; return '<span class="se"><span class="sx">' + esc(t[0]) + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') + '</span>' + entThumb(e) + '</span>'; }).join('') + '</span>' : '<span class="st empty">+ adicionar</span>') + '</button>';
   }
   function renderPlan() {
     var seg = '<div class="chipsrow pmseg"><button data-pm="week" aria-pressed="' + (pmode === 'week') + '">Semana</button><button data-pm="tpl" aria-pressed="' + (pmode === 'tpl') + '">Semana-tipo</button></div>', h;
@@ -372,10 +391,10 @@ function fitBox(t) {
   function openSlot(k, s) {
     slotCtx = { k: k, s: s, q: '', all: false };
     var tpl = k.charAt(0) === 'T', d = tpl ? null : new Date(k + 'T12:00:00'), lab = (tpl ? TD[+k.slice(1)] : DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]) + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
-    var cur = slotOf(k, s);
-    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="chipsrow" id="sfil"></div><div class="pick" id="spick"></div>' +
-      '<div><label for="sfree">Ou escreve</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Usar</button></div></div>' +
-      (cur ? '<button class="btn ghost full" data-sclear="1">Limpar esta refeição</button>' : '') + '<button class="btn ghost full" data-close="1">Fechar</button>';
+    var cur = slotOf(k, s), es = entries(cur);
+    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2>' + (es.length ? '<div class="scur">' + es.map(function (e, i) { var t = entText(e) || ['', '']; return '<div class="srow"><span>' + esc(t[0]) + '</span><button type="button" class="x" data-srm="' + i + '" aria-label="Tirar">✕</button></div>'; }).join('') + '</div><label>Acrescentar</label>' : '') + '<input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="chipsrow" id="sfil"></div><div class="pick" id="spick"></div>' +
+      '<div><label for="sfree">Ou escreve</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value=""><button class="btn" data-sfree="1">Usar</button></div></div>' +
+      (es.length > 1 ? '<button class="btn ghost full" data-sclear="1">Limpar tudo</button>' : '') + '<button class="btn ghost full" data-close="1">Fechar</button>';
     fillPick(); $('m').hidden = false;
   }
   function fillPick() {
@@ -398,7 +417,7 @@ function fitBox(t) {
   /* ---- illustrative photo per recipe: kept on this device (IndexedDB), shrunk to a small JPEG ---- */
   var pcache = {}, pdb = null, edPhoto;   // edPhoto: undefined = unchanged, null = removed, string = new picture
   function pOpen(cb) { try { var rq = indexedDB.open('meals-photos', 1); rq.onupgradeneeded = function () { rq.result.createObjectStore('p'); }; rq.onsuccess = function () { pdb = rq.result; cb(); }; rq.onerror = function () { cb(); }; } catch (e) { cb(); } }
-  function pLoad() { pOpen(function () { if (!pdb) return; try { var cur = pdb.transaction('p').objectStore('p').openCursor(); cur.onsuccess = function () { var c = cur.result; if (c) { pcache[c.key] = c.value; c.continue(); } else if (view === 'rec' && $('m').hidden) renderRec(); }; } catch (e) {} }); }
+  function pLoad() { pOpen(function () { if (!pdb) return; try { var cur = pdb.transaction('p').objectStore('p').openCursor(); cur.onsuccess = function () { var c = cur.result; if (c) { pcache[c.key] = c.value; c.continue(); } else if (view === 'rec' && $('m').hidden) renderRec(); else if (view === 'plan' && $('m').hidden) renderPlan(); }; } catch (e) {} }); }
   function pPut(id, v) { pcache[id] = v; if (!pdb) return; try { pdb.transaction('p', 'readwrite').objectStore('p').put(v, id); } catch (e) {} }
   function pDel(id) { delete pcache[id]; if (!pdb) return; try { pdb.transaction('p', 'readwrite').objectStore('p').delete(id); } catch (e) {} }
   function readPhoto(file, cb, max) {
@@ -550,7 +569,7 @@ function fitBox(t) {
     if (!sure) { sure = true; var b = document.querySelector('[data-rdel]'); b.textContent = 'Apagar? Toca outra vez'; b.classList.add('bad'); return; }
     var r = recById(edId); if (!r) return;
     var now = Date.now();
-    Object.keys(data.plan).forEach(function (k) { Object.keys(data.plan[k]).forEach(function (s) { var m = data.plan[k][s]; if (m.r === r.id) data.plan[k][s] = { t: r.n, u: now }; }); });   // planned days keep the name
+    Object.keys(data.plan).forEach(function (k) { Object.keys(data.plan[k]).forEach(function (s) { var m = data.plan[k][s]; if (!m || m.x) return; var ch = false; if (m.r === r.id) { m.t = r.n; delete m.r; ch = true; } (m.more || []).forEach(function (e) { if (e.r === r.id) { e.t = r.n; delete e.r; ch = true; } }); if (ch) m.u = now; }); });   // planned days keep the name
     r.del = now; r.u = now; save(); closeM(); render();
   }
 
@@ -570,8 +589,10 @@ function fitBox(t) {
   }
   function weekItems(mon) {   // everything the week's recipes need, same ingredient and unit added together
     var map = {}, order = [];
-    for (var i = 0; i < 7; i++) SL.forEach(function (s) {
-      var m = slotOf(ds(addDays(mon, i)), s[0]); if (!m || !m.r) return; var r = recById(m.r); if (!r || r.del) return;
+    var rids = [];
+    for (var i = 0; i < 7; i++) SL.forEach(function (s) { entries(slotOf(ds(addDays(mon, i)), s[0])).forEach(function (e) { if (e.r) rids.push(e.r); }); });
+    rids.forEach(function (rid) {
+      var r = recById(rid); if (!r || r.del) return;
       recItems(r).forEach(function (it) {
         var nm = String(it.n || '').trim(); if (!nm) return;
         var bu = baseUnit(it.u), key = nrm(nm) + '|' + bu[0], q = parseQ(it.q), o = map[key];
@@ -795,7 +816,7 @@ function fitBox(t) {
     var all = libs(), q = nrm(fq), l = all.filter(function (x) { return !q || nrm(x.d).indexOf(q) !== -1; });
     var h = '<div class="stack"><input type="search" id="fq" placeholder="Pesquisar nos teus alimentos" value="' + esc(fq) + '" autocomplete="off" aria-label="Pesquisar nos teus alimentos"><button class="btn full" data-ladd="1">+ Adicionar alimento</button></div>';
     h += l.length ? l.map(function (x) {
-      return '<div class="frow"><button type="button" class="fmain" data-fedit="' + esc(x.id) + '" aria-label="Editar ' + esc(x.d) + '">' + (x.img ? thumb(x.img) : '<span class="th add">+</span>') + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small>' + (x.gu > 0 ? '<small>1 un. = ' + x.gu + ' g · ' + Math.round(x.kcal * x.gu / 100) + ' kcal · P ' + r1(x.p * x.gu / 100) + ' · H ' + r1(x.c * x.gu / 100) + ' · G ' + r1(x.f * x.gu / 100) + '</small>' : '') + '</span></button><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
+      return '<div class="frow"><button type="button" class="fmain" data-fedit="' + esc(x.id) + '" aria-label="Editar ' + esc(x.d) + '">' + (x.img ? thumb(x.img) : '<span class="th add">+</span>') + '<span class="tx">' + esc(x.d) + (x.bs === 'un' && x.gu > 0 ? '' : '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small>') + (x.gu > 0 ? '<small>1 un. = ' + x.gu + ' g · ' + Math.round(x.kcal * x.gu / 100) + ' kcal · P ' + r1(x.p * x.gu / 100) + ' · H ' + r1(x.c * x.gu / 100) + ' · G ' + r1(x.f * x.gu / 100) + '</small>' : '') + '</span></button><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
         '<span class="stk"><input type="text" inputmode="decimal" data-stk="' + esc(x.id) + '" value="' + esc(x.s != null ? String(x.s).replace('.', ',') : '') + '" placeholder="Stock em casa" aria-label="Stock de ' + esc(x.d) + '"><input type="text" inputmode="decimal" class="gu" data-gu="' + esc(x.id) + '" value="' + esc(x.gu != null ? String(x.gu).replace('.', ',') : '') + '" placeholder="g / unidade" aria-label="Peso de uma unidade em gramas"><select data-stu="' + esc(x.id) + '" aria-label="Unidade do stock">' + ['g', 'ml', 'un'].map(function (u) { return '<option value="' + u + '"' + ((x.su || 'g') === u ? ' selected' : '') + '>' + (u === 'un' ? 'unidades' : u) + '</option>'; }).join('') + '</select></span></div>';
     }).join('') : '<div class="empty">' + (all.length ? 'Nenhum alimento com esse nome.' : 'Sem alimentos ainda.') + '</div>';
     $('v-food').innerHTML = h;
@@ -812,6 +833,7 @@ function fitBox(t) {
     $('sh').innerHTML = '<h2>Editar alimento</h2><div id="fphw" class="fph"></div><div><label for="fen">Nome</label><input type="text" id="fen" value="' + esc(x.d) + '"></div>' +
       '<div class="two"><div><label for="feb">Valores por</label><select id="feb"><option value="g">100 g</option><option value="un">1 unidade</option></select></div><div><label for="feg">1 unidade pesa (g)</label><input type="text" inputmode="decimal" id="feg" placeholder="ex.: 70" value="' + f(x.gu) + '"></div></div><div><div class="mac"><div><label for="fek">kcal</label><input type="text" inputmode="decimal" id="fek" value="' + f(x.kcal) + '"></div><div><label for="fep">prot.</label><input type="text" inputmode="decimal" id="fep" value="' + f(x.p) + '"></div><div><label for="fec">hidr.</label><input type="text" inputmode="decimal" id="fec" value="' + f(x.c) + '"></div><div><label for="fef">gord.</label><input type="text" inputmode="decimal" id="fef" value="' + f(x.f) + '"></div></div></div>' +
       '<button class="btn full" data-fsave="1">Guardar</button><button class="btn ghost full" data-close="1">Cancelar</button>';
+    if (x.bs === 'un' && x.gu > 0) { $('feb').value = 'un'; ['fek', 'fep', 'fec', 'fef'].forEach(function (i) { var v = fctx.orig[i] * x.gu / 100; $(i).value = String(i === 'fek' ? Math.round(v) : r1(v)).replace('.', ','); fctx.conv[i] = $(i).value; }); fctx.mode = 'un'; }
     paintFPhoto(); $('m').hidden = false;
   }
   function saveFood() {
@@ -825,7 +847,7 @@ function fitBox(t) {
       var gone = data.extra.filter(function (y) { return y.id === nid; })[0]; if (gone) data.extra.splice(data.extra.indexOf(gone), 1);
       x.id = nid; recs().forEach(function (r) { var ch = false; (r.items || []).forEach(function (it) { if (nrm(it.n) === oldKey) { it.n = nm; ch = true; } }); if (ch) r.u = now; });
     }
-    x.d = nm; x.kcal = vals.kcal; x.p = vals.p; x.c = vals.c; x.f = vals.f; x.img = fctx.img || ''; x.del = false; x.u = now; if (fgu > 0) x.gu = r1(fgu); else delete x.gu;
+    x.d = nm; x.kcal = vals.kcal; x.p = vals.p; x.c = vals.c; x.f = vals.f; x.img = fctx.img || ''; x.del = false; x.u = now; if (fgu > 0) x.gu = r1(fgu); else delete x.gu; if (fun) x.bs = 'un'; else delete x.bs;
     data.extra.forEach(function (y) {
       if (y.k !== 'nut' || y.del || !(y.id === 'nu|' + oldKey || y.d === oldName)) return;
       if (y.id === 'nu|' + oldKey && oldKey !== nrm(nm)) { y.id = 'nu|' + nrm(nm); y.n = nm; }
@@ -860,7 +882,7 @@ function fitBox(t) {
   }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
-    SL.forEach(function (s) { var m = slotOf(k, s[0]); if (!m) return; var r = m.r ? recById(m.r) : null, mm = r ? macOf(r) : null; if (mm) { n++; t.k += mm.k; t.p += mm.p; t.c += mm.c; t.f += mm.f; } else miss++; });
+    SL.forEach(function (s) { entries(slotOf(k, s[0])).forEach(function (e) { var r = e.r ? recById(e.r) : null, mm = r ? macOf(r) : null; if (mm) { n++; t.k += mm.k; t.p += mm.p; t.c += mm.c; t.f += mm.f; } else miss++; }); });
     return n ? '<div class="dsum"><div class="dk"><b>' + Math.round(t.k) + '</b><span>kcal</span></div><div class="dmc"><span><b>' + Math.round(t.p) + '<i>g</i></b>proteína</span><span><b>' + Math.round(t.c) + '<i>g</i></b>hidratos</span><span><b>' + Math.round(t.f) + '<i>g</i></b>gordura</span></div></div>' + (miss ? '<p class="dmiss">+ ' + miss + (miss === 1 ? ' refeição sem macros' : ' refeições sem macros') + '</p>' : '') : '';
   }
   function savedMeals(q) { return data.extra.filter(function (x) { return x.k === 'meal' && !x.del && (!q || nrm(x.t).indexOf(q) !== -1); }).sort(function (a, b) { return a.t.localeCompare(b.t); }); }
@@ -959,10 +981,11 @@ function fitBox(t) {
     else if (D.v) { view = D.v; lmsg = ''; render(); window.scrollTo(0, 0); }
     else if (D.wk !== undefined) { if (view === 'shop') swk = D.wk === '0' ? addDays(monday(new Date()), 7) : addDays(swk, 7 * Number(D.wk)); else wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
     else if (D.s && D.k) openSlot(D.k, D.s);
-    else if (D.rpick && slotCtx) { setSlot(slotCtx.k, slotCtx.s, { r: D.rpick }); closeM(); render(); }
-    else if (D.sfree && slotCtx) { var v = $('sfree').value.trim(); if (v) { saveMeal(v); setSlot(slotCtx.k, slotCtx.s, { t: v }); closeM(); render(); } else $('sfree').focus(); }
+    else if (D.rpick && slotCtx) { addEntry(slotCtx.k, slotCtx.s, { r: D.rpick }); closeM(); render(); }
+    else if (D.srm !== undefined && slotCtx) { var sk = slotCtx.k, ss = slotCtx.s, sa = entries(slotOf(sk, ss)); sa.splice(Number(D.srm), 1); putEntries(sk, ss, sa); render(); if (sa.length) openSlot(sk, ss); else closeM(); }
+    else if (D.sfree && slotCtx) { var v = $('sfree').value.trim(); if (v) { saveMeal(v); addEntry(slotCtx.k, slotCtx.s, { t: v }); closeM(); render(); } else $('sfree').focus(); }
     else if (D.sclear && slotCtx) { setSlot(slotCtx.k, slotCtx.s, null); closeM(); render(); }
-    else if (D.mpick && slotCtx) { var sm = data.extra.filter(function (y) { return y.id === D.mpick; })[0]; if (sm) { sm.u = Date.now(); setSlot(slotCtx.k, slotCtx.s, { t: sm.t }); closeM(); render(); } }
+    else if (D.mpick && slotCtx) { var sm = data.extra.filter(function (y) { return y.id === D.mpick; })[0]; if (sm) { sm.u = Date.now(); addEntry(slotCtx.k, slotCtx.s, { t: sm.t }); closeM(); render(); } }
     else if (D.mdel && slotCtx) { var dm = data.extra.filter(function (y) { return y.id === D.mdel; })[0]; if (dm) { dm.del = true; dm.u = Date.now(); save(); fillPick(); } }
     else if (D.copy) copyWeek();
     else if (D.phrm !== undefined) { edPhoto = null; paintPhoto(); }
@@ -996,7 +1019,7 @@ function fitBox(t) {
     else if (D.msrc && mctx) { mctx.src = D.msrc; $('mq').value = D.msrc === 'usda' ? enGuess(mctx.name) : mctx.name; paintSrc(); mSearch(); }
     else if (D.mbackm) mDone();
     else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { if (mctx.lib) { addLib(pk); var cell = document.createElement('span'); cell.className = 'stg'; cell.textContent = '✓ Adicionado'; b.replaceWith(cell); } else { saveNut(mctx.key, mctx.name, pk); mDone(); } } }
-    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mUn = mctx.lib && $('mmb').value === 'un', mGu = mctx.lib ? num($('mmg').value) : null; if (mUn && !(mGu > 0)) { $('mmg').focus(); return; } var mfa = mUn ? 100 / mGu : 1, mv = { d: 'escrito por ti', kcal: Math.round(mk1 * mfa), p: r1((mp1 || 0) * mfa), c: r1((mc1 || 0) * mfa), f: r1((mf1 || 0) * mfa) }; if (mctx.lib) { mv.d = mnm; var mlx = addLib(mv); if (mGu > 0) { mlx.gu = r1(mGu); save(); } } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
+    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mUn = mctx.lib && $('mmb').value === 'un', mGu = mctx.lib ? num($('mmg').value) : null; if (mUn && !(mGu > 0)) { $('mmg').focus(); return; } var mfa = mUn ? 100 / mGu : 1, mv = { d: 'escrito por ti', kcal: Math.round(mk1 * mfa), p: r1((mp1 || 0) * mfa), c: r1((mc1 || 0) * mfa), f: r1((mf1 || 0) * mfa) }; if (mctx.lib) { mv.d = mnm; var mlx = addLib(mv); if (mGu > 0) { mlx.gu = r1(mGu); if (mUn) mlx.bs = 'un'; save(); } } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
     else if (D.msave && mx) { var t = mxTotals(), rr = recById(mx.id); if (rr) { rr.serv = t.s; rr.mac = { k: t.k, p: t.p, c: t.c, f: t.f, cov: t.ok + '/' + t.tot }; rr.u = Date.now(); save(); } openView(mx.id); render(); }
     else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var dr2 = snapDraft(); openPick('', '', dr2, dr2.items.length - 1); }
     else if (D.iup !== undefined || D.idn !== undefined) { readRows(); var ia = Number(D.iup !== undefined ? D.iup : D.idn), ib = D.iup !== undefined ? ia - 1 : ia + 1; if (edItems[ia] && edItems[ib]) { var tmp = edItems[ia]; edItems[ia] = edItems[ib]; edItems[ib] = tmp; paintRows(); } }
