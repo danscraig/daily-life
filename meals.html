@@ -64,6 +64,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .rc .rimg { width: 100%; height: 92px; object-fit: cover; border-radius: 14px; display: block; background: rgba(0,0,0,.05); }
 .rc .rmac { display: flex; flex-direction: column; gap: 1px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 .rc .rmac b { font-weight: 600; font-size: 14px; color: var(--ink); }
+.vx { display: block; margin: -4px -4px 4px auto; width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
 .rpv, .vimg { width: 100%; max-height: 210px; object-fit: cover; border-radius: 18px; display: block; margin-bottom: 8px; }
 label.btn { cursor: pointer; text-align: center; display: block; }
 .rc small { color: var(--mute); font-size: 12.5px; }
@@ -156,6 +157,7 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .frow small { display: block; color: var(--mute); font-size: 12px; }
 .frow .x { width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
 .frow .stk { grid-column: 2 / -1; display: flex; gap: 6px; align-items: center; }
+.frow .stk .gu { flex: 0 0 34%; }
 .frow .stk input { flex: 1; min-width: 0; padding: 9px 12px; border-radius: 12px; }
 .frow .stk select { padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
 .shr .hv { flex: none; display: flex; gap: 6px; }
@@ -166,6 +168,13 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .view h3 { margin: 6px 0 4px; font-size: 14px; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
 .view ul { margin: 0; padding-left: 20px; }
 .view .st { white-space: pre-wrap; margin: 0; }
+.view ul.igl { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ig { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: var(--paper); }
+.ig .th { width: 32px; height: 32px; border-radius: 8px; }
+.ig .tx { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
+.ig .am { font-weight: 600; }
+.ig small { display: block; color: var(--mute); font-size: 12px; }
+.ig .ik { flex: none; font-size: 12.5px; color: var(--mute); }
 .view .fl { color: #A5560E; font-size: 12px; font-weight: 600; margin-left: 6px; }
 @keyframes fadein { from { opacity: 0; } }
 @keyframes sheetin { from { opacity: 0; transform: translateY(12px) scale(.98); } }
@@ -377,22 +386,48 @@ function fitBox(t) {
     var w = $('rphw'); if (!w) return; var ph = curPhoto();
     w.innerHTML = (ph ? '<img class="rpv" alt="" src="' + esc(ph) + '"><div class="two"><label class="btn ghost">Mudar imagem<input type="file" id="rph" accept="image/*" hidden></label><button type="button" class="btn ghost" data-phrm="1">Tirar imagem</button></div>' : '<label class="btn ghost full">+ Escolher imagem<input type="file" id="rph" accept="image/*" hidden></label>');
   }
+  function libOf(name) { var k = nrm(name); return libs().filter(function (x) { return nrm(x.d) === k; })[0]; }
+  function itemGrams(it, rec) {   // grams of one ingredient line (null when it cannot be told)
+    var gr = gramsOf(it, rec); if (gr.g != null) return gr.g;
+    if (it.u === 'un' || it.u === '') { var L = libOf(it.n), q = parseQ(it.q); if (L && L.gu > 0 && q > 0) return q * L.gu; }
+    return null;
+  }
+  function itemAmt(it) { if (it.u === 'a gosto') return 'a gosto'; var q = String(it.q || '').trim(); if (!q) return ''; return (q + ' ' + (it.u === 'un' ? 'un.' : it.u)).trim(); }
+  function ingListHTML(r) {   // amount in bold, the food's picture, its calories for this recipe
+    return recItems(r).filter(function (it) { return String(it.n).trim(); }).map(function (it) {
+      var n = String(it.n).trim(), rec = nutRec(nutKey(n)), amt = itemAmt(it), g = rec ? itemGrams(it, rec) : null, notes = [];
+      if (!amt) notes.push('sem quantidade'); if (!rec) notes.push('fora da biblioteca');
+      return '<li class="ig">' + (rec && rec.img ? thumb(rec.img) : '') + '<span class="tx">' + (amt ? '<b class="am">' + esc(amt) + '</b> ' : '') + esc(n) + (notes.length ? '<small>' + notes.join(' · ') + '</small>' : '') + '</span>' + (rec && g != null ? '<span class="ik">' + Math.round(rec.kcal * g / 100) + ' kcal</span>' : '') + '</li>';
+    }).join('');
+  }
+  function macOf(r) {   // per portion, from the ingredients that are library foods with a known weight; else what the recipe had stored
+    var t = { k: 0, p: 0, c: 0, f: 0 }, ok = 0, tot = 0;
+    recItems(r).forEach(function (it) {
+      if (!String(it.n).trim() || it.u === 'a gosto') return; tot++;
+      var rec = nutRec(nutKey(it.n)); if (!rec) return;
+      var g = itemGrams(it, rec); if (g == null) return;
+      ok++; t.k += rec.kcal * g / 100; t.p += rec.p * g / 100; t.c += rec.c * g / 100; t.f += rec.f * g / 100;
+    });
+    var sv = Math.max(1, num(r.serv) || 1);
+    if (!ok) return r.mac && r.mac.k != null ? { k: r.mac.k, p: r.mac.p, c: r.mac.c, f: r.mac.f, ok: 0, tot: tot } : null;
+    return { k: Math.round(t.k / sv), p: r1(t.p / sv), c: r1(t.c / sv), f: r1(t.f / sv), ok: ok, tot: tot };
+  }
   function recTone(n) { var T = ['#E3D9E8', '#D9E3DD', '#E8DFD3', '#D8E1EA', '#EBD9D9', '#E2E4D2'], h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997; return T[h % T.length]; }
   function renderRec() {
     var q = nrm(rq), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
     var h = '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas"><button class="btn full" data-newr="1">+ Nova receita</button></div>';
     h += l.length ? '<div class="rgrid">' + l.map(function (r) {
-      return '<button class="rc" data-er="' + r.id + '">' + (pcache[r.id] ? '<img class="rimg" alt="" src="' + esc(pcache[r.id]) + '">' : '<span class="rin" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span>') + '<b>' + esc(r.n) + '</b><span class="rmeta"><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small><span class="rmac">' + (r.mac && r.mac.k != null ? '<b>' + r.mac.k + ' kcal</b><small>P ' + r.mac.p + ' · H ' + r.mac.c + ' · G ' + r.mac.f + ' g</small>' : '<small>Sem macros</small>') + '</span></span></button>';
+      return '<button class="rc" data-er="' + r.id + '">' + (pcache[r.id] ? '<img class="rimg" alt="" src="' + esc(pcache[r.id]) + '">' : '<span class="rin" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span>') + '<b>' + esc(r.n) + '</b><span class="rmeta"><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small><span class="rmac">' + (function () { var m = macOf(r); return m ? '<b>' + m.k + ' kcal</b><small>P ' + m.p + ' · H ' + m.c + ' · G ' + m.f + ' g</small>' : '<small>Sem macros</small>'; })() + '</span></span></button>';
     }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'As tuas receitas ficam aqui.<br>Toca em “Nova receita” para acrescentar a primeira.') + '</div>';
     $('v-rec').innerHTML = h; updLinkBadge();
   }
   function openView(id) {
     var r = recById(id); if (!r) return;
-    var ing = (r.ing || []).map(function (l) { return '<li>' + esc(l) + (hasQty(l) ? '' : '<span class="fl">⚑</span>') + '</li>'; }).join('');
-    $('sh').innerHTML = '<div class="view">' + (pcache[r.id] ? '<img class="vimg" alt="" src="' + esc(pcache[r.id]) + '">' : '') + '<h2>' + esc(r.n) + '</h2><p style="margin:2px 0 0;color:var(--mute);font-size:14px">' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</p>' +
-      (r.mac && r.mac.k != null ? '<p style="margin:8px 0 0;font-size:14px"><b>Por porção</b>' + (r.serv > 1 ? ' (' + r.serv + ' porções)' : '') + ': ' + esc(macLine(r.mac)) + '</p>' : '') + '<h3>Ingredientes</h3>' + (ing ? '<ul>' + ing + '</ul>' : '<p style="margin:0;color:var(--mute)">Ainda não há.</p>') + (/⚑/.test(ing) ? '<p style="margin:6px 0 0;font-size:12px;color:var(--mute)">⚑ = sem quantidade. Edita a receita para a acrescentar.</p>' : '') +
+    var ing = ingListHTML(r), ningr = recItems(r).filter(function (it) { return String(it.n).trim(); }).length;
+    $('sh').innerHTML = '<div class="view"><button type="button" class="vx" data-close="1" aria-label="Fechar">✕</button>' + (pcache[r.id] ? '<img class="vimg" alt="" src="' + esc(pcache[r.id]) + '">' : '') + '<h2>' + esc(r.n) + '</h2><p style="margin:2px 0 0;color:var(--mute);font-size:14px">' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</p>' +
+      (function () { var m = macOf(r); return m ? '<p style="margin:8px 0 0;font-size:14px"><b>Por porção</b>' + (r.serv > 1 ? ' (' + r.serv + ' porções)' : '') + ': ' + esc(macLine(m)) + (m.ok && m.ok < m.tot ? '<small style="display:block;color:var(--mute);margin-top:2px">Contam ' + m.ok + ' de ' + m.tot + ' ingredientes (os outros não estão na biblioteca ou não têm peso).</small>' : '') + '</p>' : ''; })() + '<h3>Ingredientes' + (ningr ? ' (' + ningr + ')' : '') + '</h3>' + (ing ? '<ul class="igl">' + ing + '</ul>' : '<p style="margin:0;color:var(--mute)">Ainda não há.</p>') +
       '<h3>Passos</h3>' + (r.steps ? '<p class="st">' + esc(r.steps) + '</p>' : '<p style="margin:0;color:var(--mute)">Ainda não há.</p>') + '</div>' +
-      '<button class="btn ghost full" data-macros="' + r.id + '">Macros' + (r.mac && r.mac.k != null ? ' (recalcular)' : ' a partir dos ingredientes') + '</button><button class="btn full" data-edit="' + r.id + '">Editar</button><button class="btn ghost full" data-close="1">Fechar</button>';
+      '<button class="btn full" data-edit="' + r.id + '">Editar</button><button class="btn ghost full" data-vdel="' + r.id + '">Eliminar</button>';
     $('m').hidden = false;
   }
   var UNITS = [['', 'Unidade'], ['g', 'gramas'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'litros'], ['un', 'unidades'], ['c. sopa', 'colher de sopa'], ['c. chá', 'colher de chá'], ['chávena', 'chávena'], ['pitada', 'pitada'], ['a gosto', 'a gosto']];
@@ -418,7 +453,7 @@ function fitBox(t) {
   }
   function snapDraft() {
     readRows(); var v = function (id) { var e = $(id); return e ? e.value : ''; };
-    return { id: edId, tags: edTags.slice(), items: edItems.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }), f: { rn: v('rn'), rm: v('rm'), rt: v('rt'), rs: v('rs'), rmk: v('rmk'), rmp: v('rmp'), rmc: v('rmc'), rmf: v('rmf'), rsv: v('rsv') } };
+    return { id: edId, tags: edTags.slice(), items: edItems.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }), f: { rn: v('rn'), rm: v('rm'), rt: v('rt'), rs: v('rs'), rsv: v('rsv') } };
   }
   function paintRows() {
     if (!edItems.length) edItems.push({ n: '', q: '', u: '' });
@@ -436,7 +471,7 @@ function fitBox(t) {
       '<div class="two" style="grid-template-columns:1fr"><div><label for="rm">Minutos</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div hidden><input type="text" id="rt"><div id="rtags"></div></div></div>' +
       '<div><label>Ingredientes</label><div class="irows" id="irows"></div><button type="button" class="btn ghost full" data-iadd="1">+ Acrescentar ingrediente</button></div>' +
       '<div><label for="rs">Passos</label><textarea id="rs">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
-      '<div><label>Macros por porção (escreve-os, ou usa “Macros” na receita para os calcular)</label><div class="mac"><div><label for="rmk">kcal</label><input type="text" inputmode="decimal" id="rmk" value="' + esc(r && r.mac && r.mac.k != null ? r.mac.k : '') + '"></div><div><label for="rmp">proteína</label><input type="text" inputmode="decimal" id="rmp" value="' + esc(r && r.mac && r.mac.p != null ? r.mac.p : '') + '"></div><div><label for="rmc">hidratos</label><input type="text" inputmode="decimal" id="rmc" value="' + esc(r && r.mac && r.mac.c != null ? r.mac.c : '') + '"></div><div><label for="rmf">gordura</label><input type="text" inputmode="decimal" id="rmf" value="' + esc(r && r.mac && r.mac.f != null ? r.mac.f : '') + '"></div></div></div><div><label for="rsv">Porções</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div>' +
+      '<div><label for="rsv">Porções</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div>' +
       '<button class="btn full" data-rsave="1">Guardar</button>' + (r ? '<button class="btn ghost full" data-rdel="1">Apagar receita</button>' : '') + '<button class="btn ghost full" data-close="1">Cancelar</button>';
     if (draft) { edTags = draft.tags.slice(); edItems = draft.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }); Object.keys(draft.f).forEach(function (k) { $(k).value = draft.f[k]; }); }
     paintTags(); paintRows(); paintPhoto(); $('m').hidden = false; if (draft) fitBox($('rs'));
@@ -451,8 +486,7 @@ function fitBox(t) {
     if ($('rt').value.trim()) addTag();
     var r = edId ? recById(edId) : null; if (!r) { r = { id: uid() }; data.recipes.push(r); }
     r.n = n; r.min = Number($('rm').value) || 0; r.tags = edTags.slice(); readRows(); r.items = edItems.filter(function (x) { return String(x.n).trim(); }).map(function (x) { return { n: x.n.trim(), q: String(x.q).trim(), u: x.u }; }); r.ing = r.items.map(ingLine); r.steps = $('rs').value.trim();
-    var mk = num($('rmk').value), mp = num($('rmp').value), mc = num($('rmc').value), mf = num($('rmf').value), sv = num($('rsv').value);
-    if (mk == null && mp == null && mc == null && mf == null) delete r.mac; else r.mac = { k: Math.round(mk || 0), p: r1(mp || 0), c: r1(mc || 0), f: r1(mf || 0), cov: r.mac && r.mac.cov };
+    var sv = num($('rsv').value);
     if (sv > 0) r.serv = sv; else delete r.serv; r.u = Date.now();
     if (edPhoto === null) pDel(r.id); else if (typeof edPhoto === 'string') pPut(r.id, edPhoto); edPhoto = undefined;
     save(); closeM(); render();
@@ -561,7 +595,7 @@ function fitBox(t) {
   function recItems(r) { return Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine); }
   function gramsOf(it, rec) {
     if (it.u === 'a gosto') return { g: 0, skip: 'a gosto' };
-    var q = num(it.q); if (!(q > 0)) return { g: null, why: 'sem quantidade' };
+    var q = parseQ(it.q); if (!(q > 0)) return { g: null, why: 'sem quantidade' };
     if (it.u in UMAP) return { g: q * UMAP[it.u] };
     return rec && rec.g > 0 ? { g: q * rec.g } : { g: null, why: 'gramas por unidade?' };   // units, or an amount with no unit
   }
@@ -671,7 +705,7 @@ function fitBox(t) {
     var h = '<div class="stack"><input type="search" id="fq" placeholder="Pesquisar nos teus alimentos" value="' + esc(fq) + '" autocomplete="off" aria-label="Pesquisar nos teus alimentos"><button class="btn full" data-ladd="1">+ Adicionar alimento</button></div>';
     h += l.length ? l.map(function (x) {
       return '<div class="frow">' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
-        '<span class="stk"><input type="text" inputmode="decimal" data-stk="' + esc(x.id) + '" value="' + esc(x.s != null ? String(x.s).replace('.', ',') : '') + '" placeholder="Stock em casa" aria-label="Stock de ' + esc(x.d) + '"><select data-stu="' + esc(x.id) + '" aria-label="Unidade do stock">' + ['g', 'ml', 'un'].map(function (u) { return '<option value="' + u + '"' + ((x.su || 'g') === u ? ' selected' : '') + '>' + (u === 'un' ? 'unidades' : u) + '</option>'; }).join('') + '</select></span></div>';
+        '<span class="stk"><input type="text" inputmode="decimal" data-stk="' + esc(x.id) + '" value="' + esc(x.s != null ? String(x.s).replace('.', ',') : '') + '" placeholder="Stock em casa" aria-label="Stock de ' + esc(x.d) + '"><input type="text" inputmode="decimal" class="gu" data-gu="' + esc(x.id) + '" value="' + esc(x.gu != null ? String(x.gu).replace('.', ',') : '') + '" placeholder="g / unidade" aria-label="Peso de uma unidade em gramas"><select data-stu="' + esc(x.id) + '" aria-label="Unidade do stock">' + ['g', 'ml', 'un'].map(function (u) { return '<option value="' + u + '"' + ((x.su || 'g') === u ? ' selected' : '') + '>' + (u === 'un' ? 'unidades' : u) + '</option>'; }).join('') + '</select></span></div>';
     }).join('') : '<div class="empty">' + (all.length ? 'Nenhum alimento com esse nome.' : 'Ainda não tens alimentos.<br>Toca em “Adicionar alimento” para os procurares na base de dados.') + '</div>';
     $('v-food').innerHTML = h;
   }
@@ -702,7 +736,7 @@ function fitBox(t) {
   }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
-    SL.forEach(function (s) { var m = slotOf(k, s[0]); if (!m) return; var r = m.r ? recById(m.r) : null; if (r && r.mac && r.mac.k != null) { n++; t.k += r.mac.k; t.p += r.mac.p; t.c += r.mac.c; t.f += r.mac.f; } else miss++; });
+    SL.forEach(function (s) { var m = slotOf(k, s[0]); if (!m) return; var r = m.r ? recById(m.r) : null, mm = r ? macOf(r) : null; if (mm) { n++; t.k += mm.k; t.p += mm.p; t.c += mm.c; t.f += mm.f; } else miss++; });
     return n ? '<div class="dm">≈ ' + Math.round(t.k) + ' kcal · P ' + r1(t.p) + ' · H ' + r1(t.c) + ' · G ' + r1(t.f) + (miss ? ' · +' + miss + ' sem macros' : '') + '</div>' : '';
   }
   function savedMeals(q) { return data.extra.filter(function (x) { return x.k === 'meal' && !x.del && (!q || nrm(x.t).indexOf(q) !== -1); }).sort(function (a, b) { return a.t.localeCompare(b.t); }); }
@@ -816,7 +850,7 @@ function fitBox(t) {
     else if (D.ld) { var lk = data.extra.filter(function (y) { return y.id === D.ld; })[0]; if (lk) { lk.del = true; lk.u = Date.now(); save(); openLinks(); } }
     else if (D.er) openView(D.er);
     else if (D.edit) openRec(D.edit);
-    else if (D.macros) openMacros(D.macros);
+    else if (D.vdel) { if (!sure) { sure = true; b.textContent = 'Eliminar? Toca outra vez'; b.classList.add('bad'); } else { edId = D.vdel; sure = true; delRec(); } }
     else if (D.mclose) { if (mx) openView(mx.id); }
     else if (D.mfind) openPick(D.mfind, D.mn);
     else if (D.ppick && pctx) { var li = data.extra.filter(function (y) { return y.id === D.ppick; })[0]; if (li) { if (pctx.row >= 0 && pctx.draft) { pctx.draft.items[pctx.row].n = li.d; saveNut(nutKey(li.d), li.d, li); } else saveNut(pctx.key, pctx.name, li); pDone(); } }
@@ -873,7 +907,7 @@ function fitBox(t) {
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
 
-  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; } });
+  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { var y = window.scrollY; data = load(); if ($('m').hidden) render(); window.scrollTo(0, y); } });
   var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
   if (sh) {
