@@ -48,10 +48,10 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .day.today { outline: 2px solid var(--orchid); }
 .day h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; }
 .day h3 span { color: var(--mute); font-weight: 400; font-size: 13px; }
-.slot { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 4px; border-top: 1px solid var(--line); min-height: 44px; }
-.slot .sl { flex: none; width: 58px; font-size: 12px; color: var(--mute); text-transform: uppercase; letter-spacing: .04em; }
+.slot { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; padding: 9px 4px; border-top: 1px solid var(--line); min-height: 44px; }
+.slot .sl { flex: none; width: 78px; font-size: 12px; line-height: 1.3; color: var(--mute); text-transform: uppercase; letter-spacing: .04em; }
 .slot .st { flex: 1; min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
-.slot .st.empty { color: var(--mute); }
+.slot .st.empty { color: var(--mute); padding: 0; margin: 0; text-align: left; border: 0; background: none; box-shadow: none; }
 .slot .st small { display: block; color: var(--mute); font-size: 12px; }
 .card { display: block; width: 100%; text-align: left; background: var(--paper); border-radius: 18px; padding: 13px 16px; margin-bottom: 8px; box-shadow: 0 10px 26px -18px var(--shadow); }
 .bdg { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font: 600 11px/18px var(--font); text-align: center; }
@@ -100,6 +100,15 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pick { max-height: 46vh; overflow-y: auto; padding: 2px 2px 14px; margin: -2px -2px 0; }
 .dm { margin: -2px 0 6px; font-size: 12px; color: var(--mute); }
+.dsum { display: flex; align-items: center; gap: 14px; margin: 2px 0 8px; padding: 12px 14px; border-radius: 16px; background: var(--glass); box-shadow: var(--rim); }
+.dsum .dk { display: flex; flex-direction: column; line-height: 1; }
+.dsum .dk b { font: 400 30px/1 var(--serif); color: var(--ink); }
+.dsum .dk span { font-size: 11px; color: var(--mute); margin-top: 3px; text-transform: uppercase; letter-spacing: .05em; }
+.dsum .dmc { display: flex; gap: 16px; margin-left: auto; }
+.dsum .dmc span { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: var(--mute); gap: 2px; }
+.dsum .dmc b { font-size: 17px; font-weight: 600; color: var(--ink); }
+.dsum .dmc i { font-style: normal; font-size: 11px; font-weight: 400; color: var(--mute); margin-left: 1px; }
+.dmiss { margin: -4px 4px 8px; font-size: 12px; color: var(--mute); }
 .mac { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .mac label { margin: 0 0 3px 2px; font-size: 11px; }
 .mac input { padding: 10px 8px; text-align: center; }
@@ -722,7 +731,7 @@ function fitBox(t) {
     $('sh').innerHTML = '<h2>' + (lib ? 'Adicionar à biblioteca' : 'Que alimento é “' + esc(name) + '”?') + '</h2>' +
       '<div class="chipsrow" id="msrc"></div>' +
       '<div class="addrow" style="margin:0"><input type="text" id="mq" placeholder="Pesquisar produto" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><button type="button" class="btn ghost full" data-mscan="1" id="mscanb">Ler código de barras</button><div id="scanbox" hidden><video id="scv" playsinline muted></video><p id="scmsg">Aponta ao código de barras</p><button type="button" class="btn ghost full" data-scanx="1">Cancelar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
-      '<details id="mmanual"' + (lib ? '' : ' hidden open') + '><summary style="cursor:pointer;color:var(--ink);font-size:14px;padding:8px 2px">' + (lib ? 'Não encontras? Cria o alimento à mão (valores por 100 g)' : 'Escreve tu os valores por 100 g (do rótulo)') + '</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
+      '<details id="mmanual"' + (lib ? '' : ' hidden open') + '><summary style="cursor:pointer;color:var(--ink);font-size:14px;padding:8px 2px">' + (lib ? 'Não encontras? Cria o alimento à mão' : 'Escreve tu os valores por 100 g (do rótulo)') + '</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' + '<div class="two" style="margin-top:8px"><div><label for="mmb">Valores por</label><select id="mmb"><option value="g">100 g</option><option value="un">1 unidade</option></select></div><div><label for="mmg">1 unidade pesa (g)</label><input type="text" inputmode="decimal" id="mmg" placeholder="ex.: 70"></div></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
       '<button class="btn ghost full" data-mbackm="1">' + (lib ? 'Concluir' : 'Voltar') + '</button>';
     $('m').hidden = false;   // the sheet may be closed (adding from the Alimentos tab)
     paintSrc(); if (name) mSearch(); else $('mres').innerHTML = '<p style="color:var(--mute)">Nome ou código de barras.</p>';
@@ -786,7 +795,7 @@ function fitBox(t) {
     var all = libs(), q = nrm(fq), l = all.filter(function (x) { return !q || nrm(x.d).indexOf(q) !== -1; });
     var h = '<div class="stack"><input type="search" id="fq" placeholder="Pesquisar nos teus alimentos" value="' + esc(fq) + '" autocomplete="off" aria-label="Pesquisar nos teus alimentos"><button class="btn full" data-ladd="1">+ Adicionar alimento</button></div>';
     h += l.length ? l.map(function (x) {
-      return '<div class="frow"><button type="button" class="fmain" data-fedit="' + esc(x.id) + '" aria-label="Editar ' + esc(x.d) + '">' + (x.img ? thumb(x.img) : '<span class="th add">+</span>') + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span></button><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
+      return '<div class="frow"><button type="button" class="fmain" data-fedit="' + esc(x.id) + '" aria-label="Editar ' + esc(x.d) + '">' + (x.img ? thumb(x.img) : '<span class="th add">+</span>') + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small>' + (x.gu > 0 ? '<small>1 un. = ' + x.gu + ' g · ' + Math.round(x.kcal * x.gu / 100) + ' kcal · P ' + r1(x.p * x.gu / 100) + ' · H ' + r1(x.c * x.gu / 100) + ' · G ' + r1(x.f * x.gu / 100) + '</small>' : '') + '</span></button><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
         '<span class="stk"><input type="text" inputmode="decimal" data-stk="' + esc(x.id) + '" value="' + esc(x.s != null ? String(x.s).replace('.', ',') : '') + '" placeholder="Stock em casa" aria-label="Stock de ' + esc(x.d) + '"><input type="text" inputmode="decimal" class="gu" data-gu="' + esc(x.id) + '" value="' + esc(x.gu != null ? String(x.gu).replace('.', ',') : '') + '" placeholder="g / unidade" aria-label="Peso de uma unidade em gramas"><select data-stu="' + esc(x.id) + '" aria-label="Unidade do stock">' + ['g', 'ml', 'un'].map(function (u) { return '<option value="' + u + '"' + ((x.su || 'g') === u ? ' selected' : '') + '>' + (u === 'un' ? 'unidades' : u) + '</option>'; }).join('') + '</select></span></div>';
     }).join('') : '<div class="empty">' + (all.length ? 'Nenhum alimento com esse nome.' : 'Sem alimentos ainda.') + '</div>';
     $('v-food').innerHTML = h;
@@ -798,10 +807,10 @@ function fitBox(t) {
   }
   function editFood(id) {
     var x = data.extra.filter(function (y) { return y.id === id && y.k === 'lib'; })[0]; if (!x) return;
-    fctx = { id: id, img: x.img || '' };
+    fctx = { id: id, img: x.img || '', mode: 'g', orig: { fek: x.kcal, fep: x.p, fec: x.c, fef: x.f }, conv: {} };
     var f = function (v) { return esc(String(v != null ? v : '').replace('.', ',')); };
     $('sh').innerHTML = '<h2>Editar alimento</h2><div id="fphw" class="fph"></div><div><label for="fen">Nome</label><input type="text" id="fen" value="' + esc(x.d) + '"></div>' +
-      '<div><label>Por 100 g</label><div class="mac"><div><label for="fek">kcal</label><input type="text" inputmode="decimal" id="fek" value="' + f(x.kcal) + '"></div><div><label for="fep">prot.</label><input type="text" inputmode="decimal" id="fep" value="' + f(x.p) + '"></div><div><label for="fec">hidr.</label><input type="text" inputmode="decimal" id="fec" value="' + f(x.c) + '"></div><div><label for="fef">gord.</label><input type="text" inputmode="decimal" id="fef" value="' + f(x.f) + '"></div></div></div>' +
+      '<div class="two"><div><label for="feb">Valores por</label><select id="feb"><option value="g">100 g</option><option value="un">1 unidade</option></select></div><div><label for="feg">1 unidade pesa (g)</label><input type="text" inputmode="decimal" id="feg" placeholder="ex.: 70" value="' + f(x.gu) + '"></div></div><div><div class="mac"><div><label for="fek">kcal</label><input type="text" inputmode="decimal" id="fek" value="' + f(x.kcal) + '"></div><div><label for="fep">prot.</label><input type="text" inputmode="decimal" id="fep" value="' + f(x.p) + '"></div><div><label for="fec">hidr.</label><input type="text" inputmode="decimal" id="fec" value="' + f(x.c) + '"></div><div><label for="fef">gord.</label><input type="text" inputmode="decimal" id="fef" value="' + f(x.f) + '"></div></div></div>' +
       '<button class="btn full" data-fsave="1">Guardar</button><button class="btn ghost full" data-close="1">Cancelar</button>';
     paintFPhoto(); $('m').hidden = false;
   }
@@ -811,12 +820,12 @@ function fitBox(t) {
     if (!nm) { $('fen').focus(); return; } if (k == null || k < 0) { $('fek').focus(); return; }
     var oldKey = nrm(x.d), oldName = x.d, nid = 'lib|' + nrm(nm);
     if (nid !== x.id && data.extra.some(function (y) { return y.id === nid && !y.del; })) { $('fen').focus(); $('fen').select(); return; }
-    var vals = { kcal: Math.round(k), p: r1(num($('fep').value) || 0), c: r1(num($('fec').value) || 0), f: r1(num($('fef').value) || 0) }, now = Date.now();
+    var fgu = num($('feg').value), fun = $('feb').value === 'un'; if (fun && !(fgu > 0)) { $('feg').focus(); return; } var fac = fun ? 100 / fgu : 1, per = function (i) { var raw = $(i).value; if (fun && fctx.conv[i] === raw) return fctx.orig[i]; var v = num(raw) || 0; return v * fac; }, vals = { kcal: Math.round(per('fek')), p: r1(per('fep')), c: r1(per('fec')), f: r1(per('fef')) }, now = Date.now();
     if (nid !== x.id) {   // renamed: keep the recipes and the saved ingredient values pointing at it
       var gone = data.extra.filter(function (y) { return y.id === nid; })[0]; if (gone) data.extra.splice(data.extra.indexOf(gone), 1);
       x.id = nid; recs().forEach(function (r) { var ch = false; (r.items || []).forEach(function (it) { if (nrm(it.n) === oldKey) { it.n = nm; ch = true; } }); if (ch) r.u = now; });
     }
-    x.d = nm; x.kcal = vals.kcal; x.p = vals.p; x.c = vals.c; x.f = vals.f; x.img = fctx.img || ''; x.del = false; x.u = now;
+    x.d = nm; x.kcal = vals.kcal; x.p = vals.p; x.c = vals.c; x.f = vals.f; x.img = fctx.img || ''; x.del = false; x.u = now; if (fgu > 0) x.gu = r1(fgu); else delete x.gu;
     data.extra.forEach(function (y) {
       if (y.k !== 'nut' || y.del || !(y.id === 'nu|' + oldKey || y.d === oldName)) return;
       if (y.id === 'nu|' + oldKey && oldKey !== nrm(nm)) { y.id = 'nu|' + nrm(nm); y.n = nm; }
@@ -852,7 +861,7 @@ function fitBox(t) {
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
     SL.forEach(function (s) { var m = slotOf(k, s[0]); if (!m) return; var r = m.r ? recById(m.r) : null, mm = r ? macOf(r) : null; if (mm) { n++; t.k += mm.k; t.p += mm.p; t.c += mm.c; t.f += mm.f; } else miss++; });
-    return n ? '<div class="dm">≈ ' + Math.round(t.k) + ' kcal · P ' + r1(t.p) + ' · H ' + r1(t.c) + ' · G ' + r1(t.f) + (miss ? ' · +' + miss + ' sem macros' : '') + '</div>' : '';
+    return n ? '<div class="dsum"><div class="dk"><b>' + Math.round(t.k) + '</b><span>kcal</span></div><div class="dmc"><span><b>' + Math.round(t.p) + '<i>g</i></b>proteína</span><span><b>' + Math.round(t.c) + '<i>g</i></b>hidratos</span><span><b>' + Math.round(t.f) + '<i>g</i></b>gordura</span></div></div>' + (miss ? '<p class="dmiss">+ ' + miss + (miss === 1 ? ' refeição sem macros' : ' refeições sem macros') + '</p>' : '') : '';
   }
   function savedMeals(q) { return data.extra.filter(function (x) { return x.k === 'meal' && !x.del && (!q || nrm(x.t).indexOf(q) !== -1); }).sort(function (a, b) { return a.t.localeCompare(b.t); }); }
   function saveMeal(t) {   // remember what was typed, so next time it is one tap away
@@ -987,7 +996,7 @@ function fitBox(t) {
     else if (D.msrc && mctx) { mctx.src = D.msrc; $('mq').value = D.msrc === 'usda' ? enGuess(mctx.name) : mctx.name; paintSrc(); mSearch(); }
     else if (D.mbackm) mDone();
     else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { if (mctx.lib) { addLib(pk); var cell = document.createElement('span'); cell.className = 'stg'; cell.textContent = '✓ Adicionado'; b.replaceWith(cell); } else { saveNut(mctx.key, mctx.name, pk); mDone(); } } }
-    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mv = { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }; if (mctx.lib) { mv.d = mnm; addLib(mv); } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
+    else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mUn = mctx.lib && $('mmb').value === 'un', mGu = mctx.lib ? num($('mmg').value) : null; if (mUn && !(mGu > 0)) { $('mmg').focus(); return; } var mfa = mUn ? 100 / mGu : 1, mv = { d: 'escrito por ti', kcal: Math.round(mk1 * mfa), p: r1((mp1 || 0) * mfa), c: r1((mc1 || 0) * mfa), f: r1((mf1 || 0) * mfa) }; if (mctx.lib) { mv.d = mnm; var mlx = addLib(mv); if (mGu > 0) { mlx.gu = r1(mGu); save(); } } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
     else if (D.msave && mx) { var t = mxTotals(), rr = recById(mx.id); if (rr) { rr.serv = t.s; rr.mac = { k: t.k, p: t.p, c: t.c, f: t.f, cov: t.ok + '/' + t.tot }; rr.u = Date.now(); save(); } openView(mx.id); render(); }
     else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var dr2 = snapDraft(); openPick('', '', dr2, dr2.items.length - 1); }
     else if (D.iup !== undefined || D.idn !== undefined) { readRows(); var ia = Number(D.iup !== undefined ? D.iup : D.idn), ib = D.iup !== undefined ? ia - 1 : ia + 1; if (edItems[ia] && edItems[ib]) { var tmp = edItems[ia]; edItems[ia] = edItems[ib]; edItems[ib] = tmp; paintRows(); } }
@@ -1032,7 +1041,7 @@ function fitBox(t) {
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
 
-  document.addEventListener('change', function (e) { var t = e.target; if (t.classList && t.classList.contains('igu')) { var gL = libOf(t.dataset.igu), gn = num(t.value); if (gL && gn > 0) { gL.gu = r1(gn); gL.u = Date.now(); save(); updInfo(); } return; } if (t.id === 'fph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u && fctx) { fctx.img = u; paintFPhoto(); } }, 220); return; } if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; updInfo(); } });
+  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'feb' && fctx) { var cg = num($('feg').value); if (!(cg > 0)) { t.value = fctx.mode; $('feg').focus(); return; } if (t.value !== fctx.mode) { ['fek', 'fep', 'fec', 'fef'].forEach(function (i) { var raw = $(i).value, v = num(raw); if (v == null) return; if (t.value === 'g' && fctx.conv[i] === raw) { $(i).value = String(fctx.orig[i]).replace('.', ','); return; } v = t.value === 'un' ? v * cg / 100 : v * 100 / cg; $(i).value = String(i === 'fek' ? Math.round(v) : r1(v)).replace('.', ','); if (t.value === 'un') fctx.conv[i] = $(i).value; }); fctx.mode = t.value; } return; } if (t.classList && t.classList.contains('igu')) { var gL = libOf(t.dataset.igu), gn = num(t.value); if (gL && gn > 0) { gL.gu = r1(gn); gL.u = Date.now(); save(); updInfo(); } return; } if (t.id === 'fph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u && fctx) { fctx.img = u; paintFPhoto(); } }, 220); return; } if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; updInfo(); } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { var y = window.scrollY; data = load(); if ($('m').hidden) render(); window.scrollTo(0, y); } });
   var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
   if (sh) {
