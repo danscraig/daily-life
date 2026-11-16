@@ -159,6 +159,10 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .frow .tx { min-width: 0; overflow-wrap: anywhere; }
 .frow small { display: block; color: var(--mute); font-size: 12px; }
 .frow .fmain { grid-column: 1 / 3; display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0; padding: 0; color: inherit; font: inherit; }
+#scanbox { display: flex; flex-direction: column; gap: 8px; }
+#scanbox[hidden] { display: none; }
+#scv { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 20px; background: #000; }
+#scmsg { margin: 0; text-align: center; color: var(--mute); font-size: 14px; }
 .th.add { display: inline-grid; place-items: center; border: 1.5px dashed var(--line); background: none; color: var(--mute); font-size: 22px; }
 .fph { display: flex; align-items: center; gap: 14px; }
 .fpv { width: 96px; height: 96px; flex: none; border-radius: 20px; object-fit: cover; background: rgba(0,0,0,.05); display: grid; place-items: center; color: var(--mute); font-size: 13px; }
@@ -664,11 +668,47 @@ function fitBox(t) {
     var t = mxTotals(), el = $('mtot'); if (!el) return;
     el.innerHTML = '<b>Por porção</b> (' + t.s + ' ' + (t.s === 1 ? 'porção' : 'porções') + '): ' + t.k + ' kcal · P ' + t.p + ' g · H ' + t.c + ' g · G ' + t.f + ' g<small>Contados ' + t.ok + ' de ' + t.tot + ' ingredientes.' + (t.miss.length ? ' Em falta: ' + esc(t.miss.join(', ')) + '.' : '') + '</small>';
   }
+  /* ---- barcode scanner: the phone's own detector when it has one, otherwise a small reader library ---- */
+  var scan = null;
+  function stopScan() {
+    if (scan) { clearTimeout(scan.t); if (scan.rd) { try { scan.rd.reset(); } catch (e) {} } if (scan.st) scan.st.getTracks().forEach(function (t) { t.stop(); }); scan = null; }
+    var v = $('scv'); if (v) { try { v.srcObject = null; } catch (e) {} } var bx = $('scanbox'); if (bx) bx.hidden = true; var bb = $('mscanb'); if (bb) bb.hidden = false;
+  }
+  function scanMsg(t) { var e = $('scmsg'); if (e) e.textContent = t; }
+  function scanFound(code) {
+    stopScan(); var q = $('mq'); if (!q || !mctx) return; q.value = code; mSearch();
+  }
+  function loadZX(cb) {
+    if (window.ZXing) return cb(true);
+    var sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+    sc.onload = function () { cb(!!window.ZXing); }; sc.onerror = function () { cb(false); }; document.head.appendChild(sc);
+  }
+  function startScan() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('mres').innerHTML = '<p style="color:var(--mute)">Este browser não deixa usar a câmara. Escreve o código.</p>'; return; }
+    stopScan(); $('scanbox').hidden = false; $('mscanb').hidden = true; scanMsg('A abrir a câmara…');
+    var me = scan = { t: 0, st: null, rd: null };
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then(function (st) {
+      if (scan !== me) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
+      me.st = st; var v = $('scv'); v.srcObject = st; v.play().catch(function () {}); scanMsg('Aponta ao código de barras');
+      if ('BarcodeDetector' in window) {
+        var det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+        (function tick() { if (scan !== me) return; det.detect(v).then(function (r) { if (scan !== me) return; if (r && r[0] && r[0].rawValue) scanFound(r[0].rawValue); else me.t = setTimeout(tick, 250); }).catch(function () { if (scan === me) me.t = setTimeout(tick, 400); }); })();
+      } else {
+        scanMsg('A preparar o leitor…');
+        loadZX(function (ok) {
+          if (scan !== me) return; if (!ok) { stopScan(); $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui carregar o leitor. Escreve o código.</p>'; return; }
+          scanMsg('Aponta ao código de barras'); me.rd = new ZXing.BrowserMultiFormatReader();
+          me.rd.decodeFromStream(st, v, function (res) { if (res && scan === me) scanFound(res.getText()); });
+        });
+      }
+    }).catch(function () { if (scan === me) { stopScan(); $('mres').innerHTML = '<p style="color:var(--mute)">Sem acesso à câmara. Permite a câmara nas definições do browser.</p>'; } });
+  }
   function openMatch(key, name, draft, lib, pick) {
+    stopScan();
     mctx = { key: key, name: name, res: [], src: 'off', draft: draft || null, lib: !!lib, pick: pick || null };
     $('sh').innerHTML = '<h2>' + (lib ? 'Adicionar à biblioteca' : 'Que alimento é “' + esc(name) + '”?') + '</h2>' +
       '<div class="chipsrow" id="msrc"></div>' +
-      '<div class="addrow" style="margin:0"><input type="text" id="mq" placeholder="Pesquisar produto" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
+      '<div class="addrow" style="margin:0"><input type="text" id="mq" placeholder="Pesquisar produto" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><button type="button" class="btn ghost full" data-mscan="1" id="mscanb">Ler código de barras</button><div id="scanbox" hidden><video id="scv" playsinline muted></video><p id="scmsg">Aponta ao código de barras</p><button type="button" class="btn ghost full" data-scanx="1">Cancelar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
       '<details id="mmanual"' + (lib ? '' : ' hidden open') + '><summary style="cursor:pointer;color:var(--ink);font-size:14px;padding:8px 2px">' + (lib ? 'Não encontras? Cria o alimento à mão (valores por 100 g)' : 'Escreve tu os valores por 100 g (do rótulo)') + '</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
       '<button class="btn ghost full" data-mbackm="1">' + (lib ? 'Concluir' : 'Voltar') + '</button>';
     $('m').hidden = false;   // the sheet may be closed (adding from the Alimentos tab)
@@ -878,7 +918,7 @@ function fitBox(t) {
     $('v-shop').innerHTML = h;
   }
 
-  function closeM() { $('m').hidden = true; slotCtx = null; edId = null; }
+  function closeM() { stopScan(); $('m').hidden = true; slotCtx = null; edId = null; }
   function render() {
     $('v-plan').hidden = view !== 'plan'; $('v-rec').hidden = view !== 'rec'; $('v-shop').hidden = view !== 'shop'; $('v-food').hidden = view !== 'food';
     [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
@@ -920,6 +960,8 @@ function fitBox(t) {
     else if (D.pback) pDone();
     else if (D.lopen) openLib();
     else if (D.ladd) openMatch('', '', null, true);
+    else if (D.mscan) startScan();
+    else if (D.scanx) stopScan();
     else if (D.fedit) editFood(D.fedit);
     else if (D.fphrm) { if (fctx) { fctx.img = ''; paintFPhoto(); } }
     else if (D.fsave) saveFood();
