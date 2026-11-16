@@ -246,14 +246,14 @@ function fitBox(t) {
 (function () {
   'use strict';
   var LS = 'meals-v1';
-  var SL = [['l', 'Almoço'], ['s', 'Lanche']];   // o jantar está escondido por agora (o que já estava planeado fica guardado): para o voltar a ter, pôr ['d', 'Jantar'] entre os dois
+  var SL = [['b', 'Pequeno-almoço'], ['l', 'Almoço'], ['s', 'Lanche']];   // o jantar está escondido por agora (o que já estava planeado fica guardado): para o voltar a ter, pôr ['d', 'Jantar'] entre os dois
 
   var DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
   var MON = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   var BASE_TAGS = ['rápido', 'vegetariano', 'congela bem'];
   /* data: recipes [{id,n,min,tags[],ing[],steps,u}], plan {'YYYY-MM-DD': {l|d|s: {r: recipe id} or {t: free text}}},
      chk {'weekMonday': {normalised ingredient: 1}} (ticked on the shopping list), extra [{id,t,done}] (things typed by hand) */
-  var data = load(), view = 'plan', pmode = 'week', ask = '', swk = addDays(monday(new Date()), 7), wk = monday(new Date()), rq = '', rtag = '', slotCtx = null, edId = null, edTags = [], sure = false;
+  var data = load(), view = 'plan', pmode = 'week', ask = '', swk = addDays(monday(new Date()), 7), wk = monday(new Date()), rq = '', rtag = '', slotCtx = null, edId = null, edTags = [], edMt = [], sure = false;
 
   function load() {
     var d = null; try { d = JSON.parse(localStorage.getItem(LS)); } catch (e) {}
@@ -311,7 +311,7 @@ function fitBox(t) {
   function strip(m) { var o = JSON.parse(JSON.stringify(m)); delete o.u; return o; }
   function swapDays(a, b) {
     if (a === b) return;
-    ['l', 'd', 's'].forEach(function (s) {
+    ['b', 'l', 'd', 's'].forEach(function (s) {
       var ma = slotOf(a, s), mb = slotOf(b, s); if (!ma && !mb) return;
       ma = ma ? strip(ma) : null; mb = mb ? strip(mb) : null;
       setSlot(a, s, mb); setSlot(b, s, ma);
@@ -359,17 +359,18 @@ function fitBox(t) {
     $('v-plan').innerHTML = seg + h;
   }
   function openSlot(k, s) {
-    slotCtx = { k: k, s: s, q: '' };
+    slotCtx = { k: k, s: s, q: '', all: false };
     var tpl = k.charAt(0) === 'T', d = tpl ? null : new Date(k + 'T12:00:00'), lab = (tpl ? TD[+k.slice(1)] : DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]) + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
     var cur = slotOf(k, s);
-    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="pick" id="spick"></div>' +
+    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="chipsrow" id="sfil"></div><div class="pick" id="spick"></div>' +
       '<div><label for="sfree">Ou escreve</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Usar</button></div></div>' +
       (cur ? '<button class="btn ghost full" data-sclear="1">Limpar esta refeição</button>' : '') + '<button class="btn ghost full" data-close="1">Fechar</button>';
     fillPick(); $('m').hidden = false;
   }
   function fillPick() {
-    var q = nrm(slotCtx.q), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    $('spick').innerHTML = l.length ? '<div class="rgrid">' + l.map(function (r) { return recCard(r, 'data-rpick'); }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Sem receitas ainda.') + '</div>';
+    var fl = $('sfil'); if (fl) fl.innerHTML = '<button type="button" data-sall="0" aria-pressed="' + !slotCtx.all + '">' + esc(mtName(slotCtx.s)) + '</button><button type="button" data-sall="1" aria-pressed="' + !!slotCtx.all + '">Todas</button>';
+    var q = nrm(slotCtx.q), l = recs().filter(function (r) { var t = mtOf(r); return (slotCtx.all || !t.length || t.indexOf(slotCtx.s) !== -1) && (!q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1); }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    $('spick').innerHTML = l.length ? '<div class="rgrid">' + l.map(function (r) { return recCard(r, 'data-rpick'); }).join('') + '</div>' : '<div class="empty">' + (recs().length ? (slotCtx.all ? 'Nenhuma receita corresponde.' : 'Sem receitas de ' + esc(mtName(slotCtx.s).toLowerCase()) + '. Toca em Todas.') : 'Sem receitas ainda.') + '</div>';
     $('spick').innerHTML = $('spick').innerHTML + savedHTML(q);
   }
   function copyWeek() {
@@ -425,13 +426,19 @@ function fitBox(t) {
     if (!ok) return r.mac && r.mac.k != null ? { k: r.mac.k, p: r.mac.p, c: r.mac.c, f: r.mac.f, ok: 0, tot: tot } : null;
     return { k: Math.round(t.k / sv), p: r1(t.p / sv), c: r1(t.c / sv), f: r1(t.f / sv), ok: ok, tot: tot };
   }
+  function mtOf(r) { return Array.isArray(r.mt) ? r.mt : []; }
+  function mtName(c) { var m = SL.filter(function (x) { return x[0] === c; })[0]; return m ? m[1] : ''; }
+  var rtf = '';   // recipe type filter on the Receitas tab ('' = all)
+  function typeChips(sel, attr, withAll) {
+    return (withAll ? '<button type="button" ' + attr + '="" aria-pressed="' + (sel === '') + '">Todas</button>' : '') + SL.map(function (x) { return '<button type="button" ' + attr + '="' + x[0] + '" aria-pressed="' + (sel === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('');
+  }
   function recTone(n) { var T = ['#E3D9E8', '#D9E3DD', '#E8DFD3', '#D8E1EA', '#EBD9D9', '#E2E4D2'], h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) % 997; return T[h % T.length]; }
   function recCard(r, attr) {
     return '<button class="rc" ' + attr + '="' + r.id + '">' + (pcache[r.id] ? '<img class="rimg" alt="" src="' + esc(pcache[r.id]) + '">' : '<span class="rin" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span>') + '<b>' + esc(r.n) + '</b><span class="rmeta"><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small><span class="rmac">' + (function () { var m = macOf(r); return m ? '<b>' + m.k + ' kcal</b><small>P ' + m.p + ' · H ' + m.c + ' · G ' + m.f + ' g</small>' : '<small>Sem macros</small>'; })() + '</span></span></button>';
   }
   function renderRec() {
-    var q = nrm(rq), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    var h = '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas"><button class="btn full" data-newr="1">+ Nova receita</button></div>';
+    var q = nrm(rq), l = recs().filter(function (r) { return (!rtf || mtOf(r).indexOf(rtf) !== -1) && (!q || nrm(r.n + ' ' + (r.ing || []).join(' ')).indexOf(q) !== -1); }).sort(function (a, b) { return a.n.localeCompare(b.n); });
+    var h = '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas"><div class="chipsrow">' + typeChips(rtf, 'data-rtf', true) + '</div><button class="btn full" data-newr="1">+ Nova receita</button></div>';
     h += l.length ? '<div class="rgrid">' + l.map(function (r) {
       return recCard(r, 'data-er');
     }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Sem receitas ainda.') + '</div>';
@@ -440,7 +447,7 @@ function fitBox(t) {
   function openView(id) {
     var r = recById(id); if (!r) return;
     var ing = ingListHTML(r), ningr = recItems(r).filter(function (it) { return String(it.n).trim(); }).length;
-    $('sh').innerHTML = '<div class="view"><button type="button" class="vx" data-close="1" aria-label="Fechar">✕</button>' + (pcache[r.id] ? '<img class="vimg" alt="" src="' + esc(pcache[r.id]) + '">' : '') + '<h2>' + esc(r.n) + '</h2><p style="margin:2px 0 0;color:var(--mute);font-size:14px">' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</p>' +
+    $('sh').innerHTML = '<div class="view"><button type="button" class="vx" data-close="1" aria-label="Fechar">✕</button>' + (pcache[r.id] ? '<img class="vimg" alt="" src="' + esc(pcache[r.id]) + '">' : '') + '<h2>' + esc(r.n) + '</h2><p style="margin:2px 0 0;color:var(--mute);font-size:14px">' + (r.min ? r.min + ' min' : '') + (mtOf(r).length ? (r.min ? ' · ' : '') + esc(mtOf(r).map(mtName).join(', ')) : '') + '</p>' +
       (function () { var m = macOf(r); return m ? '<p style="margin:8px 0 0;font-size:14px"><b>Por porção</b>' + (r.serv > 1 ? ' (' + r.serv + ' porções)' : '') + ': ' + esc(macLine(m)) + (m.ok && m.ok < m.tot ? '<small style="display:block;color:var(--mute);margin-top:2px">Contam ' + m.ok + ' de ' + m.tot + ' ingredientes (os outros não estão na biblioteca ou não têm peso).</small>' : '') + '</p>' : ''; })() + '<h3>Ingredientes' + (ningr ? ' (' + ningr + ')' : '') + '</h3>' + (ing ? '<ul class="igl">' + ing + '</ul>' : '<p style="margin:0;color:var(--mute)">Ainda não há.</p>') +
       '<h3>Passos</h3>' + (r.steps ? '<p class="st">' + esc(r.steps) + '</p>' : '<p style="margin:0;color:var(--mute)">Ainda não há.</p>') + '</div>' +
       '<button class="btn full" data-edit="' + r.id + '">Editar</button><button class="btn ghost full" data-vdel="' + r.id + '">Eliminar</button>';
@@ -469,7 +476,7 @@ function fitBox(t) {
   }
   function snapDraft() {
     readRows(); var v = function (id) { var e = $(id); return e ? e.value : ''; };
-    return { id: edId, tags: edTags.slice(), items: edItems.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }), f: { rn: v('rn'), rm: v('rm'), rt: v('rt'), rs: v('rs'), rsv: v('rsv') } };
+    return { id: edId, tags: edTags.slice(), mt: edMt.slice(), items: edItems.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }), f: { rn: v('rn'), rm: v('rm'), rt: v('rt'), rs: v('rs'), rsv: v('rsv') } };
   }
   function lineKcal(it) {   // kcal of one line, or a reason it cannot be counted
     var n = String(it.n || '').trim(); if (!n) return { t: '' };
@@ -497,18 +504,19 @@ function fitBox(t) {
     updInfo();
   }
   function openRec(id, draft) {
-    var r = id ? recById(id) : null; edId = id || ''; sure = false; if (!draft) edPhoto = undefined; edTags = r ? (r.tags || []).slice() : [];
+    var r = id ? recById(id) : null; edId = id || ''; sure = false; if (!draft) edPhoto = undefined; edTags = r ? (r.tags || []).slice() : []; edMt = r ? mtOf(r).slice() : [];
     edItems = r ? (Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine)) : [];
     edItems.forEach(function (x) { if (!String(x.q).trim() && x.u !== 'a gosto') x.u = ''; });
     $('sh').innerHTML = '<h2>' + (r ? 'Editar receita' : 'Nova receita') + '</h2><div><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="Nome da receita"></div>' +
-      '<div id="rphw"></div>' +
+      '<div id="rphw"></div>' + '<div><label>Refeição</label><div class="chipsrow" id="rmt"></div></div>' +
       '<div class="two"><div><label for="rm">Minutos</label><input type="number" id="rm" inputmode="numeric" min="0" placeholder="20" value="' + esc(r && r.min ? r.min : '') + '"></div><div><label for="rsv">Porções</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div></div><div hidden><input type="text" id="rt"><div id="rtags"></div></div></div>' +
       '<div><label>Ingredientes</label><div class="irows" id="irows"></div><p class="itot" id="itot"></p><button type="button" class="btn ghost full" data-iadd="1">+ Ingrediente</button></div>' +
       '<div><label for="rs">Passos</label><textarea id="rs" placeholder="1. …">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
             '<button class="btn full" data-rsave="1">Guardar</button>' + (r ? '<button class="btn ghost full" data-rdel="1">Eliminar</button>' : '') + '<button class="btn ghost full" data-close="1">Cancelar</button>';
-    if (draft) { edTags = draft.tags.slice(); edItems = draft.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }); Object.keys(draft.f).forEach(function (k) { $(k).value = draft.f[k]; }); }
-    paintTags(); paintRows(); paintPhoto(); $('m').hidden = false; if (draft) fitBox($('rs'));
+    if (draft) { edTags = draft.tags.slice(); edMt = (draft.mt || []).slice(); edItems = draft.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }); Object.keys(draft.f).forEach(function (k) { $(k).value = draft.f[k]; }); }
+    paintTags(); paintRows(); paintPhoto(); paintMt(); $('m').hidden = false; if (draft) fitBox($('rs'));
   }
+  function paintMt() { var e = $('rmt'); if (e) e.innerHTML = SL.map(function (x) { return '<button type="button" data-rmt="' + x[0] + '" aria-pressed="' + (edMt.indexOf(x[0]) !== -1) + '">' + esc(x[1]) + '</button>'; }).join(''); }
   function paintTags() {
     var all = BASE_TAGS.slice(); allTags().concat(edTags).forEach(function (t) { if (all.indexOf(t) === -1) all.push(t); });
     $('rtags').innerHTML = all.map(function (t) { return '<button type="button" data-et="' + esc(t) + '" aria-pressed="' + (edTags.indexOf(t) !== -1) + '">' + esc(t) + '</button>'; }).join('');
@@ -518,7 +526,7 @@ function fitBox(t) {
     var n = $('rn').value.trim(); if (!n) { $('rn').focus(); return; }
     if ($('rt').value.trim()) addTag();
     var r = edId ? recById(edId) : null; if (!r) { r = { id: uid() }; data.recipes.push(r); }
-    r.n = n; r.min = Number($('rm').value) || 0; r.tags = edTags.slice(); readRows(); r.items = edItems.filter(function (x) { return String(x.n).trim(); }).map(function (x) { return { n: x.n.trim(), q: String(x.q).trim(), u: x.u }; }); r.ing = r.items.map(ingLine); r.steps = $('rs').value.trim();
+    r.n = n; r.min = Number($('rm').value) || 0; r.tags = edTags.slice(); r.mt = edMt.slice(); readRows(); r.items = edItems.filter(function (x) { return String(x.n).trim(); }).map(function (x) { return { n: x.n.trim(), q: String(x.q).trim(), u: x.u }; }); r.ing = r.items.map(ingLine); r.steps = $('rs').value.trim();
     var sv = num($('rsv').value);
     if (sv > 0) r.serv = sv; else delete r.serv; r.u = Date.now();
     if (edPhoto === null) pDel(r.id); else if (typeof edPhoto === 'string') pPut(r.id, edPhoto); edPhoto = undefined;
@@ -949,6 +957,9 @@ function fitBox(t) {
     else if (D.close) closeM();
     else if (D.rt !== undefined) { rtag = rtag === D.rt ? '' : D.rt; renderRec(); }
     else if (D.newr) openRec('');
+    else if (D.rtf !== undefined) { rtf = D.rtf; renderRec(); }
+    else if (D.sall !== undefined && slotCtx) { slotCtx.all = D.sall === '1'; fillPick(); }
+    else if (D.rmt) { var mi = edMt.indexOf(D.rmt); if (mi === -1) edMt.push(D.rmt); else edMt.splice(mi, 1); paintMt(); }
     else if (D.ld) { var lk = data.extra.filter(function (y) { return y.id === D.ld; })[0]; if (lk) { lk.del = true; lk.u = Date.now(); save(); openLinks(); } }
     else if (D.er) openView(D.er);
     else if (D.edit) openRec(D.edit);
