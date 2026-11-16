@@ -872,11 +872,12 @@ function fitBox(t) {
     return out;
   }
   function goal() { var g = data.extra.filter(function (x) { return x.k === 'goal' && !x.del; })[0]; return { kcal: g && g.kcal > 0 ? g.kcal : 1200, p: g && g.p > 0 ? g.p : 85 }; }
-  function goalRows(t) {   // is the day on target? calories: within 5% of the goal; protein: reached
+  function goalRows(t, n) {   // is the day on target? calories: within 5% of the goal; protein: reached
     var g = goal(), kc = Math.round(t.k), pr = Math.round(t.p), st, tx;
     var kr = kc / g.kcal; if (kr < 0.95) { st = 'low'; tx = 'faltam ' + (g.kcal - kc) + ' kcal'; } else if (kr <= 1.05) { st = 'ok'; tx = 'meta atingida'; } else { st = 'over'; tx = kc - g.kcal + ' kcal acima'; }
     var pr0 = pr >= g.p ? ['ok', 'meta atingida'] : ['low', 'faltam ' + (g.p - pr) + ' g'];
     var row = function (lab, val, tgt, unit, cls, txt, pct) { return '<div class="dgr ' + cls + '"><div class="dgt"><span>' + lab + '</span><b>' + val + ' / ' + tgt + ' ' + unit + '</b><em>' + txt + '</em></div><div class="dgb"><i style="width:' + Math.min(100, Math.round(pct * 100)) + '%"></i></div></div>'; };
+    if (!n) return '<div class="dg">' + row('Calorias', '–', g.kcal, 'kcal', 'none', 'sem dados', 0) + row('Proteína', '–', g.p, 'g', 'none', 'sem dados', 0) + '</div>';
     return '<div class="dg">' + row('Calorias', kc, g.kcal, 'kcal', st, tx, kr) + row('Proteína', pr, g.p, 'g', pr0[0], pr0[1], pr / g.p) + '</div>';
   }
   function openGoal() {
@@ -890,9 +891,11 @@ function fitBox(t) {
     x.kcal = Math.round(k); x.p = Math.round(p); x.del = false; x.u = Date.now(); save(); closeM(); render();
   }
   function dayMacros(k) {
-    var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
-    SL.forEach(function (s) { entries(slotOf(k, s[0])).forEach(function (e) { var r = e.r ? recById(e.r) : null, mm = r ? macOf(r) : null; if (mm) { n++; t.k += mm.k; t.p += mm.p; t.c += mm.c; t.f += mm.f; } else miss++; }); });
-    return n ? '<div class="dsum"><div class="dk"><b>' + Math.round(t.k) + '</b><span>kcal</span></div><div class="dmc"><span><b>' + Math.round(t.p) + '<i>g</i></b>proteína</span><span><b>' + Math.round(t.c) + '<i>g</i></b>hidratos</span><span><b>' + Math.round(t.f) + '<i>g</i></b>gordura</span></div></div>' + goalRows(t) + (miss ? '<p class="dmiss">+ ' + miss + (miss === 1 ? ' refeição sem macros' : ' refeições sem macros') + '</p>' : '') : '';
+    var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = [];
+    SL.forEach(function (s) { entries(slotOf(k, s[0])).forEach(function (e) { var r = e.r ? recById(e.r) : null, mm = r ? macOf(r) : null; if (mm) { n++; t.k += mm.k; t.p += mm.p; t.c += mm.c; t.f += mm.f; } else { var tx = entText(e); miss.push(tx ? tx[0] : '?'); } }); });
+    if (!n && !miss.length) return '';
+    var num0 = function (v) { return n ? Math.round(v) : '–'; };
+    return '<div class="dsum"><div class="dk"><b>' + num0(t.k) + '</b><span>kcal</span></div><div class="dmc"><span><b>' + num0(t.p) + (n ? '<i>g</i>' : '') + '</b>proteína</span><span><b>' + num0(t.c) + (n ? '<i>g</i>' : '') + '</b>hidratos</span><span><b>' + num0(t.f) + (n ? '<i>g</i>' : '') + '</b>gordura</span></div></div>' + goalRows(t, n) + (miss.length ? '<p class="dmiss">Sem macros: ' + miss.map(esc).join(', ') + '</p>' : '');
   }
   function savedMeals(q) { return data.extra.filter(function (x) { return x.k === 'meal' && !x.del && (!q || nrm(x.t).indexOf(q) !== -1); }).sort(function (a, b) { return a.t.localeCompare(b.t); }); }
   function saveMeal(t) {   // remember what was typed, so next time it is one tap away
