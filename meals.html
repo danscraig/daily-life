@@ -285,7 +285,7 @@ function fitBox(t) {
   var BASE_TAGS = ['rápido', 'vegetariano', 'congela bem'];
   /* data: recipes [{id,n,min,tags[],ing[],steps,u}], plan {'YYYY-MM-DD': {l|d|s: {r: recipe id} or {t: free text}}},
      chk {'weekMonday': {normalised ingredient: 1}} (ticked on the shopping list), extra [{id,t,done}] (things typed by hand) */
-  var data = load(), view = 'plan', pmode = 'week', ask = '', swk = addDays(monday(new Date()), 7), wk = monday(new Date()), rq = '', rtag = '', slotCtx = null, edId = null, edTags = [], edMt = [], sure = false;
+  var data = load(), view = 'plan', pmode = 'week', ask = '', swk = monday(new Date()), wk = monday(new Date()), rq = '', rtag = '', slotCtx = null, edId = null, edTags = [], edMt = [], sure = false;
 
   function load() {
     var d = null; try { d = JSON.parse(localStorage.getItem(LS)); } catch (e) {}
@@ -935,9 +935,9 @@ function fitBox(t) {
   }
   function renderShop() {
     var wkey = ds(swk), items = weekItems(swk), end = addDays(swk, 6), hm = haveMap(wkey), qm = qtyMap(wkey);
-    var thisMon = ds(monday(new Date())), nextMon = ds(addDays(monday(new Date()), 7)), sub = wkey === nextMon ? 'Próxima semana' : wkey === thisMon ? 'Esta semana · conta com o teu stock' : '<button data-wk="0" class="pill">Ir para a próxima semana</button>';
+    var thisMon = ds(monday(new Date())), nextMon = ds(addDays(monday(new Date()), 7)), sub = wkey === thisMon ? 'Esta semana' : '<button data-wk="0" class="pill">Voltar a esta semana</button>';
     var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Semana anterior">‹</button><div class="lab">' + swk.getDate() + ' ' + MON[swk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + sub + '</small></div><button class="r" data-wk="1" aria-label="Semana seguinte">›</button></div>';
-    var auto = wkey === thisMon ? stockCheck(items) : {};   // this week: your stock decides what goes in the cart
+    var auto = {};   // the list shows everything the planned meals need; no stock subtraction
     function amtOf(it) { var a = auto[it.key]; if (a && a.st === 'n' && a.single) return fmtAmt({ tot: a.miss, u: a.su, has: true }); return qm[it.key] || fmtAmt(it); }
     function stOf(it) { var a = auto[it.key]; if (a) return a.st; var r = hm[it.key]; return r && r.a === amtOf(it) ? r.s : ''; }   // a changed amount asks for a new confirmation
     function row(it) {
@@ -973,7 +973,7 @@ function fitBox(t) {
     else if (D.gsave) saveGoal();
     else if (D.hv) { var hw = ds(swk), hit = weekItems(swk).filter(function (i) { return i.key === D.hv; })[0]; if (hit) { var hq = qtyMap(hw)[hit.key] || fmtAmt(hit), hr = haveMap(hw)[hit.key], same = hr && hr.a === hq && hr.s === D.hs; setHave(hw, hit.key, same ? '' : D.hs, hq); renderShop(); } }
     else if (D.v) { view = D.v; lmsg = ''; render(); window.scrollTo(0, 0); }
-    else if (D.wk !== undefined) { if (view === 'shop') swk = D.wk === '0' ? addDays(monday(new Date()), 7) : addDays(swk, 7 * Number(D.wk)); else wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
+    else if (D.wk !== undefined) { if (view === 'shop') swk = D.wk === '0' ? monday(new Date()) : addDays(swk, 7 * Number(D.wk)); else wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
     else if (D.s && D.k) openSlot(D.k, D.s);
     else if (D.rpick && slotCtx) { addEntry(slotCtx.k, slotCtx.s, { r: D.rpick }); closeM(); render(); }
     else if (D.shf !== undefined && slotCtx) { var hk = slotCtx.k, hs = slotCtx.s, ha = entries(slotOf(hk, hs)), hi = Number(D.shf); if (ha[hi]) { ha[hi].h = ha[hi].h ? 0 : 1; putEntries(hk, hs, ha); render(); openSlot(hk, hs); } }
