@@ -139,6 +139,8 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .irow .ipr span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; }
 .irow .ipr button { width: 34px; height: 28px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 11px; color: var(--ink); }
 .irow .ipr button:disabled { opacity: .3; }
+.irow .igu { width: 64px; flex: none; padding: 5px 8px; border-radius: 10px; text-align: center; font-size: 14px; }
+.irow .ipr .ik { display: flex; align-items: center; gap: 6px; overflow: visible; white-space: normal; }
 .itot { margin: 0 0 8px; font-size: 13px; color: var(--mute); }
 .itot:empty { display: none; }
 .irow .rm { width: 36px; height: 36px; border-radius: 50%; color: var(--mute); align-self: center; }
@@ -478,17 +480,20 @@ function fitBox(t) {
     readRows(); var v = function (id) { var e = $(id); return e ? e.value : ''; };
     return { id: edId, tags: edTags.slice(), mt: edMt.slice(), items: edItems.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }), f: { rn: v('rn'), rm: v('rm'), rt: v('rt'), rs: v('rs'), rsv: v('rsv') } };
   }
+  var UGUESS = { 'pao de forma': 30, 'ovo': 55, 'banana': 120, 'maca': 150, 'iogurte': 125 };   // only shown as a hint in the box
   function lineKcal(it) {   // kcal of one line, or a reason it cannot be counted
     var n = String(it.n || '').trim(); if (!n) return { t: '' };
     if (it.u === 'a gosto') return { t: 'a gosto' };
     var rec = nutRec(nutKey(n)); if (!rec) return { t: 'não conta' };
-    var g = itemGrams(it, rec); if (g == null) return { t: String(it.q || '').trim() ? 'sem peso (g / unidade)' : '', k: 0 };
+    var g = itemGrams(it, rec); if (g == null) return { t: String(it.q || '').trim() ? 'sem peso' : '', k: 0, need: (it.u === 'un' || it.u === '') && parseQ(it.q) > 0 ? n : '' };
     return { t: Math.round(g) + ' g · ' + Math.round(rec.kcal * g / 100) + ' kcal', k: rec.kcal * g / 100 };
   }
   function updInfo() {   // live kcal under each row and the total
     readRows(); var tot = 0, cnt = 0;
     [].forEach.call(document.querySelectorAll('#irows .irow'), function (row, i) {
-      var li = lineKcal(edItems[i]), e = row.querySelector('.ik'); if (e) e.textContent = li.t; if (li.k) { tot += li.k; cnt++; }
+      var li = lineKcal(edItems[i]), e = row.querySelector('.ik');
+      if (e) { if (li.need) { if (!e.querySelector('.igu')) e.innerHTML = '1 un. = <input type="text" inputmode="decimal" class="igu" data-igu="' + esc(li.need) + '" placeholder="' + (UGUESS[nrm(li.need)] || 'g') + '" aria-label="Gramas de uma unidade"> g'; } else e.textContent = li.t; }
+      if (li.k) { tot += li.k; cnt++; }
     });
     var el = $('itot'), sv = Math.max(1, num(($('rsv') || {}).value) || 1), named = edItems.filter(function (x) { return String(x.n).trim(); }).length;
     if (el) el.textContent = named ? (cnt ? Math.round(tot / sv) + ' kcal por porção' + (sv > 1 ? ' · ' + Math.round(tot) + ' no total' : '') : '') : '';
@@ -1027,7 +1032,7 @@ function fitBox(t) {
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
 
-  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'fph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u && fctx) { fctx.img = u; paintFPhoto(); } }, 220); return; } if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; updInfo(); } });
+  document.addEventListener('change', function (e) { var t = e.target; if (t.classList && t.classList.contains('igu')) { var gL = libOf(t.dataset.igu), gn = num(t.value); if (gL && gn > 0) { gL.gu = r1(gn); gL.u = Date.now(); save(); updInfo(); } return; } if (t.id === 'fph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u && fctx) { fctx.img = u; paintFPhoto(); } }, 220); return; } if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; updInfo(); } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { var y = window.scrollY; data = load(); if ($('m').hidden) render(); window.scrollTo(0, y); } });
   var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
   if (sh) {
