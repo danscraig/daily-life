@@ -105,6 +105,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .lrow { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 14px; padding: 8px 10px; margin-bottom: 6px; }
 .lrow small { display: block; color: var(--mute); font-size: 12px; }
 .lrow .addb { flex: none; width: auto; padding: 8px 14px; font-size: 14px; }
+.mres .lrow .addb { width: auto; margin: 0; background: var(--accent); color: var(--accent-ink); border-radius: 999px; }
 .lrow .stg { flex: none; font-size: 12px; color: var(--mute); }
 .lrow .x { flex: none; width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
 .mres button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--paper); border-radius: 14px; padding: 10px 12px; margin-bottom: 6px; }
@@ -504,7 +505,7 @@ function fitBox(t) {
     function next(err) {
       if (i >= urls.length) return Promise.reject(err || new Error('off'));
       var u = urls[i++], ac = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 10000);
-      return fetch(u, ac ? { signal: ac.signal } : {}).then(function (r) { clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function (e) { clearTimeout(to); return new Promise(function (ok) { setTimeout(ok, 700); }).then(function () { return next(e); }); });
+      return fetch(u, ac ? { signal: ac.signal } : {}).then(function (r) { clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function (e) { clearTimeout(to); return new Promise(function (ok) { setTimeout(ok, 1500); }).then(function () { return next(e); }); });
     }
     return next();
   }
@@ -578,6 +579,7 @@ function fitBox(t) {
       '<div class="addrow" style="margin:0"><input type="text" id="mq" placeholder="Pesquisar produto" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
       '<details id="mmanual" hidden open><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Escreve tu os valores por 100 g (do rótulo)</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
       '<button class="btn ghost full" data-mbackm="1">' + (lib ? 'Concluir' : 'Voltar') + '</button>';
+    $('m').hidden = false;   // the sheet may be closed (adding from the Alimentos tab)
     paintSrc(); if (name) mSearch(); else $('mres').innerHTML = '<p style="color:var(--mute)">Escreve o nome do produto, ou o código de barras, e carrega em Pesquisar.</p>';
   }
   function mDone() { if (mctx && mctx.lib) { var pk0 = mctx.pick; mctx = null; if (pk0) openPick(pk0.key, pk0.name, pk0.draft, pk0.row); else { closeM(); renderFood(); } return; } if (mctx && mctx.draft) { var d = mctx.draft; mctx = null; openRec(d.id, d); } else renderMacros(); }   // back to where the choice was started
