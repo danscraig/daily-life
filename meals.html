@@ -417,13 +417,25 @@ function fitBox(t) {
   /* ---- illustrative photo per recipe: kept on this device (IndexedDB), shrunk to a small JPEG ---- */
   var pcache = {}, pdb = null, edPhoto;   // edPhoto: undefined = unchanged, null = removed, string = new picture
   function pOpen(cb) { try { var rq = indexedDB.open('meals-photos', 1); rq.onupgradeneeded = function () { rq.result.createObjectStore('p'); }; rq.onsuccess = function () { pdb = rq.result; cb(); }; rq.onerror = function () { cb(); }; } catch (e) { cb(); } }
-  function pLoad() { pOpen(function () { if (!pdb) return; try { var cur = pdb.transaction('p').objectStore('p').openCursor(); cur.onsuccess = function () { var c = cur.result; if (c) { pcache[c.key] = c.value; c.continue(); } else if (view === 'rec' && $('m').hidden) renderRec(); else if (view === 'plan' && $('m').hidden) renderPlan(); }; } catch (e) {} }); }
+  function pLoad() { pOpen(function () { if (!pdb) return; try { var cur = pdb.transaction('p').objectStore('p').openCursor(); cur.onsuccess = function () { var c = cur.result; if (c) { pcache[c.key] = c.value; c.continue(); } else { syncPhotos(); } if (c) return; if (view === 'rec' && $('m').hidden) renderRec(); else if (view === 'plan' && $('m').hidden) renderPlan(); }; } catch (e) {} }); }
   function pPut(id, v) { pcache[id] = v; if (!pdb) return; try { pdb.transaction('p', 'readwrite').objectStore('p').put(v, id); } catch (e) {} }
   function pDel(id) { delete pcache[id]; if (!pdb) return; try { pdb.transaction('p', 'readwrite').objectStore('p').delete(id); } catch (e) {} }
   function readPhoto(file, cb, max) {
     var fr = new FileReader();
     fr.onload = function () { var im = new Image(); im.onload = function () { var sc = Math.min(1, (max || 720) / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * sc)); c.height = Math.max(1, Math.round(im.height * sc)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', 0.8)); }; im.onerror = function () { cb(null); }; im.src = fr.result; };
     fr.onerror = function () { cb(null); }; fr.readAsDataURL(file);
+  }
+  function smallPhoto(url, cb) {   // a small copy (~25 KB) that is stored inside the recipe and syncs
+    var im = new Image(); im.onload = function () { var sc = Math.min(1, 400 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * sc)); c.height = Math.max(1, Math.round(im.height * sc)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', 0.7)); };
+    im.onerror = function () { cb(null); }; im.src = url;
+  }
+  var migr = {};
+  function syncPhotos() {   // r.img = the picture (synced); '' = removed; missing = an older picture only kept on this device
+    recs().forEach(function (r) {
+      if (r.img === '') { if (pcache[r.id]) pDel(r.id); return; }
+      if (r.img) { if (pcache[r.id] !== r.img) pPut(r.id, r.img); return; }
+      if (pcache[r.id] && !migr[r.id]) { migr[r.id] = 1; smallPhoto(pcache[r.id], function (u) { if (u) { r.img = u; r.u = Date.now(); save(); } }); }
+    });
   }
   function curPhoto() { return edPhoto !== undefined ? edPhoto : (edId ? pcache[edId] : null) || null; }
   function paintPhoto() {
@@ -562,7 +574,7 @@ function fitBox(t) {
     r.n = n; r.min = Number($('rm').value) || 0; r.tags = edTags.slice(); r.mt = edMt.slice(); readRows(); r.items = edItems.filter(function (x) { return String(x.n).trim(); }).map(function (x) { return { n: x.n.trim(), q: String(x.q).trim(), u: x.u }; }); r.ing = r.items.map(ingLine); r.steps = $('rs').value.trim();
     var sv = num($('rsv').value);
     if (sv > 0) r.serv = sv; else delete r.serv; r.u = Date.now();
-    if (edPhoto === null) pDel(r.id); else if (typeof edPhoto === 'string') pPut(r.id, edPhoto); edPhoto = undefined;
+    var eph = edPhoto; if (eph === null) { pDel(r.id); r.img = ''; } else if (typeof eph === 'string') { pPut(r.id, eph); smallPhoto(eph, function (u) { if (u) { r.img = u; pPut(r.id, u); r.u = Date.now(); save(); if ($('m').hidden) render(); } }); } edPhoto = undefined;
     save(); closeM(); render();
   }
   function delRec() {
@@ -964,6 +976,7 @@ function fitBox(t) {
 
   function closeM() { stopScan(); $('m').hidden = true; slotCtx = null; edId = null; }
   function render() {
+    syncPhotos();
     $('v-plan').hidden = view !== 'plan'; $('v-rec').hidden = view !== 'rec'; $('v-shop').hidden = view !== 'shop'; $('v-food').hidden = view !== 'food';
     [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
     if (view === 'plan') renderPlan(); else if (view === 'rec') renderRec(); else if (view === 'food') renderFood(); else renderShop();
