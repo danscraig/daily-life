@@ -327,21 +327,6 @@ function fitBox(t) {
   }
   function mealSig(m) { return m && !m.x ? entries(m).map(function (e) { return (e.r || '') + '|' + (e.t || ''); }).join('||') : ''; }
   function strip(m) { var o = JSON.parse(JSON.stringify(m)); delete o.u; return o; }
-  function swapDays(a, b) {
-    if (a === b) return;
-    ['b', 'l', 'd', 's'].forEach(function (s) {
-      var ma = slotOf(a, s), mb = slotOf(b, s); if (!ma && !mb) return;
-      ma = ma ? strip(ma) : null; mb = mb ? strip(mb) : null;
-      setSlot(a, s, mb); setSlot(b, s, ma);
-    });
-  }
-  function openSwap() {
-    var o = [0, 1, 2, 3, 4, 5, 6].map(function (i) { var d = addDays(wk, i); return [ds(d), DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]]; });
-    var opt = function (sel) { return o.map(function (x, i) { return '<option value="' + x[0] + '"' + (i === sel ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join(''); };
-    $('sh').innerHTML = '<h2>Trocar dois dias</h2><div class="two"><div><label for="sw1">Dia</label><select id="sw1">' + opt(0) + '</select></div><div><label for="sw2">Com</label><select id="sw2">' + opt(1) + '</select></div></div>' +
-      '<button class="btn full" data-swgo="1">Trocar</button><button class="btn ghost full" data-close="1">Fechar</button>';
-    $('m').hidden = false;
-  }
 
   /* plan */
   function renderWeek() {
@@ -354,8 +339,7 @@ function fitBox(t) {
       var k = ds(d);
       return '<div class="day' + (k === now ? ' today' : '') + '"><h3>' + DAYS[d.getDay()] + '<span>' + d.getDate() + ' ' + MON[d.getMonth()] + '</span></h3>' + dayMacros(k) + SL.map(function (s) { return slotBtn(k, s); }).join('') + '</div>';
     }).join('');
-    h += '<button class="btn ghost full" data-swap="1">Trocar dois dias</button>';
-    h += '<button class="btn ghost full" style="margin-top:8px" data-copy="1">Copiar a semana anterior</button>';
+    h += '<button class="btn ghost full" data-copy="1">Copiar a semana anterior</button>';
     return h;
   }
   function entThumb(e) {   // the recipe's picture (or its coloured initial) at the end of the row
@@ -986,8 +970,6 @@ function fitBox(t) {
     var D = b.dataset, wasAsk = ask; ask = '';
     if (D.goal) openGoal();
     else if (D.gsave) saveGoal();
-    else if (D.swap) openSwap();
-    else if (D.swgo) { swapDays($('sw1').value, $('sw2').value); closeM(); render(); }
     else if (D.hv) { var hw = ds(swk), hit = weekItems(swk).filter(function (i) { return i.key === D.hv; })[0]; if (hit) { var hq = qtyMap(hw)[hit.key] || fmtAmt(hit), hr = haveMap(hw)[hit.key], same = hr && hr.a === hq && hr.s === D.hs; setHave(hw, hit.key, same ? '' : D.hs, hq); renderShop(); } }
     else if (D.v) { view = D.v; lmsg = ''; render(); window.scrollTo(0, 0); }
     else if (D.wk !== undefined) { if (view === 'shop') swk = D.wk === '0' ? addDays(monday(new Date()), 7) : addDays(swk, 7 * Number(D.wk)); else wk = D.wk === '0' ? monday(new Date()) : addDays(wk, 7 * Number(D.wk)); render(); }
