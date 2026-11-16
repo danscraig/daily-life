@@ -104,6 +104,8 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .mres .tx, .lrow .tx { flex: 1; min-width: 0; }
 .lrow { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 14px; padding: 8px 10px; margin-bottom: 6px; }
 .lrow small { display: block; color: var(--mute); font-size: 12px; }
+.lrow .addb { flex: none; width: auto; padding: 8px 14px; font-size: 14px; }
+.lrow .stg { flex: none; font-size: 12px; color: var(--mute); }
 .lrow .x { flex: none; width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
 .mres button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--paper); border-radius: 14px; padding: 10px 12px; margin-bottom: 6px; }
 .mres small { display: block; color: var(--mute); font-size: 12px; }
@@ -496,19 +498,33 @@ function fitBox(t) {
       });
     });
   }
+  var offCache = {};
+  function offFetch(urls) {   // tries the addresses in turn (the database sometimes refuses a request): the first that answers wins
+    var i = 0;
+    function next(err) {
+      if (i >= urls.length) return Promise.reject(err || new Error('off'));
+      var u = urls[i++], ac = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 10000);
+      return fetch(u, ac ? { signal: ac.signal } : {}).then(function (r) { clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function (e) { clearTimeout(to); return new Promise(function (ok) { setTimeout(ok, 700); }).then(function () { return next(e); }); });
+    }
+    return next();
+  }
   function offSearch(q) {   // Open Food Facts: products sold in Portugal (supermarket own brands included), values per 100 g
-    var ac = typeof AbortController !== 'undefined' ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 12000), code = /^d{8,14}$/.test(q.trim());
-    var url = code ? 'https://world.openfoodfacts.org/api/v2/product/' + q.trim() + '.json?fields=product_name,brands,nutriments,image_front_small_url,image_small_url'
-      : 'https://pt.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&tagtype_0=countries&tag_contains_0=contains&tag_0=portugal&fields=product_name,brands,nutriments,image_front_small_url,image_small_url&search_terms=' + encodeURIComponent(q);
-    return fetch(url, ac ? { signal: ac.signal } : {}).then(function (r) { clearTimeout(to); if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
-      var l = code ? (j.product ? [j.product] : []) : (j.products || []);
-      return l.map(function (pr) {
+    var qq = q.trim(), code = /^\d{8,14}$/.test(qq), ck = qq.toLowerCase(), F = 'product_name,brands,nutriments,image_front_small_url,image_small_url';
+    if (offCache[ck]) return Promise.resolve(offCache[ck]);
+    var urls = code ? ['https://world.openfoodfacts.org/api/v2/product/' + qq + '.json?fields=' + F, 'https://pt.openfoodfacts.org/api/v2/product/' + qq + '.json?fields=' + F]
+      : ['https://pt.openfoodfacts.org', 'https://world.openfoodfacts.org', 'https://pt.openfoodfacts.org'].map(function (h) { return h + '/cgi/search.pl?search_simple=1&action=process&json=1&page_size=30&tagtype_0=countries&tag_contains_0=contains&tag_0=portugal&fields=' + F + '&search_terms=' + encodeURIComponent(qq); });
+    return offFetch(urls).then(function (j) {
+      var l = code ? (j.product ? [j.product] : []) : (j.products || []), words = nrm(qq).split(' ').filter(Boolean);
+      var res = l.map(function (pr, ix) {
         var n = pr.nutriments || {}, k = n['energy-kcal_100g'], p = n.proteins_100g, c = n.carbohydrates_100g, fa = n.fat_100g;
         if (k == null && n['energy-kj_100g'] != null) k = n['energy-kj_100g'] / 4.184;
         if (k == null || p == null || c == null || fa == null || !pr.product_name) return null;   // incomplete label: skip
         var im = pr.image_front_small_url || pr.image_small_url || ''; if (im.indexOf('https://') !== 0) im = '';
-        return { img: im, d: pr.product_name + (pr.brands ? ' (' + String(pr.brands).split(',')[0].trim() + ')' : ''), kcal: Math.round(k), p: r1(p), c: r1(c), f: r1(fa) };
+        var d = pr.product_name + (pr.brands ? ' (' + String(pr.brands).split(',')[0].trim() + ')' : ''), nd = nrm(d);
+        return { img: im, d: d, kcal: Math.round(k), p: r1(p), c: r1(c), f: r1(fa), sc: code ? 9 : words.filter(function (w) { return nd.indexOf(w) !== -1; }).length, ix: ix };
       }).filter(Boolean);
+      if (!code) { var best = res.some(function (x) { return x.sc > 0; }); if (best) res = res.filter(function (x) { return x.sc > 0; }); res.sort(function (a, b) { return b.sc - a.sc || a.ix - b.ix; }); }   // names that contain your words come first
+      res = res.slice(0, 15); if (res.length) offCache[ck] = res; return res;
     });
   }
   var UMAP = { 'g': 1, 'kg': 1000, 'ml': 1, 'l': 1000, 'c. sopa': 15, 'c. chá': 5, 'chávena': 240, 'pitada': 0.4 };   // millilitres counted as grams
@@ -561,7 +577,7 @@ function fitBox(t) {
       '<div class="chipsrow" id="msrc"></div>' +
       '<div class="addrow" style="margin:0"><input type="text" id="mq" placeholder="Pesquisar produto" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
       '<details id="mmanual" hidden open><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Escreve tu os valores por 100 g (do rótulo)</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
-      '<button class="btn ghost full" data-mbackm="1">Voltar</button>';
+      '<button class="btn ghost full" data-mbackm="1">' + (lib ? 'Concluir' : 'Voltar') + '</button>';
     paintSrc(); if (name) mSearch(); else $('mres').innerHTML = '<p style="color:var(--mute)">Escreve o nome do produto, ou o código de barras, e carrega em Pesquisar.</p>';
   }
   function mDone() { if (mctx && mctx.lib) { var pk0 = mctx.pick; mctx = null; if (pk0) openPick(pk0.key, pk0.name, pk0.draft, pk0.row); else { closeM(); renderFood(); } return; } if (mctx && mctx.draft) { var d = mctx.draft; mctx = null; openRec(d.id, d); } else renderMacros(); }   // back to where the choice was started
@@ -572,11 +588,13 @@ function fitBox(t) {
     var q = $('mq').value.trim(); if (!q) return; $('mmanual').hidden = true; $('mres').innerHTML = '<p style="color:var(--mute)">A pesquisar…</p>';
     var src = mctx.src;
     (src === 'off' ? offSearch(q) : fdcSearch(q)).then(function (res) {
-      if (!mctx || mctx.src !== src) return; mctx.res = res; $('mmanual').hidden = res.length > 0; $('mres').innerHTML = res.length ? res.map(function (x, i) { return resRow(x, 'data-mxpick="' + i + '"'); }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra' + (src === 'usda' ? ' (em inglês)' : ', a outra fonte acima') + ', ou escreve tu os valores.</p>';
-    }).catch(function () { if (!mctx || mctx.src !== src) return; $('mmanual').hidden = false; $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui chegar à base de dados de alimentos (sem ligação, ou demasiadas pesquisas por agora). Tenta daqui a pouco, ou escreve tu os valores.</p>'; });
+      if (!mctx || mctx.src !== src) return; mctx.res = res; $('mmanual').hidden = res.length > 0; $('mres').innerHTML = res.length ? res.map(function (x, i) { return mctx.lib ? libResRow(x, i) : resRow(x, 'data-mxpick="' + i + '"'); }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra' + (src === 'usda' ? ' (em inglês)' : ', a outra fonte acima') + ', ou escreve tu os valores.</p>';
+    }).catch(function () { if (!mctx || mctx.src !== src) return; $('mmanual').hidden = false; $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui chegar à base de dados agora (sem ligação, ou ela limita as pesquisas por minuto). Espera uns segundos e carrega em Pesquisar outra vez, ou escreve tu os valores.</p>'; });
   }
   /* ---- food library: products you use often (data.extra, k:'lib'); recipes pick from here, the database is only used to fill it ---- */
   function thumb(img) { return img ? '<img class="th" src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : '<span class="th"></span>'; }
+  function libHas(x) { var id = 'lib|' + nrm(x.d); return data.extra.some(function (y) { return y.id === id && !y.del; }); }
+  function libResRow(x, i) { return '<div class="lrow">' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span>' + (libHas(x) ? '<span class="stg">✓ Na biblioteca</span>' : '<button type="button" class="btn addb" data-mxpick="' + i + '">+ Adicionar</button>') + '</div>'; }
   function resRow(x, attr) { return '<button type="button" ' + attr + '>' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span></button>'; }
   function libs() { return data.extra.filter(function (x) { return x.k === 'lib' && !x.del; }).sort(function (a, b) { return a.d.localeCompare(b.d); }); }
   function addLib(o) {
@@ -792,7 +810,7 @@ function fitBox(t) {
     else if (D.msearch) mSearch();
     else if (D.msrc && mctx) { mctx.src = D.msrc; $('mq').value = D.msrc === 'usda' ? enGuess(mctx.name) : mctx.name; paintSrc(); mSearch(); }
     else if (D.mbackm) mDone();
-    else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { if (mctx.lib) addLib(pk); else saveNut(mctx.key, mctx.name, pk); mDone(); } }
+    else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { if (mctx.lib) { addLib(pk); var cell = document.createElement('span'); cell.className = 'stg'; cell.textContent = '✓ Adicionado'; b.replaceWith(cell); } else { saveNut(mctx.key, mctx.name, pk); mDone(); } } }
     else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mv = { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }; if (mctx.lib) { mv.d = mnm; addLib(mv); } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
     else if (D.msave && mx) { var t = mxTotals(), rr = recById(mx.id); if (rr) { rr.serv = t.s; rr.mac = { k: t.k, p: t.p, c: t.c, f: t.f, cov: t.ok + '/' + t.tot }; rr.u = Date.now(); save(); } openView(mx.id); render(); }
     else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var dr2 = snapDraft(); openPick('', '', dr2, dr2.items.length - 1); }
