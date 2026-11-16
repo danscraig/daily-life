@@ -37,3 +37,15 @@
   window.addEventListener('resize', function () { reveal(); });
   try { if (inFrame && parent.visualViewport) parent.visualViewport.addEventListener('resize', function () { setTimeout(reveal, 60); }); } catch (e) {}
 })();
+
+/* Search bars: tapping the ✕ at the right end (drawn by glass.css) empties the bar in one go. Works on every page, mouse or touch. */
+(function () {
+  var SEL = 'input[type=search],input[placeholder*="esquis" i],input[placeholder*="earch" i]';
+  document.addEventListener('click', function (e) {
+    var t = e.target; if (!t || !t.matches || !t.matches(SEL) || !t.value) return;
+    var r = t.getBoundingClientRect(); if (e.clientX < r.right - 46 || e.clientX > r.right) return;
+    e.preventDefault(); t.value = '';
+    t.dispatchEvent(new Event('input', { bubbles: true })); t.dispatchEvent(new Event('change', { bubbles: true }));
+    try { t.focus(); } catch (x) {}
+  }, true);
+})();

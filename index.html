@@ -548,7 +548,7 @@ function fitBox(t) {
   if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
 })();
 </script>
-<link rel="stylesheet" href="glass.css?v=4">
+<link rel="stylesheet" href="glass.css?v=5">
 </head>
 <body>
 
@@ -1632,13 +1632,13 @@ function fitBox(t) {
     var mvd = lsGet(MKEY, null), wp = 0, ww = 0, br = 0;
     if (mvd && Array.isArray(mvd.items)) mvd.items.forEach(function (i) { if (i.k === 'b') { if (i.s === 'p') br++; } else if (i.k === 's' && i.s === 'p') wp++; else if (i.s === 'w') ww++; });
     document.getElementById('wmeta').textContent = [wp ? wp + ' watching' : '', br ? br + ' reading' : ''].filter(Boolean).join(' · ');
-    var sc = lsGet('skincare-v1', null), st = 0, sd = 0;   // today's skincare steps done
+    var sc = lsGet('skincare-v1', null), st = 0, sd = 0, pz0 = lsGet('skincare-paused-v1', null), pids0 = pz0 && pz0.d === tds && Array.isArray(pz0.ids) ? pz0.ids : [];   // today's skincare steps done (steps hidden by a laser pause do not count)
     var cyc = sc && sc.cyc && Array.isArray(sc.cyc.slots) ? (sc.cyc.slots.length ? sc.cyc : null) : sc ? { slots: [{ id: 'c1', n: 'Hydration' }, { id: 'c2', n: 'Retinol' }], idx: 0, log: {} } : null, night = null;   // tonight's night of the cycle (Hydration, Retinol, …); the default one until it is first saved
     if (cyc) { var lid = cyc.log && cyc.log[tds]; night = cyc.slots.filter(function (c) { return c.id === lid; })[0] || cyc.slots[(cyc.idx || 0) % cyc.slots.length]; }
     if (sc && sc.log) ['am', 'pm'].forEach(function (p) {
       (sc[p] || []).forEach(function (s) {
         var on = p === 'pm' && cyc ? (!s.slot || (night && s.slot === night.id)) : (!s.days || !s.days.length || s.days.indexOf(now.getDay()) !== -1);
-        if (s.n && on) { st++; if ((sc.log[tds] || []).indexOf(s.id) !== -1) sd++; }
+        if (s.n && on && pids0.indexOf(s.id) === -1) { st++; if ((sc.log[tds] || []).indexOf(s.id) !== -1) sd++; }
       });
     });
     document.getElementById('smeta').textContent = [night && night.n ? 'Tonight: ' + night.n : '', st ? sd + ' of ' + st + ' steps' : ''].filter(Boolean).join(' · ');   // under the name, like the other cards
@@ -1767,13 +1767,13 @@ function fitBox(t) {
     function mn(m) { if (!m || m.x) return ''; var r = m.r && ml && Array.isArray(ml.recipes) ? ml.recipes.filter(function (x) { return x.id === m.r; })[0] : null; return r ? r.n : (m.t || ''); }
     [['ih_l', mt.l], ['ih_s', mt.s]].forEach(function (q) { var t = mn(q[1]), el = document.getElementById(q[0]); el.textContent = t || 'Nada planeado'; el.className = t ? '' : 'none'; });
     /* skincare: tonight's step and whether the morning and the night routines are done */
-    var sc = lsGet('skincare-v1', null), night = null, tot = { am: 0, pm: 0 }, dn = { am: 0, pm: 0 };
+    var sc = lsGet('skincare-v1', null), night = null, tot = { am: 0, pm: 0 }, dn = { am: 0, pm: 0 }, pz = lsGet('skincare-paused-v1', null), pids = pz && pz.d === k && Array.isArray(pz.ids) ? pz.ids : [];
     var cyc = sc && sc.cyc && Array.isArray(sc.cyc.slots) && sc.cyc.slots.length ? sc.cyc : null;
     if (cyc) { var lid = cyc.log && cyc.log[k]; night = cyc.slots.filter(function (c) { return c.id === lid; })[0] || cyc.slots[(cyc.idx || 0) % cyc.slots.length]; }
     if (sc) ['am', 'pm'].forEach(function (q) {
       (sc[q] || []).forEach(function (s) {
         var on = q === 'pm' && cyc ? (!s.slot || (night && s.slot === night.id)) : (!s.days || !s.days.length || s.days.indexOf(n.getDay()) !== -1);
-        if (s.n && on) { tot[q]++; if (sc.log && (sc.log[k] || []).indexOf(s.id) !== -1) dn[q]++; }
+        if (s.n && on && pids.indexOf(s.id) === -1) { tot[q]++; if (sc.log && (sc.log[k] || []).indexOf(s.id) !== -1) dn[q]++; }
       });
     });
     document.getElementById('ih_n').innerHTML = sc ? '<small>Esta noite</small>' + esc2(night && night.n ? night.n : (tot.pm ? 'Rotina da noite' : '—')) : '<small>Esta noite</small>Cria a tua rotina';
@@ -2016,7 +2016,7 @@ if(open){iw.style.bottom="auto";iw.style.top=vv.offsetTop+"px";iw.style.height=v
 else{iw.style.bottom="";iw.style.top="";iw.style.height="";}}
 vv.addEventListener("resize",fit);vv.addEventListener("scroll",fit);})();
 </script>
-<script src="kb.js?v=1"></script>
+<script src="kb.js?v=2"></script>
 <script src="backup.js?v=1"></script>
 <script type="module" src="sync.js?v=13"></script>
 

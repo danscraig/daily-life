@@ -289,7 +289,7 @@ function fitBox(t) {
   if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
 })();
 </script>
-<link rel="stylesheet" href="glass.css?v=4">
+<link rel="stylesheet" href="glass.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -632,6 +632,13 @@ function fitBox(t) {
     var w = txWindow(); if (!w || day < w.from || day > w.to) return false;
     var p = s.prod ? prodById(s.prod) : null; if (!p) return false; var c = conf(p); return c.ret || c.strong || c.mild;
   }
+  function publishPaused() {   // the home widget cannot judge a laser pause itself: it is told which of today's steps are hidden
+    try {
+      var sv = day, t = new Date(); t.setHours(12, 0, 0, 0); day = t;
+      var ids = []; ['am', 'pm'].forEach(function (p) { data[p].forEach(function (s) { if (s.n.trim() && pausedStep(s)) ids.push(s.id); }); });
+      day = sv; localStorage.setItem('skincare-paused-v1', JSON.stringify({ d: ds(t), ids: ids }));
+    } catch (e) { if (typeof sv !== 'undefined') day = sv; }
+  }
   function shortName(p) { return String(p.n).replace(/\s+\d+(\.\d+)?\s?(ml|g)\b.*$/i, '').slice(0, 36); }
   function isSpfStep(s) { var p = s.prod ? prodById(s.prod) : null; return typeOfStep(s) === 'sunscreen' || (p && p.t === 'sunscreen'); }
   function routineWarnings(steps, am, amHasSpf) {   // [{lv: avoid|caution|info, t: text}]
@@ -748,6 +755,7 @@ function fitBox(t) {
     }).join('') : (plv === 'wish' ? '<div class="empty">Your wish list is empty.<br>Open a product and turn on ♡ Wish list.</div>' : '<div class="empty">Your shelf is empty.<br>Add the products you use.</div>');
   }
   function render() {
+    publishPaused();
     $('v-today').hidden = view !== 'today'; $('v-prods').hidden = view !== 'prods'; $('v-search').hidden = view !== 'search'; $('v-skin').hidden = view !== 'skin'; $('v-info').hidden = view !== 'info'; $('v-add').hidden = view !== 'add'; $('editb').hidden = view !== 'today';
     [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
     if (view === 'today') renderToday(); else if (view === 'prods') renderProds(); else if (view === 'skin') renderSkin(); else if (view === 'info') renderInfo(); else if (view === 'add') renderAdd(); else renderSres();
@@ -1599,7 +1607,7 @@ function fitBox(t) {
   runImport();
 })();
 </script>
-<script src="kb.js?v=1"></script>
+<script src="kb.js?v=2"></script>
 <script src="backup.js?v=1"></script>
 <script type="module" src="sync.js?v=13"></script>
 </body>

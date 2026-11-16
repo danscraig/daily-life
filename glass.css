@@ -115,3 +115,11 @@ html[data-ac] { --accent: #2F2F2E; }
 
 /* while typing, the bottom bar steps aside so the field has room above the keyboard */
 .kb .navbar, .kb .tabs { display: none; }
+
+/* search bars: a round ✕ at the right end, only while something is typed; tapping it empties the bar (see kb.js) */
+input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+input[type="search"]:not(:placeholder-shown), input[placeholder*="esquis" i]:not(:placeholder-shown), input[placeholder*="earch" i]:not(:placeholder-shown) {
+  padding-right: 46px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='10' fill='%23a59cae'/%3E%3Cpath d='M6.6 6.6l6.8 6.8M13.4 6.6l-6.8 6.8' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; background-size: 20px 20px;
+}

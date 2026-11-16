@@ -212,7 +212,7 @@ function fitBox(t) {
   if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
 })();
 </script>
-<link rel="stylesheet" href="glass.css?v=4">
+<link rel="stylesheet" href="glass.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -246,7 +246,8 @@ function fitBox(t) {
   var CLABD = ['Personal', 'Birthdays', 'Work & study', 'Appointments', 'Health & sport', 'Travel', 'Family & friends', 'Public holidays'];
   var CLAB = CLABD.slice();   // what each colour is for; she can rename them (kept on this device only, so cloud sync leaves it alone)
   try { var cl = JSON.parse(localStorage.getItem('daily-life-cal-labels')); if (Array.isArray(cl)) cl.forEach(function (x, i) { if (i < CLAB.length && typeof x === 'string' && x.trim()) CLAB[i] = x.trim().slice(0, 30); }); } catch (e) {}
-  var BDC = COLORS[1], HOLC = COLORS[7];
+  var HOLC = COLORS[7];
+  function bdColor() { var i = -1; CLAB.forEach(function (l, j) { if (i < 0 && /birthday|anivers|b-?day/i.test(l)) i = j; }); return COLORS[i >= 0 ? i : 1]; }   // the colour you named Birthdays (else the first one)
   var REPEATS = [['', 'Does not repeat'], ['d', 'Every day'], ['wd', 'Every weekday (Mon–Fri)'], ['w', 'Every week'], ['m', 'Every month on this day'], ['6m', 'Every 6 months on this day'], ['y', 'Every year on this day']];
   var HR = 46;   // pixels per hour in the week and day views
   var START = 300;   // the grid starts at 05:00 (minutes after midnight)
@@ -537,8 +538,8 @@ function fitBox(t) {
   function drawEditor() {
     var e = edit.e;
     var h = '<h2>' + (edit.isNew ? 'New event' : 'Event') + '</h2>' +
+      '<div class="tog"><span>🎂 Birthday</span><button class="sw" id="ebd" aria-pressed="' + !!e.bd + '" aria-label="Birthday"></button></div>' +
       '<label class="fl" for="et">Title</label><input type="text" id="et" maxlength="120" autocomplete="off" value="' + esc(e.t) + '" placeholder="Add title">' +
-      '<div class="tog"><span>Birthday</span><button class="sw" id="ebd" aria-pressed="' + !!e.bd + '" aria-label="Birthday"></button></div>' +
       '<div class="tog"><span>All day</span><button class="sw" id="ead" aria-pressed="' + !!e.ad + '" aria-label="All day"></button></div>' +
       '<label class="fl" for="ed">Date</label><input type="date" id="ed" value="' + esc(e.d) + '">' +
       '<div class="two" id="etimes"' + (e.ad ? ' hidden' : '') + '><div><label class="fl" for="es">Start</label><input type="text" inputmode="numeric" autocomplete="off" placeholder="HH:MM" id="es" value="' + esc(e.st) + '"></div><div><label class="fl" for="ee">End</label><input type="text" inputmode="numeric" autocomplete="off" placeholder="HH:MM" id="ee" value="' + esc(e.en) + '"></div></div>' +
@@ -562,7 +563,7 @@ function fitBox(t) {
   function hidePop() { pop.hidden = true; ebody.hidden = false; }
   function readForm() {
     var e = edit.e;
-    e.t = document.getElementById('et').value.trim(); e.d = document.getElementById('ed').value || e.d;
+    e.t = document.getElementById('et').value.trim(); if (e.bd && e.t === '🎂') e.t = '🎂 '; e.d = document.getElementById('ed').value || e.d;
     e.st = parseTime(document.getElementById('es').value) || e.st; e.en = parseTime(document.getElementById('ee').value) || e.en;
     e.rp = document.getElementById('er').value; e.un = document.getElementById('eu').value;
     e.loc = document.getElementById('el').value.trim(); e.n = document.getElementById('en').value.trim();
@@ -691,8 +692,10 @@ function fitBox(t) {
     }
     if (b.id === 'ebd') {   // a birthday is an all-day event that comes back every year
       readForm(); var on = !edit.e.bd; edit.e.bd = on;
-      if (on) { edit.e.ad = true; edit.e.rp = 'y'; edit.e.un = ''; edit.e.c = BDC; } else edit.e.rp = '';
-      drawEditor(); if (edit.dock) render(true); return;
+      if (on) { edit.e.ad = true; edit.e.rp = 'y'; edit.e.un = ''; edit.e.c = bdColor(); edit.e.t = '🎂 ' + String(edit.e.t || '').replace(/^🎂\s*/, ''); } else { edit.e.rp = ''; edit.e.t = String(edit.e.t || '').replace(/^🎂\s*/, ''); }
+      drawEditor(); if (edit.dock) render(true);
+      if (on) { var et = document.getElementById('et'); if (et) { et.focus(); try { et.setSelectionRange(et.value.length, et.value.length); } catch (x) {} } }
+      return;
     }
     if (b.id === 'ead') { readForm(); edit.e.ad = !edit.e.ad; drawEditor(); if (edit.dock) render(true); return; }
     if (b.dataset.c) { readForm(); edit.e.c = b.dataset.c; drawEditor(); if (edit.dock) placeDraft(); return; }
@@ -879,7 +882,7 @@ function fitBox(t) {
   load(); sel = todayS; render(); setSh();
 })();
 </script>
-<script src="kb.js?v=1"></script>
+<script src="kb.js?v=2"></script>
 <script src="backup.js?v=1"></script>
 <script type="module" src="sync.js?v=13"></script>
 </body>

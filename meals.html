@@ -73,7 +73,7 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .h { margin: 18px 4px 8px; font-size: 14px; font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
 .addrow { display: flex; gap: 8px; margin-bottom: 12px; }
 .navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--paper); border-top: 1px solid var(--line); padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
-.tabbar { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 640px; margin: 0 auto; }
+.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 640px; margin: 0 auto; }
 .tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; font-size: 12px; font-weight: 500; color: var(--mute); }
 .tabbar button[aria-pressed="true"] { color: var(--accent); }
 .tabbar button[aria-pressed="true"]::before { content: ""; position: absolute; top: -1px; left: 50%; width: 36px; height: 3px; margin-left: -18px; border-radius: 0 0 3px 3px; background: var(--accent); }
@@ -109,7 +109,12 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .mres small { display: block; color: var(--mute); font-size: 12px; }
 .irows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 .irow { display: grid; grid-template-columns: 1fr 1.3fr 36px; gap: 6px; background: var(--paper); border-radius: 16px; padding: 8px; }
-.irow .in-n { grid-column: 1 / -1; }
+.irow .ipick { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 15px var(--font); }
+.irow .ipick .tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.irow .ipick i { color: var(--mute); font-style: normal; }
+.irow .ipick small { display: block; color: var(--mute); font-size: 12px; }
+.irow .ipick .chv { flex: none; color: var(--mute); font-size: 13px; }
+.irow .ipick .th { width: 32px; height: 32px; border-radius: 8px; }
 .irow input, .irow select { padding: 10px 12px; border-radius: 12px; }
 .irow select { width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
 .irow input:disabled { opacity: .45; }
@@ -129,6 +134,14 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .shr .tx b { font-weight: 600; }
 .shr .tx small { display: block; color: var(--mute); font-size: 12px; }
 .shr .tx .flag { margin: 4px 0 0; display: inline-block; }
+.shr .stg { font-size: 12px; color: var(--mute); padding: 6px 10px; border: 1px dashed var(--line); border-radius: 999px; white-space: nowrap; }
+.frow { display: grid; grid-template-columns: 44px 1fr 32px; gap: 6px 10px; align-items: center; background: var(--paper); border-radius: 16px; padding: 10px 12px; margin-bottom: 6px; }
+.frow .tx { min-width: 0; overflow-wrap: anywhere; }
+.frow small { display: block; color: var(--mute); font-size: 12px; }
+.frow .x { width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
+.frow .stk { grid-column: 2 / -1; display: flex; gap: 6px; align-items: center; }
+.frow .stk input { flex: 1; min-width: 0; padding: 9px 12px; border-radius: 12px; }
+.frow .stk select { padding: 9px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
 .shr .hv { flex: none; display: flex; gap: 6px; }
 .shr .hv button { padding: 7px 11px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--mute); background: var(--bg); }
 .shr .hv button[data-hs="y"][aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
@@ -164,7 +177,7 @@ function fitBox(t) {
   if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);
 })();
 </script>
-<link rel="stylesheet" href="glass.css?v=4">
+<link rel="stylesheet" href="glass.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -175,6 +188,7 @@ function fitBox(t) {
   </header>
   <section id="v-plan"></section>
   <section id="v-rec" hidden></section>
+  <section id="v-food" hidden></section>
   <section id="v-shop" hidden></section>
 </div>
 
@@ -183,10 +197,11 @@ function fitBox(t) {
 <nav class="navbar" aria-label="Secções"><div class="tabbar">
   <button data-v="plan" aria-pressed="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Plano</button>
   <button data-v="rec" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14a0 0 0 0 1 0 0v1a7 7 0 0 1-7 7 7 7 0 0 1-7-7v-1z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/></svg>Receitas</button>
+  <button data-v="food" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8.5c-2.2-1.8-6.5-1-6.5 3.7 0 4 2.6 7.8 4.7 7.8.9 0 1.1-.5 1.8-.5s.9.5 1.8.5c2.1 0 4.7-3.8 4.7-7.8 0-4.7-4.3-5.5-6.5-3.7z"/><path d="M12 8.5c0-2 1-3.6 2.6-4.5"/></svg>Alimentos</button>
   <button data-v="shop" aria-pressed="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5h2.5l2 10h9.5l2-7.5H7"/><circle cx="9.5" cy="19" r="1.2"/><circle cx="16.5" cy="19" r="1.2"/></svg>Compras</button>
 </div></nav>
 
-<script src="kb.js?v=1"></script>
+<script src="kb.js?v=2"></script>
 <script src="backup.js?v=1"></script>
 <script type="module" src="sync.js?v=13"></script>
 <script>
@@ -335,7 +350,7 @@ function fitBox(t) {
     var keepL = $('lin') ? $('lin').value : '';
     var h = linksHTML() + '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas">' +
       (recs().length ? '<div class="chipsrow">' + allTags().map(function (t) { return '<button type="button" data-rt="' + esc(t) + '" aria-pressed="' + (rtag === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
-      '<button class="btn full" data-newr="1">+ Nova receita</button><button class="btn ghost full" data-lopen="1">Biblioteca de alimentos (' + libs().length + ')</button></div>';
+      '<button class="btn full" data-newr="1">+ Nova receita</button></div>';
     h += l.length ? l.map(function (r) { return '<button class="card" data-er="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small>' + ((r.tags || []).length ? '<div class="tags">' + r.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') + '</button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'As tuas receitas ficam aqui.<br>Toca em “Nova receita” para acrescentar a primeira.') + '</div>';
     $('v-rec').innerHTML = h; if (keepL && $('lin')) $('lin').value = keepL;
     var s = $('rq'); if (s && document.activeElement === document.body && rq) { /* keep typing focus handled by input event */ }
@@ -366,10 +381,9 @@ function fitBox(t) {
     return { n: String(l).trim(), q: '', u: '' };
   }
   function readRows() { edItems = [].map.call(document.querySelectorAll('#irows .irow'), function (r) { return { n: r.querySelector('.in-n').value, q: r.querySelector('.in-q').value, u: r.querySelector('.in-u').value }; }); }
-  function prodLine(it, i) {   // the supermarket product chosen for this ingredient (remembered by ingredient name)
-    var n = String(it.n || '').trim(); if (it.u === 'a gosto') return '';
-    var rec = n ? nutRec(nutKey(n)) : null;
-    return rec ? (rec.img ? thumb(rec.img) : '') + '<span>🛒 ' + esc(rec.d || 'manual') + ' · ' + rec.kcal + ' kcal/100 g</span><button type="button" data-ifind="' + i + '">mudar</button>' : '<span>Sem produto escolhido</span><button type="button" data-ifind="' + i + '">Escolher produto</button>';
+  function pickBtn(it, i) {   // an ingredient can only be a food from the library
+    var n = String(it.n || '').trim(), rec = n ? nutRec(nutKey(n)) : null;
+    return '<button type="button" class="ipick" data-ifind="' + i + '">' + (rec && rec.img ? thumb(rec.img) : '') + '<span class="tx">' + (n ? esc(n) + '<small>' + (rec ? rec.kcal + ' kcal/100 g' : 'fora da biblioteca') + '</small>' : '<i>Escolher da biblioteca</i>') + '</span><span class="chv">' + (n ? 'mudar' : '+') + '</span></button>';
   }
   function snapDraft() {
     readRows(); var v = function (id) { var e = $(id); return e ? e.value : ''; };
@@ -378,8 +392,8 @@ function fitBox(t) {
   function paintRows() {
     if (!edItems.length) edItems.push({ n: '', q: '', u: '' });
     $('irows').innerHTML = edItems.map(function (it, i) {
-      return '<div class="irow"><input type="text" class="in-n" placeholder="Ingrediente" aria-label="Ingrediente" value="' + esc(it.n) + '"><input type="text" inputmode="decimal" class="in-q" placeholder="Quantidade" aria-label="Quantidade" value="' + esc(it.q) + '"' + (it.u === 'a gosto' ? ' disabled' : '') + '>' +
-        '<div class="ipr">' + prodLine(it, i) + '</div><select class="in-u" aria-label="Unidade">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select><button type="button" class="rm" data-irm="' + i + '" aria-label="Remover ingrediente">✕</button></div>';
+      return '<div class="irow"><input type="hidden" class="in-n" value="' + esc(it.n) + '">' + pickBtn(it, i) + '<input type="text" inputmode="decimal" class="in-q" placeholder="Quantidade" aria-label="Quantidade" value="' + esc(it.q) + '"' + (it.u === 'a gosto' ? ' disabled' : '') + '>' +
+        '<select class="in-u" aria-label="Unidade">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select><button type="button" class="rm" data-irm="' + i + '" aria-label="Remover ingrediente">✕</button></div>';
     }).join('');
   }
   function openRec(id, draft) {
@@ -541,16 +555,16 @@ function fitBox(t) {
     var t = mxTotals(), el = $('mtot'); if (!el) return;
     el.innerHTML = '<b>Por porção</b> (' + t.s + ' ' + (t.s === 1 ? 'porção' : 'porções') + '): ' + t.k + ' kcal · P ' + t.p + ' g · H ' + t.c + ' g · G ' + t.f + ' g<small>Contados ' + t.ok + ' de ' + t.tot + ' ingredientes.' + (t.miss.length ? ' Em falta: ' + esc(t.miss.join(', ')) + '.' : '') + '</small>';
   }
-  function openMatch(key, name, draft, lib) {
-    mctx = { key: key, name: name, res: [], src: 'off', draft: draft || null, lib: !!lib };
+  function openMatch(key, name, draft, lib, pick) {
+    mctx = { key: key, name: name, res: [], src: 'off', draft: draft || null, lib: !!lib, pick: pick || null };
     $('sh').innerHTML = '<h2>' + (lib ? 'Adicionar à biblioteca' : 'Que alimento é “' + esc(name) + '”?') + '</h2><p style="margin:0;color:var(--mute);font-size:14px">Escolhe o mais parecido. Podes pesquisar pelo nome ou pelo código de barras.</p>' +
       '<div class="chipsrow" id="msrc"></div>' +
-      '<div class="addrow" style="margin:0"><input type="text" id="mq" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
+      '<div class="addrow" style="margin:0"><input type="text" id="mq" placeholder="Pesquisar produto" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
       '<details id="mmanual" hidden open><summary style="cursor:pointer;color:var(--mute);font-size:14px;padding:6px 2px">Escreve tu os valores por 100 g (do rótulo)</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
       '<button class="btn ghost full" data-mbackm="1">Voltar</button>';
     paintSrc(); if (name) mSearch(); else $('mres').innerHTML = '<p style="color:var(--mute)">Escreve o nome do produto, ou o código de barras, e carrega em Pesquisar.</p>';
   }
-  function mDone() { if (mctx && mctx.lib) { mctx = null; openLib(); return; } if (mctx && mctx.draft) { var d = mctx.draft; mctx = null; openRec(d.id, d); } else renderMacros(); }   // back to where the choice was started
+  function mDone() { if (mctx && mctx.lib) { var pk0 = mctx.pick; mctx = null; if (pk0) openPick(pk0.key, pk0.name, pk0.draft, pk0.row); else { closeM(); renderFood(); } return; } if (mctx && mctx.draft) { var d = mctx.draft; mctx = null; openRec(d.id, d); } else renderMacros(); }   // back to where the choice was started
   function paintSrc() {
     $('msrc').innerHTML = [['off', 'Produtos em Portugal'], ['usda', 'Alimentos genéricos (USDA, inglês)']].map(function (x) { return '<button type="button" data-msrc="' + x[0] + '" aria-pressed="' + (mctx.src === x[0]) + '">' + x[1] + '</button>'; }).join('');
   }
@@ -594,12 +608,49 @@ function fitBox(t) {
     var q = nrm(pctx.q), all = libs(), l = all.filter(function (x) { return !q || nrm(x.d).indexOf(q) !== -1; });
     $('pres').innerHTML = l.length ? l.map(function (x) { return resRow(x, 'data-ppick="' + esc(x.id) + '"'); }).join('') : '<p style="color:var(--mute)">' + (all.length ? 'Nada na biblioteca com esse nome.' : 'A tua biblioteca ainda está vazia.') + '</p>';
   }
-  function openPick(key, name, draft) {
-    pctx = { key: key, name: name, draft: draft || null, q: name };
-    $('sh').innerHTML = '<h2>Que produto é “' + esc(name) + '”?</h2><p style="margin:0;color:var(--mute);font-size:14px">Escolhe da tua biblioteca.</p><input type="search" id="pq" value="' + esc(name) + '" placeholder="Pesquisar na biblioteca" autocomplete="off" aria-label="Pesquisar na biblioteca"><div class="mres" id="pres"></div><button class="btn ghost full" data-pdb="1">Não está aqui? Procurar na base de dados</button><button class="btn ghost full" data-pback="1">Voltar</button>';
+  function openPick(key, name, draft, row) {
+    row = row == null ? -1 : row;
+    pctx = { key: key, name: name, draft: draft || null, row: row, q: row >= 0 ? '' : name };
+    $('sh').innerHTML = '<h2>' + (row >= 0 ? 'Escolhe o ingrediente' : 'Que produto é “' + esc(name) + '”?') + '</h2><p style="margin:0;color:var(--mute);font-size:14px">Só podes usar alimentos da tua biblioteca.</p><input type="search" id="pq" value="' + esc(pctx.q) + '" placeholder="Pesquisar na biblioteca" autocomplete="off" aria-label="Pesquisar na biblioteca"><div class="mres" id="pres"></div><button class="btn ghost full" data-pdb="1">Não está aqui? Adicionar à biblioteca</button><button class="btn ghost full" data-pback="1">Voltar</button>';
     fillPickLib(); $('m').hidden = false;
   }
   function pDone() { var d = pctx && pctx.draft; pctx = null; if (d) openRec(d.id, d); else renderMacros(); }
+  /* ---- Alimentos tab: the library with a stock count per food; the shopping list for this week uses it ---- */
+  var fq = '';
+  function renderFood() {
+    var all = libs(), q = nrm(fq), l = all.filter(function (x) { return !q || nrm(x.d).indexOf(q) !== -1; });
+    var h = '<div class="stack"><input type="search" id="fq" placeholder="Pesquisar nos teus alimentos" value="' + esc(fq) + '" autocomplete="off" aria-label="Pesquisar nos teus alimentos"><button class="btn full" data-ladd="1">+ Adicionar alimento</button></div>';
+    h += l.length ? l.map(function (x) {
+      return '<div class="frow">' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
+        '<span class="stk"><input type="text" inputmode="decimal" data-stk="' + esc(x.id) + '" value="' + esc(x.s != null ? String(x.s).replace('.', ',') : '') + '" placeholder="Stock em casa" aria-label="Stock de ' + esc(x.d) + '"><select data-stu="' + esc(x.id) + '" aria-label="Unidade do stock">' + ['g', 'ml', 'un'].map(function (u) { return '<option value="' + u + '"' + ((x.su || 'g') === u ? ' selected' : '') + '>' + (u === 'un' ? 'unidades' : u) + '</option>'; }).join('') + '</select></span></div>';
+    }).join('') : '<div class="empty">' + (all.length ? 'Nenhum alimento com esse nome.' : 'Ainda não tens alimentos.<br>Toca em “Adicionar alimento” para os procurares na base de dados.') + '</div>';
+    $('v-food').innerHTML = h;
+  }
+  function setStock(id, val, unit) {
+    var x = data.extra.filter(function (y) { return y.id === id && y.k === 'lib'; })[0]; if (!x) return;
+    if (val !== null) { var n = num(val); if (n == null || n < 0) delete x.s; else x.s = r1(n); }
+    if (unit) x.su = unit;
+    x.u = Date.now(); save();
+  }
+  function stockCheck(items) {   // for the week you are in: compares what the recipes need with your stock, food by food
+    var libsAll = libs(), g = {}, out = {};
+    items.forEach(function (it) {
+      if (it.u === 'a gosto') return;
+      var L = libsAll.filter(function (x) { return nrm(x.d) === nrm(it.n) && x.s != null; })[0]; if (!L) return;
+      var o = g[L.id] || (g[L.id] = { L: L, need: 0, its: [], ok: true }), su = L.su || 'g', nr = nutRec(nutKey(L.d)), c = null;
+      if (it.noq) c = null;
+      else if (it.u === 'un') c = su === 'un' ? it.tot : (nr && nr.g > 0 ? it.tot * nr.g : null);
+      else if (it.u in UMAP) c = su === 'un' ? (nr && nr.g > 0 ? it.tot * UMAP[it.u] / nr.g : null) : it.tot * UMAP[it.u];
+      if (c == null) o.ok = false; else o.need += c;
+      o.its.push(it);
+    });
+    Object.keys(g).forEach(function (id) {
+      var o = g[id]; if (!o.ok) return;   // an amount that cannot be compared stays with the usual Tenho / Falta
+      var miss = o.need - o.L.s;
+      o.its.forEach(function (it) { out[it.key] = { st: miss > 0.001 ? 'n' : 'y', miss: miss, s: o.L.s, su: o.L.su || 'g', single: o.its.length === 1 }; });
+    });
+    return out;
+  }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = 0;
     SL.forEach(function (s) { var m = slotOf(k, s[0]); if (!m) return; var r = m.r ? recById(m.r) : null; if (r && r.mac && r.mac.k != null) { n++; t.k += r.mac.k; t.p += r.mac.p; t.c += r.mac.c; t.f += r.mac.f; } else miss++; });
@@ -655,14 +706,15 @@ function fitBox(t) {
   function renderShop() {
     fillFromTpl(swk);
     var wkey = ds(swk), items = weekItems(swk), end = addDays(swk, 6), hm = haveMap(wkey), qm = qtyMap(wkey);
-    var thisMon = ds(monday(new Date())), nextMon = ds(addDays(monday(new Date()), 7)), sub = wkey === nextMon ? 'Próxima semana' : wkey === thisMon ? 'Esta semana' : '<button data-wk="0" class="pill">Ir para a próxima semana</button>';
+    var thisMon = ds(monday(new Date())), nextMon = ds(addDays(monday(new Date()), 7)), sub = wkey === nextMon ? 'Próxima semana' : wkey === thisMon ? 'Esta semana · conta com o teu stock' : '<button data-wk="0" class="pill">Ir para a próxima semana</button>';
     var h = '<div class="wk"><button class="r" data-wk="-1" aria-label="Semana anterior">‹</button><div class="lab">' + swk.getDate() + ' ' + MON[swk.getMonth()] + ' – ' + end.getDate() + ' ' + MON[end.getMonth()] + '<small>' + sub + '</small></div><button class="r" data-wk="1" aria-label="Semana seguinte">›</button></div>';
-    function amtOf(it) { return qm[it.key] || fmtAmt(it); }
-    function stOf(it) { var r = hm[it.key]; return r && r.a === amtOf(it) ? r.s : ''; }   // a changed amount asks for a new confirmation
+    var auto = wkey === thisMon ? stockCheck(items) : {};   // this week: your stock decides what goes in the cart
+    function amtOf(it) { var a = auto[it.key]; if (a && a.st === 'n' && a.single) return fmtAmt({ tot: a.miss, u: a.su, has: true }); return qm[it.key] || fmtAmt(it); }
+    function stOf(it) { var a = auto[it.key]; if (a) return a.st; var r = hm[it.key]; return r && r.a === amtOf(it) ? r.s : ''; }   // a changed amount asks for a new confirmation
     function row(it) {
       var am = amtOf(it), st = stOf(it), from = Object.keys(it.from).map(function (n) { return n + (it.from[n] > 1 ? ' ×' + it.from[n] : ''); }).join(', ');
-      return '<div class="shr"><span class="tx">' + (am ? '<b>' + esc(am) + '</b> ' : '') + esc(it.n) + '<small>' + esc(from) + '</small>' + (it.noq ? '<button class="flag" data-qf="' + esc(it.key) + '">' + (qm[it.key] ? 'editar quantidade' : '⚑ quantidade') + '</button>' : '') + '</span>' +
-        '<span class="hv"><button data-hv="' + esc(it.key) + '" data-hs="y" aria-pressed="' + (st === 'y') + '">Tenho</button><button data-hv="' + esc(it.key) + '" data-hs="n" aria-pressed="' + (st === 'n') + '">Falta</button></span></div>';
+      return '<div class="shr"><span class="tx">' + (am ? '<b>' + esc(am) + '</b> ' : '') + esc(it.n) + '<small>' + esc(from) + (auto[it.key] ? ' · stock ' + fmtAmt({ tot: auto[it.key].s, u: auto[it.key].su, has: true }) : '') + '</small>' + (it.noq ? '<button class="flag" data-qf="' + esc(it.key) + '">' + (qm[it.key] ? 'editar quantidade' : '⚑ quantidade') + '</button>' : '') + '</span>' +
+        (auto[it.key] ? '<span class="hv"><span class="stg">' + (st === 'n' ? 'falta no stock' : 'há stock') + '</span></span></div>' : '<span class="hv"><button data-hv="' + esc(it.key) + '" data-hs="y" aria-pressed="' + (st === 'y') + '">Tenho</button><button data-hv="' + esc(it.key) + '" data-hs="n" aria-pressed="' + (st === 'n') + '">Falta</button></span></div>');
     }
     var un = items.filter(function (i) { return !stOf(i); }), miss = items.filter(function (i) { return stOf(i) === 'n'; }), have = items.filter(function (i) { return stOf(i) === 'y'; });
     if (items.length) {
@@ -696,9 +748,9 @@ function fitBox(t) {
   }
   function closeM() { $('m').hidden = true; slotCtx = null; edId = null; }
   function render() {
-    $('v-plan').hidden = view !== 'plan'; $('v-rec').hidden = view !== 'rec'; $('v-shop').hidden = view !== 'shop';
+    $('v-plan').hidden = view !== 'plan'; $('v-rec').hidden = view !== 'rec'; $('v-shop').hidden = view !== 'shop'; $('v-food').hidden = view !== 'food';
     [].forEach.call(document.querySelectorAll('.tabbar button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === view)); });
-    if (view === 'plan') renderPlan(); else if (view === 'rec') renderRec(); else renderShop();
+    if (view === 'plan') renderPlan(); else if (view === 'rec') renderRec(); else if (view === 'food') renderFood(); else renderShop();
   }
 
   document.addEventListener('click', function (e) {
@@ -730,20 +782,20 @@ function fitBox(t) {
     else if (D.macros) openMacros(D.macros);
     else if (D.mclose) { if (mx) openView(mx.id); }
     else if (D.mfind) openPick(D.mfind, D.mn);
-    else if (D.ppick && pctx) { var li = data.extra.filter(function (y) { return y.id === D.ppick; })[0]; if (li) { saveNut(pctx.key, pctx.name, li); pDone(); } }
-    else if (D.pdb && pctx) { var pc = pctx; pctx = null; openMatch(pc.key, pc.name, pc.draft); }
+    else if (D.ppick && pctx) { var li = data.extra.filter(function (y) { return y.id === D.ppick; })[0]; if (li) { if (pctx.row >= 0 && pctx.draft) { pctx.draft.items[pctx.row].n = li.d; saveNut(nutKey(li.d), li.d, li); } else saveNut(pctx.key, pctx.name, li); pDone(); } }
+    else if (D.pdb && pctx) { var pc = pctx; pctx = null; openMatch('', '', null, true, pc); }
     else if (D.pback) pDone();
     else if (D.lopen) openLib();
     else if (D.ladd) openMatch('', '', null, true);
-    else if (D.ldel) { var ld = data.extra.filter(function (y) { return y.id === D.ldel; })[0]; if (ld) { ld.del = true; ld.u = Date.now(); save(); fillLib(); } }
-    else if (D.ifind !== undefined) { var dr = snapDraft(), it0 = dr.items[Number(D.ifind)]; if (it0 && String(it0.n).trim()) openPick(nutKey(it0.n), it0.n.trim(), dr); else { var nn = document.querySelectorAll('#irows .in-n')[Number(D.ifind)]; if (nn) nn.focus(); } }
+    else if (D.ldel) { var ld = data.extra.filter(function (y) { return y.id === D.ldel; })[0]; if (ld) { ld.del = true; ld.u = Date.now(); save(); renderFood(); } }
+    else if (D.ifind !== undefined) { var dr = snapDraft(), ix = Number(D.ifind); if (dr.items[ix]) openPick('', '', dr, ix); }
     else if (D.msearch) mSearch();
     else if (D.msrc && mctx) { mctx.src = D.msrc; $('mq').value = D.msrc === 'usda' ? enGuess(mctx.name) : mctx.name; paintSrc(); mSearch(); }
     else if (D.mbackm) mDone();
     else if (D.mxpick !== undefined && mctx) { var pk = mctx.res[Number(D.mxpick)]; if (pk) { if (mctx.lib) addLib(pk); else saveNut(mctx.key, mctx.name, pk); mDone(); } }
     else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mv = { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }; if (mctx.lib) { mv.d = mnm; addLib(mv); } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
     else if (D.msave && mx) { var t = mxTotals(), rr = recById(mx.id); if (rr) { rr.serv = t.s; rr.mac = { k: t.k, p: t.p, c: t.c, f: t.f, cov: t.ok + '/' + t.tot }; rr.u = Date.now(); save(); } openView(mx.id); render(); }
-    else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var ns = document.querySelectorAll('#irows .in-n'); if (ns.length) ns[ns.length - 1].focus(); }
+    else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var dr2 = snapDraft(); openPick('', '', dr2, dr2.items.length - 1); }
     else if (D.irm !== undefined) { readRows(); edItems.splice(Number(D.irm), 1); paintRows(); }
     else if (D.qf) openQty(D.qf);
     else if (D.qsave && qCtx) setQty($('qin2').value.trim());
@@ -757,6 +809,7 @@ function fitBox(t) {
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.id === 'fq') { fq = t.value; var ps = t.selectionStart; renderFood(); var nf = $('fq'); nf.focus(); try { nf.setSelectionRange(ps, ps); } catch (x) {} return; }
     if (t.id === 'lq') { lq = t.value; fillLib(); return; }
     if (t.id === 'pq' && pctx) { pctx.q = t.value; fillPickLib(); return; }
     if (t.id === 'mserv' && mx) { mx.serv = t.value; paintTot(); return; }
@@ -776,8 +829,8 @@ function fitBox(t) {
     if (e.key === 'Enter' && e.target.id === 'sfree') { e.preventDefault(); var b = document.querySelector('[data-sfree]'); if (b) b.click(); }
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
-  document.addEventListener('input', function (e) { var t = e.target; if (t.classList && t.classList.contains('in-n')) { var row = t.closest('.irow'), rows = [].slice.call(document.querySelectorAll('#irows .irow')), i = rows.indexOf(row), p = row.querySelector('.ipr'); if (p) p.innerHTML = prodLine({ n: t.value, u: row.querySelector('.in-u').value }, i); } });
-  document.addEventListener('change', function (e) { var t = e.target; if (t.classList && t.classList.contains('in-u')) { var rw = t.closest('.irow'), pr = rw.querySelector('.ipr'); if (pr) pr.innerHTML = prodLine({ n: rw.querySelector('.in-n').value, u: t.value }, [].indexOf.call(document.querySelectorAll('#irows .irow'), rw)); } if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; } });
+
+  document.addEventListener('change', function (e) { var t = e.target; if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { var y = window.scrollY; data = load(); if ($('m').hidden) render(); window.scrollTo(0, y); } });
   var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
   if (sh) {
