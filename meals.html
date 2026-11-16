@@ -158,6 +158,12 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .frow { display: grid; grid-template-columns: 44px 1fr 32px; gap: 6px 10px; align-items: center; background: var(--paper); border-radius: 16px; padding: 10px 12px; margin-bottom: 6px; }
 .frow .tx { min-width: 0; overflow-wrap: anywhere; }
 .frow small { display: block; color: var(--mute); font-size: 12px; }
+.frow .fmain { grid-column: 1 / 3; display: flex; align-items: center; gap: 10px; text-align: left; min-width: 0; padding: 0; color: inherit; font: inherit; }
+.th.add { display: inline-grid; place-items: center; border: 1.5px dashed var(--line); background: none; color: var(--mute); font-size: 22px; }
+.fph { display: flex; align-items: center; gap: 14px; }
+.fpv { width: 96px; height: 96px; flex: none; border-radius: 20px; object-fit: cover; background: rgba(0,0,0,.05); display: grid; place-items: center; color: var(--mute); font-size: 13px; }
+.fpv.none { border: 1.5px dashed var(--line); background: none; }
+.fpb { display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .frow .x { width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
 .frow .stk { grid-column: 2 / -1; display: flex; gap: 6px; align-items: center; }
 .frow .stk .gu { flex: 0 0 34%; }
@@ -379,9 +385,9 @@ function fitBox(t) {
   function pLoad() { pOpen(function () { if (!pdb) return; try { var cur = pdb.transaction('p').objectStore('p').openCursor(); cur.onsuccess = function () { var c = cur.result; if (c) { pcache[c.key] = c.value; c.continue(); } else if (view === 'rec' && $('m').hidden) renderRec(); }; } catch (e) {} }); }
   function pPut(id, v) { pcache[id] = v; if (!pdb) return; try { pdb.transaction('p', 'readwrite').objectStore('p').put(v, id); } catch (e) {} }
   function pDel(id) { delete pcache[id]; if (!pdb) return; try { pdb.transaction('p', 'readwrite').objectStore('p').delete(id); } catch (e) {} }
-  function readPhoto(file, cb) {
+  function readPhoto(file, cb, max) {
     var fr = new FileReader();
-    fr.onload = function () { var im = new Image(); im.onload = function () { var sc = Math.min(1, 720 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * sc)); c.height = Math.max(1, Math.round(im.height * sc)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', 0.8)); }; im.onerror = function () { cb(null); }; im.src = fr.result; };
+    fr.onload = function () { var im = new Image(); im.onload = function () { var sc = Math.min(1, (max || 720) / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * sc)); c.height = Math.max(1, Math.round(im.height * sc)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', 0.8)); }; im.onerror = function () { cb(null); }; im.src = fr.result; };
     fr.onerror = function () { cb(null); }; fr.readAsDataURL(file);
   }
   function curPhoto() { return edPhoto !== undefined ? edPhoto : (edId ? pcache[edId] : null) || null; }
@@ -727,10 +733,43 @@ function fitBox(t) {
     var all = libs(), q = nrm(fq), l = all.filter(function (x) { return !q || nrm(x.d).indexOf(q) !== -1; });
     var h = '<div class="stack"><input type="search" id="fq" placeholder="Pesquisar nos teus alimentos" value="' + esc(fq) + '" autocomplete="off" aria-label="Pesquisar nos teus alimentos"><button class="btn full" data-ladd="1">+ Adicionar alimento</button></div>';
     h += l.length ? l.map(function (x) {
-      return '<div class="frow">' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
+      return '<div class="frow"><button type="button" class="fmain" data-fedit="' + esc(x.id) + '" aria-label="Editar ' + esc(x.d) + '">' + (x.img ? thumb(x.img) : '<span class="th add">+</span>') + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span></button><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
         '<span class="stk"><input type="text" inputmode="decimal" data-stk="' + esc(x.id) + '" value="' + esc(x.s != null ? String(x.s).replace('.', ',') : '') + '" placeholder="Stock em casa" aria-label="Stock de ' + esc(x.d) + '"><input type="text" inputmode="decimal" class="gu" data-gu="' + esc(x.id) + '" value="' + esc(x.gu != null ? String(x.gu).replace('.', ',') : '') + '" placeholder="g / unidade" aria-label="Peso de uma unidade em gramas"><select data-stu="' + esc(x.id) + '" aria-label="Unidade do stock">' + ['g', 'ml', 'un'].map(function (u) { return '<option value="' + u + '"' + ((x.su || 'g') === u ? ' selected' : '') + '>' + (u === 'un' ? 'unidades' : u) + '</option>'; }).join('') + '</select></span></div>';
     }).join('') : '<div class="empty">' + (all.length ? 'Nenhum alimento com esse nome.' : 'Sem alimentos ainda.') + '</div>';
     $('v-food').innerHTML = h;
+  }
+  var fctx = null;
+  function paintFPhoto() {
+    var w = $('fphw'); if (!w || !fctx) return;
+    w.innerHTML = (fctx.img ? '<img class="fpv" alt="" src="' + esc(fctx.img) + '">' : '<span class="fpv none">Sem foto</span>') + '<div class="fpb"><label class="btn ghost">' + (fctx.img ? 'Mudar foto' : '+ Foto') + '<input type="file" id="fph" accept="image/*" hidden></label>' + (fctx.img ? '<button type="button" class="btn ghost" data-fphrm="1">Tirar</button>' : '') + '</div>';
+  }
+  function editFood(id) {
+    var x = data.extra.filter(function (y) { return y.id === id && y.k === 'lib'; })[0]; if (!x) return;
+    fctx = { id: id, img: x.img || '' };
+    var f = function (v) { return esc(String(v != null ? v : '').replace('.', ',')); };
+    $('sh').innerHTML = '<h2>Editar alimento</h2><div id="fphw" class="fph"></div><div><label for="fen">Nome</label><input type="text" id="fen" value="' + esc(x.d) + '"></div>' +
+      '<div><label>Por 100 g</label><div class="mac"><div><label for="fek">kcal</label><input type="text" inputmode="decimal" id="fek" value="' + f(x.kcal) + '"></div><div><label for="fep">prot.</label><input type="text" inputmode="decimal" id="fep" value="' + f(x.p) + '"></div><div><label for="fec">hidr.</label><input type="text" inputmode="decimal" id="fec" value="' + f(x.c) + '"></div><div><label for="fef">gord.</label><input type="text" inputmode="decimal" id="fef" value="' + f(x.f) + '"></div></div></div>' +
+      '<button class="btn full" data-fsave="1">Guardar</button><button class="btn ghost full" data-close="1">Cancelar</button>';
+    paintFPhoto(); $('m').hidden = false;
+  }
+  function saveFood() {
+    var x = fctx && data.extra.filter(function (y) { return y.id === fctx.id && y.k === 'lib'; })[0]; if (!x) return;
+    var nm = $('fen').value.trim(), k = num($('fek').value);
+    if (!nm) { $('fen').focus(); return; } if (k == null || k < 0) { $('fek').focus(); return; }
+    var oldKey = nrm(x.d), oldName = x.d, nid = 'lib|' + nrm(nm);
+    if (nid !== x.id && data.extra.some(function (y) { return y.id === nid && !y.del; })) { $('fen').focus(); $('fen').select(); return; }
+    var vals = { kcal: Math.round(k), p: r1(num($('fep').value) || 0), c: r1(num($('fec').value) || 0), f: r1(num($('fef').value) || 0) }, now = Date.now();
+    if (nid !== x.id) {   // renamed: keep the recipes and the saved ingredient values pointing at it
+      var gone = data.extra.filter(function (y) { return y.id === nid; })[0]; if (gone) data.extra.splice(data.extra.indexOf(gone), 1);
+      x.id = nid; recs().forEach(function (r) { var ch = false; (r.items || []).forEach(function (it) { if (nrm(it.n) === oldKey) { it.n = nm; ch = true; } }); if (ch) r.u = now; });
+    }
+    x.d = nm; x.kcal = vals.kcal; x.p = vals.p; x.c = vals.c; x.f = vals.f; x.img = fctx.img || ''; x.del = false; x.u = now;
+    data.extra.forEach(function (y) {
+      if (y.k !== 'nut' || y.del || !(y.id === 'nu|' + oldKey || y.d === oldName)) return;
+      if (y.id === 'nu|' + oldKey && oldKey !== nrm(nm)) { y.id = 'nu|' + nrm(nm); y.n = nm; }
+      y.d = nm; y.kcal = vals.kcal; y.p = vals.p; y.c = vals.c; y.f = vals.f; y.img = x.img; y.u = now;
+    });
+    save(); fctx = null; closeM(); renderFood(); renderRec();
   }
   function setStock(id, val, unit) {
     var x = data.extra.filter(function (y) { return y.id === id && y.k === 'lib'; })[0]; if (!x) return;
@@ -881,6 +920,9 @@ function fitBox(t) {
     else if (D.pback) pDone();
     else if (D.lopen) openLib();
     else if (D.ladd) openMatch('', '', null, true);
+    else if (D.fedit) editFood(D.fedit);
+    else if (D.fphrm) { if (fctx) { fctx.img = ''; paintFPhoto(); } }
+    else if (D.fsave) saveFood();
     else if (D.ldel) { var ld = data.extra.filter(function (y) { return y.id === D.ldel; })[0]; if (ld) { ld.del = true; ld.u = Date.now(); save(); renderFood(); } }
     else if (D.ifind !== undefined) { var dr = snapDraft(), ix = Number(D.ifind); if (dr.items[ix]) openPick('', '', dr, ix); }
     else if (D.msearch) mSearch();
@@ -932,7 +974,7 @@ function fitBox(t) {
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
 
-  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; updInfo(); } });
+  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'fph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u && fctx) { fctx.img = u; paintFPhoto(); } }, 220); return; } if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; updInfo(); } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { var y = window.scrollY; data = load(); if ($('m').hidden) render(); window.scrollTo(0, y); } });
   var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
   if (sh) {
