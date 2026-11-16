@@ -135,9 +135,12 @@ label.btn { cursor: pointer; text-align: center; display: block; }
 .irow input, .irow select { padding: 10px 12px; border-radius: 12px; }
 .irow select { width: 100%; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); }
 .irow input:disabled { opacity: .45; }
-.irow .ipr { order: 5; grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mute); }
-.irow .ipr span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.irow .ipr button { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 13px; color: var(--ink); }
+.irow .ipr { order: 5; grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--mute); }
+.irow .ipr span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; }
+.irow .ipr button { width: 34px; height: 28px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 11px; color: var(--ink); }
+.irow .ipr button:disabled { opacity: .3; }
+.itot { margin: 0 0 8px; font-size: 13px; color: var(--mute); }
+.itot:empty { display: none; }
 .irow .rm { width: 36px; height: 36px; border-radius: 50%; color: var(--mute); align-self: center; }
 .mchip { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font-size: 14px; color: var(--ink); margin: 0 6px 6px 0; }
 .chipsrow .mchip button { border: 0; background: none; padding: 8px 4px 8px 14px; color: inherit; border-radius: 999px; font-size: 14px; }
@@ -339,7 +342,7 @@ function fitBox(t) {
   function renderPlan() {
     var seg = '<div class="chipsrow pmseg"><button data-pm="week" aria-pressed="' + (pmode === 'week') + '">Semana</button><button data-pm="tpl" aria-pressed="' + (pmode === 'tpl') + '">Semana-tipo</button></div>', h;
     if (pmode === 'tpl') {
-      h = '<p class="dm" style="margin:0 4px 10px">As mesmas refeições todas as semanas. O que mudares aqui passa para as próximas semanas.</p>' +
+      h = '<p class="dm" style="margin:0 4px 10px">Repete-se todas as semanas.</p>' +
         TK.map(function (k, i) { return '<div class="day"><h3>' + TD[i] + '</h3>' + SL.map(function (s) { return slotBtn(k, s); }).join('') + '</div>'; }).join('') +
         '<button class="btn ghost full" data-swap="1">Trocar dois dias</button>';
     } else h = renderWeek();
@@ -350,13 +353,13 @@ function fitBox(t) {
     var tpl = k.charAt(0) === 'T', d = tpl ? null : new Date(k + 'T12:00:00'), lab = (tpl ? TD[+k.slice(1)] : DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()]) + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
     var cur = slotOf(k, s);
     $('sh').innerHTML = '<h2>' + esc(lab) + '</h2><input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="pick" id="spick"></div>' +
-      '<div><label for="sfree">Ou escreve o que vais comer</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Usar</button></div></div>' +
+      '<div><label for="sfree">Ou escreve</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value="' + (cur && !cur.r ? esc(cur.t) : '') + '"><button class="btn" data-sfree="1">Usar</button></div></div>' +
       (cur ? '<button class="btn ghost full" data-sclear="1">Limpar esta refeição</button>' : '') + '<button class="btn ghost full" data-close="1">Fechar</button>';
     fillPick(); $('m').hidden = false;
   }
   function fillPick() {
     var q = nrm(slotCtx.q), l = recs().filter(function (r) { return !q || nrm(r.n + ' ' + (r.tags || []).join(' ')).indexOf(q) !== -1; }).sort(function (a, b) { return a.n.localeCompare(b.n); });
-    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Ainda não tens receitas. Acrescenta no separador Receitas, ou escreve a refeição em baixo.') + '</div>';
+    $('spick').innerHTML = l.length ? l.map(function (r) { return '<button class="card" data-rpick="' + r.id + '"><b>' + esc(r.n) + '</b><small>' + (r.min ? r.min + ' min' : '') + ((r.tags || []).length ? (r.min ? ' · ' : '') + esc(r.tags.join(', ')) : '') + '</small></button>'; }).join('') : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Sem receitas ainda.') + '</div>';
     $('spick').innerHTML = $('spick').innerHTML + savedHTML(q);
   }
   function copyWeek() {
@@ -418,7 +421,7 @@ function fitBox(t) {
     var h = '<div class="stack"><input type="search" id="rq" placeholder="Pesquisar receitas ou ingredientes" value="' + esc(rq) + '" autocomplete="off" aria-label="Pesquisar receitas"><button class="btn full" data-newr="1">+ Nova receita</button></div>';
     h += l.length ? '<div class="rgrid">' + l.map(function (r) {
       return '<button class="rc" data-er="' + r.id + '">' + (pcache[r.id] ? '<img class="rimg" alt="" src="' + esc(pcache[r.id]) + '">' : '<span class="rin" style="background:' + recTone(r.n) + '">' + esc((r.n.trim().charAt(0) || '·').toUpperCase()) + '</span>') + '<b>' + esc(r.n) + '</b><span class="rmeta"><small>' + (r.min ? r.min + ' min · ' : '') + (r.ing || []).length + ' ingredientes</small><span class="rmac">' + (function () { var m = macOf(r); return m ? '<b>' + m.k + ' kcal</b><small>P ' + m.p + ' · H ' + m.c + ' · G ' + m.f + ' g</small>' : '<small>Sem macros</small>'; })() + '</span></span></button>';
-    }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'As tuas receitas ficam aqui.<br>Toca em “Nova receita” para acrescentar a primeira.') + '</div>';
+    }).join('') + '</div>' : '<div class="empty">' + (recs().length ? 'Nenhuma receita corresponde.' : 'Sem receitas ainda.') + '</div>';
     $('v-rec').innerHTML = h; updLinkBadge();
   }
   function openView(id) {
@@ -449,30 +452,47 @@ function fitBox(t) {
   function readRows() { edItems = [].map.call(document.querySelectorAll('#irows .irow'), function (r) { return { n: r.querySelector('.in-n').value, q: r.querySelector('.in-q').value, u: r.querySelector('.in-u').value }; }); }
   function pickBtn(it, i) {   // an ingredient can only be a food from the library
     var n = String(it.n || '').trim(), rec = n ? nutRec(nutKey(n)) : null;
-    return '<button type="button" class="ipick" data-ifind="' + i + '">' + (rec && rec.img ? thumb(rec.img) : '') + '<span class="tx">' + (n ? esc(n) + '<small>' + (rec ? rec.kcal + ' kcal/100 g' : 'fora da biblioteca') + '</small>' : '<i>Escolher da biblioteca</i>') + '</span><span class="chv">' + (n ? 'mudar' : '+') + '</span></button>';
+    return '<button type="button" class="ipick" data-ifind="' + i + '">' + (rec && rec.img ? thumb(rec.img) : '') + '<span class="tx">' + (n ? esc(n) + '<small>' + (rec ? rec.kcal + ' kcal / 100 g' : 'fora da biblioteca') + '</small>' : '<i>Escolher ingrediente</i>') + '</span><span class="chv">' + (n ? 'mudar' : '+') + '</span></button>';
   }
   function snapDraft() {
     readRows(); var v = function (id) { var e = $(id); return e ? e.value : ''; };
     return { id: edId, tags: edTags.slice(), items: edItems.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }), f: { rn: v('rn'), rm: v('rm'), rt: v('rt'), rs: v('rs'), rsv: v('rsv') } };
   }
+  function lineKcal(it) {   // kcal of one line, or a reason it cannot be counted
+    var n = String(it.n || '').trim(); if (!n) return { t: '' };
+    if (it.u === 'a gosto') return { t: 'a gosto' };
+    var rec = nutRec(nutKey(n)); if (!rec) return { t: 'não conta' };
+    var g = itemGrams(it, rec); if (g == null) return { t: String(it.q || '').trim() ? 'sem peso (g / unidade)' : '', k: 0 };
+    return { t: Math.round(g) + ' g · ' + Math.round(rec.kcal * g / 100) + ' kcal', k: rec.kcal * g / 100 };
+  }
+  function updInfo() {   // live kcal under each row and the total
+    readRows(); var tot = 0, cnt = 0;
+    [].forEach.call(document.querySelectorAll('#irows .irow'), function (row, i) {
+      var li = lineKcal(edItems[i]), e = row.querySelector('.ik'); if (e) e.textContent = li.t; if (li.k) { tot += li.k; cnt++; }
+    });
+    var el = $('itot'), sv = Math.max(1, num(($('rsv') || {}).value) || 1), named = edItems.filter(function (x) { return String(x.n).trim(); }).length;
+    if (el) el.textContent = named ? (cnt ? Math.round(tot / sv) + ' kcal por porção' + (sv > 1 ? ' · ' + Math.round(tot) + ' no total' : '') : '') : '';
+  }
   function paintRows() {
     if (!edItems.length) edItems.push({ n: '', q: '', u: '' });
+    var last = edItems.length - 1;
     $('irows').innerHTML = edItems.map(function (it, i) {
-      return '<div class="irow"><input type="hidden" class="in-n" value="' + esc(it.n) + '">' + pickBtn(it, i) + '<input type="text" inputmode="decimal" class="in-q" placeholder="Quantidade" aria-label="Quantidade" value="' + esc(it.q) + '"' + (it.u === 'a gosto' ? ' disabled' : '') + '>' +
-        '<select class="in-u" aria-label="Unidade">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select><button type="button" class="rm" data-irm="' + i + '" aria-label="Remover ingrediente">✕</button></div>';
+      return '<div class="irow"><input type="hidden" class="in-n" value="' + esc(it.n) + '">' + pickBtn(it, i) + '<input type="text" inputmode="decimal" class="in-q" placeholder="Qtd." aria-label="Quantidade" value="' + esc(it.q) + '"' + (it.u === 'a gosto' ? ' disabled' : '') + '>' +
+        '<select class="in-u" aria-label="Unidade">' + UNITS.map(function (x) { return '<option value="' + esc(x[0]) + '"' + (x[0] === it.u ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select><button type="button" class="rm" data-irm="' + i + '" aria-label="Remover ingrediente">✕</button>' +
+        '<div class="ipr"><span class="ik"></span><button type="button" data-iup="' + i + '" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" data-idn="' + i + '" aria-label="Descer"' + (i === last ? ' disabled' : '') + '>▼</button></div></div>';
     }).join('');
+    updInfo();
   }
   function openRec(id, draft) {
     var r = id ? recById(id) : null; edId = id || ''; sure = false; if (!draft) edPhoto = undefined; edTags = r ? (r.tags || []).slice() : [];
     edItems = r ? (Array.isArray(r.items) ? r.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }) : (r.ing || []).map(parseLine)) : [];
     edItems.forEach(function (x) { if (!String(x.q).trim() && x.u !== 'a gosto') x.u = ''; });
-    $('sh').innerHTML = '<h2>' + (r ? 'Editar receita' : 'Nova receita') + '</h2><div><label for="rn">Nome</label><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="ex.: frango com arroz"></div>' +
-      '<div><label>Imagem (opcional)</label><div id="rphw"></div></div>' +
-      '<div class="two" style="grid-template-columns:1fr"><div><label for="rm">Minutos</label><input type="number" id="rm" inputmode="numeric" min="0" value="' + esc(r && r.min ? r.min : '') + '"></div><div hidden><input type="text" id="rt"><div id="rtags"></div></div></div>' +
-      '<div><label>Ingredientes</label><div class="irows" id="irows"></div><button type="button" class="btn ghost full" data-iadd="1">+ Acrescentar ingrediente</button></div>' +
-      '<div><label for="rs">Passos</label><textarea id="rs">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
-      '<div><label for="rsv">Porções</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div>' +
-      '<button class="btn full" data-rsave="1">Guardar</button>' + (r ? '<button class="btn ghost full" data-rdel="1">Apagar receita</button>' : '') + '<button class="btn ghost full" data-close="1">Cancelar</button>';
+    $('sh').innerHTML = '<h2>' + (r ? 'Editar receita' : 'Nova receita') + '</h2><div><input type="text" id="rn" value="' + esc(r ? r.n : '') + '" placeholder="Nome da receita"></div>' +
+      '<div id="rphw"></div>' +
+      '<div class="two"><div><label for="rm">Minutos</label><input type="number" id="rm" inputmode="numeric" min="0" placeholder="20" value="' + esc(r && r.min ? r.min : '') + '"></div><div><label for="rsv">Porções</label><input type="text" inputmode="numeric" id="rsv" value="' + esc(r && r.serv ? r.serv : '') + '" placeholder="1"></div></div><div hidden><input type="text" id="rt"><div id="rtags"></div></div></div>' +
+      '<div><label>Ingredientes</label><div class="irows" id="irows"></div><p class="itot" id="itot"></p><button type="button" class="btn ghost full" data-iadd="1">+ Ingrediente</button></div>' +
+      '<div><label for="rs">Passos</label><textarea id="rs" placeholder="1. …">' + esc(r ? r.steps || '' : '') + '</textarea></div>' +
+            '<button class="btn full" data-rsave="1">Guardar</button>' + (r ? '<button class="btn ghost full" data-rdel="1">Eliminar</button>' : '') + '<button class="btn ghost full" data-close="1">Cancelar</button>';
     if (draft) { edTags = draft.tags.slice(); edItems = draft.items.map(function (x) { return { n: x.n, q: x.q, u: x.u }; }); Object.keys(draft.f).forEach(function (k) { $(k).value = draft.f[k]; }); }
     paintTags(); paintRows(); paintPhoto(); $('m').hidden = false; if (draft) fitBox($('rs'));
   }
@@ -637,13 +657,13 @@ function fitBox(t) {
   }
   function openMatch(key, name, draft, lib, pick) {
     mctx = { key: key, name: name, res: [], src: 'off', draft: draft || null, lib: !!lib, pick: pick || null };
-    $('sh').innerHTML = '<h2>' + (lib ? 'Adicionar à biblioteca' : 'Que alimento é “' + esc(name) + '”?') + '</h2><p style="margin:0;color:var(--mute);font-size:14px">Escolhe o mais parecido. Podes pesquisar pelo nome ou pelo código de barras.</p>' +
+    $('sh').innerHTML = '<h2>' + (lib ? 'Adicionar à biblioteca' : 'Que alimento é “' + esc(name) + '”?') + '</h2>' +
       '<div class="chipsrow" id="msrc"></div>' +
       '<div class="addrow" style="margin:0"><input type="text" id="mq" placeholder="Pesquisar produto" value="' + esc(name) + '"><button class="btn" data-msearch="1">Pesquisar</button></div><div class="mres" id="mres"><p style="color:var(--mute)">A pesquisar…</p></div>' +
       '<details id="mmanual"' + (lib ? '' : ' hidden open') + '><summary style="cursor:pointer;color:var(--ink);font-size:14px;padding:8px 2px">' + (lib ? 'Não encontras? Cria o alimento à mão (valores por 100 g)' : 'Escreve tu os valores por 100 g (do rótulo)') + '</summary>' + (lib ? '<div style="margin-top:8px"><label for="mmn">Nome do produto</label><input type="text" id="mmn"></div>' : '') + '<div class="mac" style="margin-top:8px"><div><label>kcal</label><input type="text" inputmode="decimal" id="mmk"></div><div><label>proteína</label><input type="text" inputmode="decimal" id="mmp"></div><div><label>hidratos</label><input type="text" inputmode="decimal" id="mmc"></div><div><label>gordura</label><input type="text" inputmode="decimal" id="mmf"></div></div><button class="btn full" style="margin-top:8px" data-mman="1">Usar estes valores</button></details>' +
       '<button class="btn ghost full" data-mbackm="1">' + (lib ? 'Concluir' : 'Voltar') + '</button>';
     $('m').hidden = false;   // the sheet may be closed (adding from the Alimentos tab)
-    paintSrc(); if (name) mSearch(); else $('mres').innerHTML = '<p style="color:var(--mute)">Escreve o nome do produto, ou o código de barras, e carrega em Pesquisar.</p>';
+    paintSrc(); if (name) mSearch(); else $('mres').innerHTML = '<p style="color:var(--mute)">Nome ou código de barras.</p>';
   }
   function mDone() { if (mctx && mctx.lib) { var pk0 = mctx.pick; mctx = null; if (pk0) openPick(pk0.key, pk0.name, pk0.draft, pk0.row); else { closeM(); renderFood(); } return; } if (mctx && mctx.draft) { var d = mctx.draft; mctx = null; openRec(d.id, d); } else renderMacros(); }   // back to where the choice was started
   function paintSrc() {
@@ -654,7 +674,7 @@ function fitBox(t) {
     var src = mctx.src;
     (src === 'off' ? offSearch(q) : fdcSearch(q)).then(function (res) {
       if (!mctx || mctx.src !== src || !$('mq') || $('mq').value.trim() !== q) return; mctx.res = res; if (mctx.lib) { if (!res.length) $('mmanual').open = true; } else $('mmanual').hidden = res.length > 0; $('mres').innerHTML = res.length ? res.map(function (x, i) { return mctx.lib ? libResRow(x, i) : resRow(x, 'data-mxpick="' + i + '"'); }).join('') : '<p style="color:var(--mute)">Nada encontrado. Tenta outra palavra' + (src === 'usda' ? ' (em inglês)' : ', a outra fonte acima') + ', ou escreve tu os valores.</p>';
-    }).catch(function () { if (!mctx || mctx.src !== src || !$('mq') || $('mq').value.trim() !== q) return; if (mctx.lib) $('mmanual').open = true; else $('mmanual').hidden = false; $('mres').innerHTML = '<p style="color:var(--mute)">Não consegui chegar à base de dados agora (sem ligação, ou ela limita as pesquisas por minuto). Espera uns segundos e carrega em Pesquisar outra vez, ou escreve tu os valores.</p>'; });
+    }).catch(function () { if (!mctx || mctx.src !== src || !$('mq') || $('mq').value.trim() !== q) return; if (mctx.lib) $('mmanual').open = true; else $('mmanual').hidden = false; $('mres').innerHTML = '<p style="color:var(--mute)">Sem resposta da base de dados. Tenta daqui a uns segundos, ou cria o alimento à mão.</p>'; });
   }
   /* ---- food library: products you use often (data.extra, k:'lib'); recipes pick from here, the database is only used to fill it ---- */
   function thumb(img) { return img ? '<img class="th" src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : '<span class="th"></span>'; }
@@ -684,7 +704,7 @@ function fitBox(t) {
   }
   function openLib() {
     pctx = null; mctx = null;
-    $('sh').innerHTML = '<h2>Biblioteca de alimentos</h2><p style="margin:0;color:var(--mute);font-size:14px">Os produtos que usas normalmente. Nas receitas escolhes daqui.</p><input type="search" id="lq" placeholder="Pesquisar na biblioteca" value="' + esc(lq) + '" autocomplete="off" aria-label="Pesquisar na biblioteca"><div id="lres"></div><button class="btn full" data-ladd="1">+ Adicionar à biblioteca</button><button class="btn ghost full" data-close="1">Fechar</button>';
+    $('sh').innerHTML = '<h2>Biblioteca de alimentos</h2><input type="search" id="lq" placeholder="Pesquisar na biblioteca" value="' + esc(lq) + '" autocomplete="off" aria-label="Pesquisar na biblioteca"><div id="lres"></div><button class="btn full" data-ladd="1">+ Adicionar à biblioteca</button><button class="btn ghost full" data-close="1">Fechar</button>';
     fillLib(); $('m').hidden = false;
   }
   function fillPickLib() {
@@ -706,7 +726,7 @@ function fitBox(t) {
     h += l.length ? l.map(function (x) {
       return '<div class="frow">' + thumb(x.img) + '<span class="tx">' + esc(x.d) + '<small>' + x.kcal + ' kcal · P ' + x.p + ' · H ' + x.c + ' · G ' + x.f + ' (por 100 g)</small></span><button type="button" class="x" data-ldel="' + esc(x.id) + '" aria-label="Tirar dos alimentos">✕</button>' +
         '<span class="stk"><input type="text" inputmode="decimal" data-stk="' + esc(x.id) + '" value="' + esc(x.s != null ? String(x.s).replace('.', ',') : '') + '" placeholder="Stock em casa" aria-label="Stock de ' + esc(x.d) + '"><input type="text" inputmode="decimal" class="gu" data-gu="' + esc(x.id) + '" value="' + esc(x.gu != null ? String(x.gu).replace('.', ',') : '') + '" placeholder="g / unidade" aria-label="Peso de uma unidade em gramas"><select data-stu="' + esc(x.id) + '" aria-label="Unidade do stock">' + ['g', 'ml', 'un'].map(function (u) { return '<option value="' + u + '"' + ((x.su || 'g') === u ? ' selected' : '') + '>' + (u === 'un' ? 'unidades' : u) + '</option>'; }).join('') + '</select></span></div>';
-    }).join('') : '<div class="empty">' + (all.length ? 'Nenhum alimento com esse nome.' : 'Ainda não tens alimentos.<br>Toca em “Adicionar alimento” para os procurares na base de dados.') + '</div>';
+    }).join('') : '<div class="empty">' + (all.length ? 'Nenhum alimento com esse nome.' : 'Sem alimentos ainda.') + '</div>';
     $('v-food').innerHTML = h;
   }
   function setStock(id, val, unit) {
@@ -755,7 +775,7 @@ function fitBox(t) {
   function openQty(key) {
     var w = ds(swk), cur = qtyMap(w)[key] || '', it = weekItems(swk).filter(function (i) { return i.key === key; })[0]; if (!it) return;
     qCtx = { key: key, wkey: w };
-    $('sh').innerHTML = '<h2>' + esc(it.n) + '</h2><p style="margin:0;color:var(--mute);font-size:14px">A receita não diz a quantidade. Escreve a quantidade para esta semana (ex.: 500 g, 2 unidades, uma pitada).</p>' +
+    $('sh').innerHTML = '<h2>' + esc(it.n) + '</h2>' +
       '<div><label for="qin2">Quantidade</label><input type="text" id="qin2" value="' + esc(cur) + '" placeholder="ex.: 500 g"></div>' +
       '<button class="btn full" data-qsave="1">Guardar</button>' + (cur ? '<button class="btn ghost full" data-qclear="1">Remover a quantidade</button>' : '') + '<button class="btn ghost full" data-close="1">Cancelar</button>';
     $('m').hidden = false; setTimeout(function () { var i = $('qin2'); if (i) i.focus(); }, 60);
@@ -770,7 +790,7 @@ function fitBox(t) {
   function updLinkBadge() { var n = links().length, b = $('lkn'); if (b) { b.hidden = !n; b.textContent = n; } }
   function openLinks() {
     var L = links();
-    $('sh').innerHTML = '<h2>Adicionar link de uma receita</h2><p style="margin:0;color:var(--mute);font-size:14px">Cola o link (TikTok, Instagram, um site…). Fica aqui à espera de ser transformado em receita.</p>' +
+    $('sh').innerHTML = '<h2>Adicionar link de uma receita</h2>' +
       '<form class="addrow" id="lf" autocomplete="off"><input type="text" id="lin" inputmode="url" placeholder="Cola o link de uma receita" aria-label="Link da receita"><button class="btn" type="submit">+</button></form>' + (lmsg ? '<p style="margin:-4px 4px 4px;font-size:13px;color:var(--mute)">' + esc(lmsg) + '</p>' : '') +
       (L.length ? '<div class="h" style="margin:4px 0 0">À espera de virar receita (' + L.length + ')</div>' + L.map(function (x) { return '<div class="item"><span class="tx">' + esc(hostOf(x.url)) + '<small>' + esc(x.url) + '</small></span><button class="x" data-ld="' + x.id + '" aria-label="Remover link">✕</button></div>'; }).join('') : '') +
       '<button class="btn ghost full" data-close="1">Fechar</button>';
@@ -809,7 +829,7 @@ function fitBox(t) {
       if (un.length) h += '<div class="h">Por confirmar (' + un.length + ')</div>' + un.map(row).join('');
       if (miss.length) h += '<div class="h">Em falta — comprar (' + miss.length + ')</div>' + miss.map(row).join('');
       if (have.length) h += '<div class="h">Tenho (' + have.length + ')</div>' + have.map(row).join('');
-    } else h += '<div class="empty">Ainda nada.<br>Planeia a semana (ou a semana-tipo) com receitas e as quantidades aparecem aqui.</div>';
+    } else h += '<div class="empty">Planeia a semana e a lista aparece aqui.</div>';
     h += '<div class="h">Extras</div><form class="addrow" id="xf" autocomplete="off"><input type="text" id="xin" placeholder="Acrescentar algo (leite, café…)" aria-label="Acrescentar um item extra"><button class="btn" type="submit">Acrescentar</button></form>';
     h += extras().map(function (x) { return '<div class="item" style="padding:0"><button class="item" style="margin:0;flex:1" data-xd="' + x.id + '" aria-pressed="' + !!x.done + '"><span class="box"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="tx">' + esc(x.t) + '</span></button><button class="x" data-xx="' + x.id + '" aria-label="Remover">✕</button></div>'; }).join('');
     if (extras().some(function (x) { return x.done; }) || have.length || miss.length) h += '<button class="btn ghost full" style="margin-top:12px" data-unt="1">Limpar confirmações</button>';
@@ -867,6 +887,7 @@ function fitBox(t) {
     else if (D.mman && mctx) { var mk1 = num($('mmk').value), mp1 = num($('mmp').value), mc1 = num($('mmc').value), mf1 = num($('mmf').value), mnm = mctx.lib ? $('mmn').value.trim() : ''; if (mctx.lib && !mnm) $('mmn').focus(); else if (mk1 != null) { var mv = { d: 'escrito por ti', kcal: Math.round(mk1), p: mp1 || 0, c: mc1 || 0, f: mf1 || 0 }; if (mctx.lib) { mv.d = mnm; addLib(mv); } else saveNut(mctx.key, mctx.name, mv); mDone(); } else $('mmk').focus(); }
     else if (D.msave && mx) { var t = mxTotals(), rr = recById(mx.id); if (rr) { rr.serv = t.s; rr.mac = { k: t.k, p: t.p, c: t.c, f: t.f, cov: t.ok + '/' + t.tot }; rr.u = Date.now(); save(); } openView(mx.id); render(); }
     else if (D.iadd) { readRows(); edItems.push({ n: '', q: '', u: '' }); paintRows(); var dr2 = snapDraft(); openPick('', '', dr2, dr2.items.length - 1); }
+    else if (D.iup !== undefined || D.idn !== undefined) { readRows(); var ia = Number(D.iup !== undefined ? D.iup : D.idn), ib = D.iup !== undefined ? ia - 1 : ia + 1; if (edItems[ia] && edItems[ib]) { var tmp = edItems[ia]; edItems[ia] = edItems[ib]; edItems[ib] = tmp; paintRows(); } }
     else if (D.irm !== undefined) { readRows(); edItems.splice(Number(D.irm), 1); paintRows(); }
     else if (D.qf) openQty(D.qf);
     else if (D.qsave && qCtx) setQty($('qin2').value.trim());
@@ -880,9 +901,10 @@ function fitBox(t) {
   });
   document.addEventListener('input', function (e) {
     var t = e.target;
+    if (t.classList && t.classList.contains('in-q') || t.id === 'rsv') { updInfo(); return; }
     if (t.id === 'mq' && mctx) {
       clearTimeout(mqT); var mv = t.value.trim();
-      if (!mv) { mctx.res = []; $('mres').innerHTML = '<p style="color:var(--mute)">Escreve o nome do produto, ou o código de barras.</p>'; return; }
+      if (!mv) { mctx.res = []; $('mres').innerHTML = '<p style="color:var(--mute)">Nome ou código de barras.</p>'; return; }
       if (mv.length >= 3 || /^\d+$/.test(mv)) mqT = setTimeout(function () { if (mctx && $('mq') && $('mq').value.trim() === mv) mSearch(); }, 800);
       return;
     }
@@ -907,7 +929,7 @@ function fitBox(t) {
   });
   $('m').addEventListener('click', function (e) { if (e.target === $('m')) closeM(); });
 
-  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; } });
+  document.addEventListener('change', function (e) { var t = e.target; if (t.id === 'rph' && t.files && t.files[0]) { readPhoto(t.files[0], function (u) { if (u) { edPhoto = u; paintPhoto(); } }); return; } if (t.dataset && t.dataset.gu) { var gx = data.extra.filter(function (y) { return y.id === t.dataset.gu && y.k === 'lib'; })[0], gv = num(t.value); if (gx) { if (gv > 0) gx.gu = r1(gv); else delete gx.gu; gx.u = Date.now(); save(); } } else if (t.dataset && t.dataset.stk) setStock(t.dataset.stk, t.value, null); else if (t.dataset && t.dataset.stu) setStock(t.dataset.stu, null, t.value); if (t.classList && t.classList.contains('in-u')) { var q = t.closest('.irow').querySelector('.in-q'); q.disabled = t.value === 'a gosto'; updInfo(); } });
   window.addEventListener('storage', function (e) { if (e.key === LS) { var y = window.scrollY; data = load(); if ($('m').hidden) render(); window.scrollTo(0, y); } });
   var sh = (location.hash || '').match(/^#add=([\s\S]+)$/);
   if (sh) {
