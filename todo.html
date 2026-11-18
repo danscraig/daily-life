@@ -50,6 +50,14 @@ input::placeholder { color: var(--mute); }
 .bar { display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: var(--bg); margin: 10px 0 8px; }
 .bar i { display: block; height: 100%; }
 .bar .a0 { background: var(--s0); } .bar .a1 { background: var(--s1); } .bar .a2 { background: var(--s2); }
+.pvs { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pv { display: flex; align-items: center; gap: 9px; font-size: 14px; min-width: 0; }
+.pv > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv i { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--s0); }
+.pv[data-s="1"] i { border-color: var(--s1); background: linear-gradient(90deg, var(--s1) 50%, transparent 50%); }
+.pv[data-s="2"] i { border-color: var(--s2); background: var(--s2); }
+.pv[data-s="2"] > span { color: var(--mute); text-decoration: line-through; }
+.pm { font-size: 12.5px; color: var(--mute); padding-left: 21px; }
 .cnt { display: flex; gap: 14px; font-size: 12.5px; color: var(--mute); }
 .cnt span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--c); }
 
@@ -138,6 +146,14 @@ input::placeholder { color: var(--mute); }
     $('ttl').textContent = cur ? l.n : 'To do';
     $('main').innerHTML = cur ? topicHTML(l) : topicsHTML();
   }
+  function previewHTML(l, ts) {   // the first open tasks of the topic (ongoing first); done ones only when nothing else is left
+    var open = ts.filter(function (t) { return t.s !== 2; }).sort(function (a, b) { return ((b.s || 0) === 1) - ((a.s || 0) === 1) || (a.c || a.u || 0) - (b.c || b.u || 0); });
+    var list = open.length ? open : ts.slice().sort(function (a, b) { return (b.u || 0) - (a.u || 0); }), N = 3, h = '';
+    if (!list.length) return '';
+    list.slice(0, N).forEach(function (t) { h += '<span class="pv" data-s="' + (t.s === 2 ? 2 : (prog(l) ? (t.s || 0) : 0)) + '"><i></i><span>' + esc(t.t) + '</span></span>'; });
+    if (list.length > N) h += '<span class="pm">+' + (list.length - N) + (open.length ? ' por fazer' : ' feitas') + '</span>';
+    return '<span class="pvs">' + h + '</span>';
+  }
   function topicsHTML() {
     var ls = lists().sort(function (a, b) { return (b.u || 0) - (a.u || 0); });
     var h = '<form class="addrow" id="addl"><input type="text" id="nl" placeholder="Novo tópico" autocomplete="off" enterkeyhint="done"><button class="btn" aria-label="Adicionar tópico">+</button></form>' +
@@ -145,10 +161,10 @@ input::placeholder { color: var(--mute); }
     if (!ls.length) return h + '<div class="empty">Ainda não tens tópicos.<br>Cria um para começares a listar tarefas.</div>';
     return h + ls.map(function (l) {
       var ts = tasksOf(l.id), c = [0, 0, 0]; ts.forEach(function (t) { c[t.s || 0]++; });
-      if (!prog(l)) return '<button class="tcard" data-l="' + l.id + '"><span class="row"><b>' + esc(l.n) + '</b><span class="n">' + (ts.length ? (ts.length - c[2]) + ' por fazer' : 'vazio') + '</span></span></button>';
+      if (!prog(l)) return '<button class="tcard" data-l="' + l.id + '"><span class="row"><b>' + esc(l.n) + '</b><span class="n">' + (ts.length ? (ts.length - c[2]) + ' por fazer' : 'vazio') + '</span></span>' + previewHTML(l, ts) + '</button>';
       return '<button class="tcard" data-l="' + l.id + '"><span class="row"><b>' + esc(l.n) + '</b><span class="n">' + ts.length + (ts.length === 1 ? ' tarefa' : ' tarefas') + '</span></span>' +
         (ts.length ? '<span class="bar">' + c.map(function (n, i) { return n ? '<i class="a' + i + '" style="width:' + (n / ts.length * 100) + '%"></i>' : ''; }).join('') + '</span>' +
-          '<span class="cnt">' + c.map(function (n, i) { return '<span style="--c:' + ST[i].c + '">' + n + ' ' + ST[i].n.toLowerCase() + '</span>'; }).join('') + '</span>' : '') + '</button>';
+          '<span class="cnt">' + c.map(function (n, i) { return '<span style="--c:' + ST[i].c + '">' + n + ' ' + ST[i].n.toLowerCase() + '</span>'; }).join('') + '</span>' : '') + previewHTML(l, ts) + '</button>';
     }).join('');
   }
   function topicHTML(l) {
