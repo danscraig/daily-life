@@ -1,6 +1,6 @@
 ﻿{
-  "name": "Daily Life",
-  "short_name": "Daily Life",
+  "name": "Daily",
+  "short_name": "Daily",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

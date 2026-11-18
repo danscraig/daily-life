@@ -57,6 +57,12 @@ input[type="search"] { border-radius: 999px; padding: 14px 18px; -webkit-appeara
 .srow span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .srow .hf { width: 32px; height: 32px; border-radius: 50%; color: var(--mute); border: 1px solid var(--line); font-size: 15px; }
 .srow .hf[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.srow .qb { height: 32px; padding: 0 10px; border-radius: 16px; color: var(--mute); border: 1px solid var(--line); font-size: 13px; }
+.srow .qb.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.qrow { display: flex; align-items: center; gap: 8px; }
+.qrow label { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.qrow input { width: 84px; flex: none; text-align: right; }
+.qrow .qu { flex: none; width: 54px; color: var(--mute); font-size: 13px; }
 .srow .x { width: 32px; height: 32px; border-radius: 50%; color: var(--mute); }
 .slot .st:not(.empty) { display: flex; flex-direction: column; gap: 8px; }
 .slot .se { display: flex; align-items: center; gap: 10px; }
@@ -252,7 +258,7 @@ function fitBox(t) {
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="ibtn" href="index.html" aria-label="Voltar ao Daily Life">‹</a>
+    <a class="ibtn" href="index.html" aria-label="Voltar ao Daily">‹</a>
     <h1>Refeições</h1>
     <button class="ibtn" data-links="1" aria-label="Adicionar o link de uma receita"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span class="bdg" id="lkn" hidden></span></button>
   </header>
@@ -308,17 +314,17 @@ function fitBox(t) {
   function cleanLines(t) { return String(t || '').split('\n').map(function (l) { return l.replace(/^\s*[-•*]\s*/, '').trim(); }).filter(Boolean); }
   function slotOf(k, s) { var d = data.plan[k]; return d && d[s] && !d[s].x ? d[s] : null; }   // {x:1} = cleared
   function entries(m) {   // everything planned in one meal: [{r|t}, ...]
-    if (!m || m.x) return []; var o = []; if (m.r || m.t) o.push({ r: m.r, t: m.t, h: m.h });
-    (m.more || []).forEach(function (e) { o.push({ r: e.r, t: e.t, h: e.h }); }); return o;
+    if (!m || m.x) return []; var o = []; if (m.r || m.t) o.push({ r: m.r, t: m.t, h: m.h, o: m.o });
+    (m.more || []).forEach(function (e) { o.push({ r: e.r, t: e.t, h: e.h, o: e.o }); }); return o;
   }
   function putEntries(k, s, arr) {
     if (!arr.length) { setSlot(k, s, null); return; }
-    var clean = function (e) { var o = {}; if (e.r) o.r = e.r; if (e.t) o.t = e.t; if (e.h) o.h = 1; return o; }, v = clean(arr[0]);
+    var clean = function (e) { var o = {}; if (e.r) o.r = e.r; if (e.t) o.t = e.t; if (e.h) o.h = 1; if (e.o && Object.keys(e.o).length) o.o = e.o; return o; }, v = clean(arr[0]);
     if (arr.length > 1) v.more = arr.slice(1).map(clean); setSlot(k, s, v);
   }
   function addEntry(k, s, e) { var arr = entries(slotOf(k, s)); arr.push(e); putEntries(k, s, arr); }
   function entText(e) {   // [title, subtitle] for one planned item
-    if (e.r) { var r = recById(e.r); if (!r) return [e.t || 'Receita apagada', '']; var mm = macOf(r); return [r.n, [e.h ? '½ prato' : '', r.min ? r.min + ' min' : '', mm ? Math.round(mm.k * (e.h ? 0.5 : 1)) + ' kcal' : ''].filter(Boolean).join(' · ')]; }
+    if (e.r) { var r = recById(e.r); if (!r) return [e.t || 'Receita apagada', '']; var mm = macOf(r, e.o); return [r.n, [e.h ? '½ prato' : '', e.o && Object.keys(e.o).length ? 'quantidades ajustadas' : '', r.min ? r.min + ' min' : '', mm ? Math.round(mm.k * (e.h ? 0.5 : 1)) + ' kcal' : ''].filter(Boolean).join(' · ')]; }
     return e.t ? [e.t, e.h ? '½ prato' : ''] : null;
   }
   function slotText(m) { var es = entries(m); return es.length ? entText(es[0]) : null; }
@@ -327,7 +333,7 @@ function fitBox(t) {
     d[s] = v ? Object.assign({}, v, { u: now }) : { x: 1, u: now };   // a cleared meal is kept as a marker so the clearing syncs
     save();
   }
-  function mealSig(m) { return m && !m.x ? entries(m).map(function (e) { return (e.r || '') + '|' + (e.t || '') + (e.h ? '|h' : ''); }).join('||') : ''; }
+  function mealSig(m) { return m && !m.x ? entries(m).map(function (e) { return (e.r || '') + '|' + (e.t || '') + (e.h ? '|h' : '') + (e.o ? '|' + JSON.stringify(e.o) : ''); }).join('||') : ''; }
   function strip(m) { var o = JSON.parse(JSON.stringify(m)); delete o.u; return o; }
 
   /* plan */
@@ -356,10 +362,30 @@ function fitBox(t) {
     slotCtx = { k: k, s: s, q: '', all: false };
     var d = new Date(k + 'T12:00:00'), lab = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + ' · ' + SL.filter(function (x) { return x[0] === s; })[0][1];
     var cur = slotOf(k, s), es = entries(cur);
-    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2>' + (es.length ? '<div class="scur">' + es.map(function (e, i) { var t = entText(e) || ['', '']; return '<div class="srow"><span>' + esc(t[0]) + '</span><button type="button" class="hf" data-shf="' + i + '" aria-pressed="' + !!e.h + '" aria-label="Só comi metade">½</button><button type="button" class="x" data-srm="' + i + '" aria-label="Tirar">✕</button></div>'; }).join('') + '</div><label>Acrescentar</label>' : '') + '<input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="chipsrow" id="sfil"></div><div class="pick" id="spick"></div>' +
+    $('sh').innerHTML = '<h2>' + esc(lab) + '</h2>' + (es.length ? '<div class="scur">' + es.map(function (e, i) { var t = entText(e) || ['', '']; return '<div class="srow"><span>' + esc(t[0]) + '</span>' + (e.r ? '<button type="button" class="qb' + (e.o && Object.keys(e.o).length ? ' on' : '') + '" data-sadj="' + i + '" aria-label="Alterar quantidades só nesta refeição">Qtd</button>' : '') + '<button type="button" class="hf" data-shf="' + i + '" aria-pressed="' + !!e.h + '" aria-label="Só comi metade">½</button><button type="button" class="x" data-srm="' + i + '" aria-label="Tirar">✕</button></div>'; }).join('') + '</div><label>Acrescentar</label>' : '') + '<input type="search" id="sq" placeholder="Pesquisar as tuas receitas" autocomplete="off" aria-label="Pesquisar receitas"><div class="chipsrow" id="sfil"></div><div class="pick" id="spick"></div>' +
       '<div><label for="sfree">Ou escreve</label><div class="addrow" style="margin:0"><input type="text" id="sfree" placeholder="ex.: almoço fora" value=""><button class="btn" data-sfree="1">Usar</button></div></div>' +
       (es.length > 1 ? '<button class="btn ghost full" data-sclear="1">Limpar tudo</button>' : '') + '<button class="btn ghost full" data-close="1">Fechar</button>';
     fillPick(); $('m').hidden = false;
+  }
+  /* quantities for one meal only: {ingredient name: amount}, kept in the planned item (e.o), the recipe itself is untouched */
+  var adj = null;
+  function openAdj(k, s, i) {
+    var e = entries(slotOf(k, s))[i], r = e && e.r ? recById(e.r) : null; if (!r) return;
+    adj = { k: k, s: s, i: i, r: r.id };
+    var o = e.o || {}, rows = recItems(r).filter(function (it) { return String(it.n).trim() && it.u !== 'a gosto'; }).map(function (it, j) {
+      var key = nrm(it.n), v = o[key] != null ? o[key] : it.q, unit = it.u === 'un' ? 'un.' : it.u;
+      return '<div class="qrow"><label for="aq' + j + '">' + esc(String(it.n).trim()) + '</label><input type="text" inputmode="decimal" id="aq' + j + '" data-akey="' + esc(key) + '" data-aorig="' + esc(String(it.q == null ? '' : it.q)) + '" value="' + esc(String(v == null ? '' : v)) + '" autocomplete="off"><span class="qu">' + esc(unit || '') + '</span></div>';
+    }).join('');
+    $('sh').innerHTML = '<h2>' + esc(r.n) + '</h2><p style="margin:0;color:var(--mute);font-size:14px">Quantidades só para esta refeição. A receita não muda.</p>' + (rows || '<p style="color:var(--mute)">Esta receita não tem ingredientes com quantidade.</p>') +
+      '<button class="btn full" data-adjsave="1">Guardar</button><button class="btn ghost full" data-adjreset="1">Voltar às quantidades da receita</button><button class="btn ghost full" data-adjback="1">Cancelar</button>';
+    $('m').hidden = false;
+  }
+  function saveAdj(reset) {
+    var a = adj; if (!a) return; var arr = entries(slotOf(a.k, a.s)), e = arr[a.i]; if (!e) { adj = null; return; }
+    var o = {};
+    if (!reset) [].forEach.call($('sh').querySelectorAll('input[data-akey]'), function (inp) { var v = inp.value.trim(); if (v !== inp.dataset.aorig.trim() && v !== '') o[inp.dataset.akey] = v; });
+    if (Object.keys(o).length) e.o = o; else delete e.o;
+    putEntries(a.k, a.s, arr); adj = null; render(); openSlot(a.k, a.s);
   }
   function fillPick() {
     var fl = $('sfil'); if (fl) fl.innerHTML = '<button type="button" data-sall="0" aria-pressed="' + !slotCtx.all + '">' + esc(mtName(slotCtx.s)) + '</button><button type="button" data-sall="1" aria-pressed="' + !!slotCtx.all + '">Todas</button>';
@@ -420,10 +446,11 @@ function fitBox(t) {
       return '<li class="ig">' + (rec && rec.img ? thumb(rec.img) : '') + '<span class="tx">' + (amt ? '<b class="am">' + esc(amt) + '</b> ' : '') + esc(n) + (notes.length ? '<small>' + notes.join(' · ') + '</small>' : '') + '</span>' + (rec && g != null ? '<span class="ik">' + Math.round(rec.kcal * g / 100) + ' kcal</span>' : '') + '</li>';
     }).join('');
   }
-  function macOf(r) {   // per portion, from the ingredients that are library foods with a known weight; else what the recipe had stored
+  function macOf(r, ov) {   // per portion, from the ingredients that are library foods with a known weight; else what the recipe had stored
     var t = { k: 0, p: 0, c: 0, f: 0 }, ok = 0, tot = 0;
     recItems(r).forEach(function (it) {
       if (!String(it.n).trim() || it.u === 'a gosto') return; tot++;
+      if (ov && ov[nrm(it.n)] != null) it = { n: it.n, q: ov[nrm(it.n)], u: it.u };
       var rec = nutRec(nutKey(it.n)); if (!rec) return;
       var g = itemGrams(it, rec); if (g == null) return;
       ok++; t.k += rec.kcal * g / 100; t.p += rec.p * g / 100; t.c += rec.c * g / 100; t.f += rec.f * g / 100;
@@ -566,12 +593,12 @@ function fitBox(t) {
   function weekItems(mon) {   // everything the week's recipes need, same ingredient and unit added together
     var map = {}, order = [];
     var rids = [];
-    for (var i = 0; i < 7; i++) SL.forEach(function (s) { entries(slotOf(ds(addDays(mon, i)), s[0])).forEach(function (e) { if (e.r) rids.push(e.r); }); });
-    rids.forEach(function (rid) {
-      var r = recById(rid); if (!r || r.del) return;
+    for (var i = 0; i < 7; i++) SL.forEach(function (s) { entries(slotOf(ds(addDays(mon, i)), s[0])).forEach(function (e) { if (e.r) rids.push({ id: e.r, o: e.o }); }); });
+    rids.forEach(function (re) {
+      var r = recById(re.id); if (!r || r.del) return;
       recItems(r).forEach(function (it) {
         var nm = String(it.n || '').trim(); if (!nm) return;
-        var bu = baseUnit(it.u), key = nrm(nm) + '|' + bu[0], q = parseQ(it.q), o = map[key];
+        var bu = baseUnit(it.u), key = nrm(nm) + '|' + bu[0], q = parseQ(re.o && re.o[nrm(nm)] != null ? re.o[nrm(nm)] : it.q), o = map[key];
         if (!o) { o = map[key] = { key: key, n: nm, u: bu[0], tot: 0, has: false, from: {} }; order.push(key); }
         if (q != null && bu[0] !== 'a gosto') { o.tot += q * bu[1]; o.has = true; }
         o.from[r.n] = (o.from[r.n] || 0) + 1;
@@ -877,7 +904,7 @@ function fitBox(t) {
   }
   function dayMacros(k) {
     var t = { k: 0, p: 0, c: 0, f: 0 }, n = 0, miss = [];
-    SL.forEach(function (s) { entries(slotOf(k, s[0])).forEach(function (e) { var r = e.r ? recById(e.r) : null, mm = r ? macOf(r) : null; if (mm) { var f = e.h ? 0.5 : 1; n++; t.k += mm.k * f; t.p += mm.p * f; t.c += mm.c * f; t.f += mm.f * f; } else { var tx = entText(e); miss.push(tx ? tx[0] : '?'); } }); });
+    SL.forEach(function (s) { entries(slotOf(k, s[0])).forEach(function (e) { var r = e.r ? recById(e.r) : null, mm = r ? macOf(r, e.o) : null; if (mm) { var f = e.h ? 0.5 : 1; n++; t.k += mm.k * f; t.p += mm.p * f; t.c += mm.c * f; t.f += mm.f * f; } else { var tx = entText(e); miss.push(tx ? tx[0] : '?'); } }); });
     if (!n && !miss.length) return '';
     var num0 = function (v) { return n ? Math.round(v) : '–'; };
     return '<div class="dsum"><div class="dk"><b>' + num0(t.k) + '</b><span>kcal</span></div><div class="dmc"><span><b>' + num0(t.p) + (n ? '<i>g</i>' : '') + '</b>proteína</span><span><b>' + num0(t.c) + (n ? '<i>g</i>' : '') + '</b>hidratos</span><span><b>' + num0(t.f) + (n ? '<i>g</i>' : '') + '</b>gordura</span></div></div>' + goalRows(t, n) + (miss.length ? '<p class="dmiss">Sem macros: ' + miss.map(esc).join(', ') + '</p>' : '');
@@ -977,6 +1004,10 @@ function fitBox(t) {
     else if (D.s && D.k) openSlot(D.k, D.s);
     else if (D.rpick && slotCtx) { addEntry(slotCtx.k, slotCtx.s, { r: D.rpick }); closeM(); render(); }
     else if (D.shf !== undefined && slotCtx) { var hk = slotCtx.k, hs = slotCtx.s, ha = entries(slotOf(hk, hs)), hi = Number(D.shf); if (ha[hi]) { ha[hi].h = ha[hi].h ? 0 : 1; putEntries(hk, hs, ha); render(); openSlot(hk, hs); } }
+    else if (D.sadj !== undefined && slotCtx) openAdj(slotCtx.k, slotCtx.s, Number(D.sadj));
+    else if (D.adjsave && adj) saveAdj(false);
+    else if (D.adjreset && adj) saveAdj(true);
+    else if (D.adjback && adj) { var ak = adj.k, as = adj.s; adj = null; openSlot(ak, as); }
     else if (D.srm !== undefined && slotCtx) { var sk = slotCtx.k, ss = slotCtx.s, sa = entries(slotOf(sk, ss)); sa.splice(Number(D.srm), 1); putEntries(sk, ss, sa); render(); if (sa.length) openSlot(sk, ss); else closeM(); }
     else if (D.sfree && slotCtx) { var v = $('sfree').value.trim(); if (v) { saveMeal(v); addEntry(slotCtx.k, slotCtx.s, { t: v }); closeM(); render(); } else $('sfree').focus(); }
     else if (D.sclear && slotCtx) { setSlot(slotCtx.k, slotCtx.s, null); closeM(); render(); }

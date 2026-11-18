@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Daily Life</title>
+<title>Daily</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
@@ -517,6 +517,32 @@ html.onhome body::before { display: none; }
 #home.ios.tight3 .ic .sq { width: 48px; height: 48px; }
 #home.ios.tight3 .ic .lb { font-size: 11px; }
 #home.ios.tight3 .igrid { gap: 8px 6px; }
+/* home fills the whole screen: header, widgets stretch to share the free height, app icons at the bottom */
+#home.ios .hello { padding: 8px 6px 18px; }
+#home.ios .ihw { flex: 1 1 auto; min-height: auto; grid-template-rows: auto 1fr 1fr; gap: 12px; margin: 0 0 20px; }
+#home.ios .ihw .wg { min-height: 0; padding: 16px 16px 15px; justify-content: flex-start; gap: 12px; overflow: visible; border-radius: 28px; }
+#home.ios .ihw .wg.bdw { padding: 14px 18px; justify-content: flex-start; }
+#home.ios .ihw .wg > :not(.t) { margin-top: 0; }
+#home.ios .ihw .t { font-size: 12px; }
+#home.ios .ihw .mr, #home.ios .ihw .night { font-size: 16px; margin-top: 0; }
+#home.ios .ihw .mr small, #home.ios .ihw .night small { font-size: 11px; margin-bottom: 2px; }
+#home.ios .ihw .ln { font-size: 14.5px; margin-top: 0; }
+#home.ios .ihw .bdl { font-size: 14.5px; }
+#home.ios .ihw .hb { margin-top: 0; padding: 9px 12px; }
+#home.ios .ihw .hb .nm { font-size: 15px; }
+#home.ios .ihw .chips { margin-top: auto; padding-top: 0; }
+#home.ios .ihw .hb { flex: 1 1 0; max-height: 62px; }
+#home.ios .ihw .wg:not(.bdw) > .t + * { margin-top: auto; }
+#home.ios .ihw .wg:not(.bdw) > :last-child:not(.chips) { margin-bottom: auto; }
+#home.ios .ihw .wg > #ih_ev { display: flex; flex-direction: column; gap: 8px; }
+#home.ios .ihw .chip { height: 34px; border-radius: 17px; font-size: 12.5px; }
+#home.ios .igrid { margin-top: 0; gap: 18px 6px; padding: 0 2px; }
+#home.ios .ic .sq { width: 64px; height: 64px; }
+#home.ios.tight .ihw { gap: 8px; margin-bottom: 12px; }
+#home.ios.tight .ihw .wg { padding: 10px 13px; border-radius: 22px; }
+#home.ios.tight .igrid { gap: 10px 6px; }
+#home.ios.tight .ic .sq { width: 54px; height: 54px; }
+#home.ios.tight3 .ic .sq { width: 48px; height: 48px; }
 /* an open app: a window that grows out of its icon */
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
 .iwin.off { visibility: hidden; pointer-events: none; }
@@ -792,6 +818,22 @@ function fitBox(t) {
   document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); });
   window.addEventListener('pagehide', flush);
 
+  /* Check-in | Journal switch: same day, same calendar, just the other half of it */
+  function swHTML() {
+    return '<div class="seg" role="group" aria-label="Check-in or Journal"><button data-sw="check" aria-pressed="' + (app === 'check') + '">Check-in</button><button data-sw="diary" aria-pressed="' + (app === 'diary') + '">Journal</button></div>';
+  }
+  function switchApp(a) {
+    if (a === app) return;
+    if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') flush();
+    app = a; query = '';
+    ovTab.hidden = a === 'diary'; document.getElementById('actset').hidden = a !== 'check';
+    tabsIn.style.gridTemplateColumns = 'repeat(' + (a === 'diary' ? 2 : 3) + ', 1fr)';
+    document.getElementById('appname').textContent = a === 'diary' ? 'Journal' : 'Daily Check-in';
+    if (view === 'ov' && a === 'diary') view = 'day';
+    document.documentElement.dataset.ac = a;
+    render();
+  }
+
   /* day view */
   function shift(n) { var t = new Date(2024, sel.m - 1, sel.d + n); sel = { m: t.getMonth() + 1, d: t.getDate() }; render(); }
   function dayYears() {
@@ -803,7 +845,7 @@ function fitBox(t) {
     var m = sel.m, d = sel.d, isToday = m === TM && d === TD;
     var wd = validDate(TY, m, d) ? WD[new Date(TY, m - 1, d).getDay()] : 'Leap day';
     var ys = dayYears();
-    var h = '<div class="nav"><button class="step" data-act="prev" aria-label="Previous day">‹</button>' +
+    var h = swHTML() + '<div class="nav"><button class="step" data-act="prev" aria-label="Previous day">‹</button>' +
       '<button class="center" data-act="cal" aria-label="Open calendar"><span class="dayname">' + d + ' ' + MN[m - 1] + '</span>' +
       '<span class="daysub">' + wd + (isToday ? '<span class="today-pill">Today</span>' : '') + '</span></button>' +
       '<button class="step" data-act="next" aria-label="Next day">›</button></div>';
@@ -933,7 +975,7 @@ function fitBox(t) {
   function calHTML() {
     var all = allEntries(), yrs = entryYears(), counts = {}, mood = {};
     all.forEach(function (e) { if (e.m === calM) { counts[e.d] = (counts[e.d] || 0) + 1; if (e.mood && app === 'check') mood[e.d] = e.mood; } });
-    var h = '<div class="ctop"><div class="stats"><div class="stat"><b>' + all.length + '</b><span>Days logged</span></div>' +
+    var h = swHTML() + '<div class="ctop"><div class="stats"><div class="stat"><b>' + all.length + '</b><span>Days logged</span></div>' +
       '<div class="stat"><b>' + streak() + '</b><span>Days in a row</span></div>' +
       '<div class="stat"><b>' + (yrs.length ? Math.min.apply(null, yrs) : TY) + '</b><span>First year</span></div></div><button class="lupa" data-act="search" aria-label="Search entries"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></button></div>';
     h += '<div class="mnav"><button class="step" data-act="mprev" aria-label="Previous month">‹</button><h2>' + MN[calM - 1] + '</h2><button class="step" data-act="mnext" aria-label="Next month">›</button></div>';
@@ -993,7 +1035,8 @@ function fitBox(t) {
     if (sq && sq.dataset.m) { sel = { m: +sq.dataset.m, d: +sq.dataset.d }; view = 'day'; render(); window.scrollTo(0, 0); return; }
     var b = e.target.closest('button'); if (!b) return;
     var act = b.dataset.act;
-    if (b.dataset.mood) { putMood(+b.dataset.y, sel.m, sel.d, +b.dataset.mood); render(); }
+    if (b.dataset.sw) switchApp(b.dataset.sw);
+    else if (b.dataset.mood) { putMood(+b.dataset.y, sel.m, sel.d, +b.dataset.mood); render(); }
     else if (b.dataset.aid && !act) { toggleAct(+b.dataset.y, sel.m, sel.d, b.dataset.aid); render(); }
     else if (b.dataset.bul) { var bt = (b.closest('.learn') || b.closest('.row')).querySelector('textarea'); if (bt && !bt.disabled) toggleBullets(bt); }
     else if (act === 'editacts') openActs();
