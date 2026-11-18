@@ -517,6 +517,19 @@ html.onhome body::before { display: none; }
 #home.ios.tight3 .ic .sq { width: 48px; height: 48px; }
 #home.ios.tight3 .ic .lb { font-size: 11px; }
 #home.ios.tight3 .igrid { gap: 8px 6px; }
+/* compact home: smaller header, tighter cards, icons right below them */
+#home.ios .hello { padding: 0 6px 10px; }
+#home.ios .hello h1 { font-size: 32px; }
+#home.ios .ihw { gap: 8px; }
+#home.ios .ihw .wg { min-height: 0; padding: 10px 13px; border-radius: 20px; }
+#home.ios .ihw .wg.bdw { padding: 9px 14px; }
+#home.ios .ihw .ln, #home.ios .ihw .mr, #home.ios .ihw .hb, #home.ios .ihw .night { margin-top: 5px; }
+#home.ios .ihw .chip { height: 24px; }
+#home.ios .ihw .chips { padding-top: 6px; }
+#home.ios .ihw { margin-bottom: 14px; }
+#home.ios .igrid { margin-top: 0; gap: 10px 6px; padding-top: 0; }
+#home.ios .ic .sq { width: 54px; height: 54px; }
+#home.ios .ic .lb { font-size: 11px; }
 /* an open app: a window that grows out of its icon */
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
 .iwin.off { visibility: hidden; pointer-events: none; }
