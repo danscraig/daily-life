@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>["gesturestart","gesturechange","gestureend"].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault();});});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});</script>
+<meta name="theme-color" content="#E3E2DF">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Outfits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1F5; --paper: #FCFDFE; --ink: #2F3640; --mute: #727C89; --line: #DDE2E9; --accent: #5B7799; --accent-ink: #FFFFFF;
+  --ok: #6C9378; --shadow: rgba(47, 54, 64, .14); --bad: #C0392B; --font: "Outfit", "Helvetica Neue", Arial, sans-serif;
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; overscroll-behavior-y: none; }
+html, body, button, a, input, select, label, textarea { touch-action: manipulation; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font); padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(104px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); -webkit-text-size-adjust: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; transition: transform 140ms var(--ease-out), background-color 150ms ease, color 150ms ease; }
+button:active { transform: scale(.97); }
+[hidden] { display: none !important; }
+.wrap { max-width: 640px; margin: 0 auto; }
+.top { position: sticky; top: 0; z-index: 15; background: var(--bg); margin: 0 -16px; display: flex; align-items: center; gap: 12px; padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 10px; }
+.top h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ibtn { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: grid; place-items: center; font-size: 22px; color: var(--ink); text-decoration: none; line-height: 1; }
+input[type="text"], input[type="date"], select { width: 100%; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 400 16px var(--font); min-height: 48px; }
+input::placeholder { color: var(--mute); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 18px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 14px; text-align: center; }
+.btn.ghost { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+.btn.bad { background: var(--bad); color: #fff; }
+.btn.full { width: 100%; padding: 14px; font-size: 15px; }
+.empty { text-align: center; color: var(--mute); padding: 34px 10px; }
+.mut { color: var(--mute); font-size: 13.5px; }
+
+/* trips */
+.tcard { display: block; width: 100%; text-align: left; background: var(--paper); border-radius: 20px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.tcard .row { display: flex; align-items: baseline; gap: 10px; }
+.tcard b { flex: 1; min-width: 0; font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
+.tcard .n { flex: none; color: var(--mute); font-size: 13px; }
+.tcard .sub { color: var(--mute); font-size: 13.5px; margin-top: 2px; }
+.bar { display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: var(--bg); margin: 10px 0 0; }
+.bar i { display: block; height: 100%; background: var(--ok); }
+.past { opacity: .62; }
+.h { margin: 18px 4px 8px; font-size: 13px; font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: .05em; }
+
+/* day chips and filters */
+.filt { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; padding: 2px 0; }
+.filt::-webkit-scrollbar { display: none; }
+.filt button { flex: none; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 13.5px; color: var(--mute); }
+.filt button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.filt.days button { display: flex; flex-direction: column; align-items: center; min-width: 54px; padding: 8px 8px 9px; line-height: 1.15; border-radius: 18px; position: relative; }
+.filt.days small { font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
+.filt.days b { font-size: 18px; font-weight: 600; }
+.filt.days i { position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
+.filt.days button[aria-pressed="true"] i { background: #fff; }
+.filt.days button.has { padding-bottom: 14px; }
+
+/* day card + mannequin */
+.dcard { background: var(--paper); border-radius: 24px; padding: 14px; box-shadow: 0 10px 26px -18px var(--shadow); }
+.dhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 2px 10px; }
+.dhead b { font-size: 17px; font-weight: 600; }
+.wx { font-size: 13px; color: var(--mute); text-align: right; }
+.scene { display: flex; gap: 10px; align-items: stretch; }
+.man { position: relative; flex: 0 0 58%; aspect-ratio: 1 / 2; border-radius: 18px; background: linear-gradient(180deg, rgba(0,0,0,.025), rgba(0,0,0,.055)); overflow: hidden; }
+.man svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: #D5D4D0; }
+.man img { position: absolute; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(40, 40, 38, .28)); }
+.man img.z-hat { left: 29%; top: 0; width: 42%; height: 9%; }
+.man img.z-top { left: 20%; top: 15%; width: 60%; height: 34%; }
+.man img.z-dress { left: 19%; top: 15%; width: 62%; height: 60%; }
+.man img.z-bottom { left: 24%; top: 45%; width: 52%; height: 48%; }
+.man img.z-shoes { left: 26%; top: 90%; width: 48%; height: 10%; }
+.side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.slot { position: relative; flex: 1; min-height: 0; border-radius: 16px; background: rgba(0, 0, 0, .035); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; padding: 6px; overflow: hidden; }
+.slot.coat { flex: 1.5; }
+.slot img { max-width: 100%; max-height: 100%; min-width: 0; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(40, 40, 38, .25)); }
+.slot.coat img, .slot.bag img { width: 100%; height: 100%; }
+.slot.acc img { width: calc(50% - 4px); height: 46%; }
+.slot em { position: absolute; left: 0; right: 0; bottom: 5px; text-align: center; font-style: normal; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); opacity: .7; }
+.chosen { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
+.chosen span { font-size: 13px; padding: 5px 10px; border-radius: 999px; background: rgba(0, 0, 0, .05); color: var(--ink); }
+.dact { display: flex; gap: 8px; margin-top: 12px; }
+.dact .btn { flex: 1; }
+
+/* wardrobe + picker grid */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pc { position: relative; aspect-ratio: 1 / 1.1; border-radius: 16px; background: var(--paper); box-shadow: 0 8px 20px -18px var(--shadow); display: flex; align-items: center; justify-content: center; padding: 8px 8px 22px; overflow: hidden; }
+.pc img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.pc span { position: absolute; left: 6px; right: 6px; bottom: 4px; font-size: 11px; color: var(--mute); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc[aria-pressed="true"] { box-shadow: 0 0 0 2.5px var(--accent), 0 8px 20px -18px var(--shadow); }
+.pc[aria-pressed="true"]::after { content: ""; position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / 12px no-repeat; }
+.add { display: flex; }
+
+/* packing list */
+.pk { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--paper); border-radius: 16px; padding: 8px 14px 8px 8px; margin-bottom: 6px; box-shadow: 0 8px 20px -18px var(--shadow); }
+.pk .th { flex: none; width: 52px; height: 52px; border-radius: 12px; background: rgba(0, 0, 0, .035); overflow: hidden; padding: 4px; }
+.pk .th img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.pk .tx { flex: 1; min-width: 0; }
+.pk .tx b { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk .tx small { color: var(--mute); font-size: 12.5px; }
+.pk .ck { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #A9A8A4; display: grid; place-items: center; }
+.pk .ck svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.pk[aria-pressed="true"] .ck { background: var(--ok); border-color: var(--ok); }
+.pk[aria-pressed="true"] .ck svg { opacity: 1; }
+.pk[aria-pressed="true"] .tx b { color: var(--mute); text-decoration: line-through; }
+
+/* sheets */
+.modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: color-mix(in srgb, var(--ink) 45%, transparent); padding: calc(16px + env(safe-area-inset-top, 0px)) 12px 16px; }
+.modal:not([hidden]) { animation: fadein 160ms var(--ease-out); }
+.modal:not([hidden]) .sheet { animation: sheetin 220ms var(--ease-out); }
+.sheet { width: 100%; max-width: 560px; max-height: 100%; overflow-y: auto; background: var(--bg); border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sheet h2 { margin: 0; font-size: 20px; }
+.sheet label.l { font-size: 13px; color: var(--mute); display: block; margin: 0 0 4px 4px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.seg button { padding: 11px 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; color: var(--mute); }
+.seg button[aria-pressed="true"] { color: #fff; border-color: transparent; background: var(--accent); }
+.acts { display: flex; gap: 8px; }
+.acts .btn { flex: 1; }
+.pprev { height: 230px; border-radius: 18px; display: grid; place-items: center; overflow: hidden; background: repeating-conic-gradient(#ECEBE8 0 25%, #F7F6F4 0 50%) 0 0 / 18px 18px; }
+.pprev img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.pprev span { color: var(--mute); font-size: 14px; }
+.cutrow { display: flex; align-items: center; gap: 12px; }
+.cutrow .btn { flex: none; }
+.cutrow input[type="range"] { flex: 1; min-width: 0; accent-color: var(--accent); }
+.res { display: flex; flex-direction: column; gap: 6px; }
+.res button { text-align: left; padding: 12px 14px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line); font-size: 15px; }
+.dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.err { color: var(--bad); font-size: 13.5px; margin: 0 4px; }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes sheetin { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* bottom bar */
+.navbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--paper); border-top: 1px solid var(--line); padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.tabbar { display: grid; grid-template-columns: repeat(2, 1fr); max-width: 640px; margin: 0 auto; }
+.tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 9px; font-size: 12px; font-weight: 500; color: var(--mute); }
+.tabbar button[aria-pressed="true"] { color: var(--accent); }
+</style>
+<link rel="stylesheet" href="glass.css?v=5">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="ibtn" id="home" href="index.html" aria-label="Voltar ao Daily">‹</a>
+    <button class="ibtn" id="up" aria-label="Voltar às viagens" hidden>‹</button>
+    <h1 id="ttl">Outfits</h1>
+    <button class="ibtn" id="more" aria-label="Opções da viagem" hidden style="font-size:20px">⋯</button>
+  </header>
+  <main id="main"></main>
+</div>
+<nav class="navbar" aria-label="Secções"><div class="tabbar" id="nav"></div></nav>
+<div class="modal" id="m" hidden><div class="sheet" id="sh"></div></div>
+
+<script src="kb.js?v=3"></script>
+<script src="backup.js?v=1"></script>
+<script type="module" src="sync.js?v=13"></script>
+<script>
+(function () {
+  'use strict';
+  /* Data (localStorage 'outfits-v1'):
+       trips:  [{id, n (name), d (destination), la, lo (coordinates), a, b (first and last day, YYYY-MM-DD), u}]
+       pieces: [{id, k (category), n (optional name), u}]       the wardrobe, shared by every trip
+       days:   { 'tripId|YYYY-MM-DD': [pieceId, ...] }          the outfit of each day
+       pk:     { tripId: [pieceId, ...] }                       pieces already packed
+     The photos live in IndexedDB 'daily-outfits': store p = the picture shown (cut out or not), store o = the original.
+     Everything stays on this device (photos are too big for the cloud sync). */
+  var LS = 'outfits-v1', WXK = 'outfits-wx-v1';
+  var CATS = [['top', 'Top'], ['dress', 'Vestido'], ['bottom', 'Calças e saias'], ['coat', 'Casaco'], ['shoes', 'Sapatos'], ['hat', 'Chapéu'], ['bag', 'Mala'], ['acc', 'Acessório']];
+  var CN = {}; CATS.forEach(function (c) { CN[c[0]] = c[1]; });
+  var MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var MESL = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var DSC = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  var DSL = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+  var data = load(), wx = loadWx(), urls = {};
+  var S = { tab: 'trips', trip: '', vtab: 'days', day: '', pf: 'all' };
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid() { return 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function load() {
+    var d = null; try { d = JSON.parse(localStorage.getItem(LS)); } catch (e) {}
+    d = d && typeof d === 'object' ? d : {};
+    return { trips: Array.isArray(d.trips) ? d.trips : [], pieces: Array.isArray(d.pieces) ? d.pieces : [], days: d.days && typeof d.days === 'object' ? d.days : {}, pk: d.pk && typeof d.pk === 'object' ? d.pk : {} };
+  }
+  function save() { try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {} }
+  function loadWx() { try { var w = JSON.parse(localStorage.getItem(WXK)); return w && typeof w === 'object' ? w : {}; } catch (e) { return {}; } }
+  function saveWx() { try { localStorage.setItem(WXK, JSON.stringify(wx)); } catch (e) {} }
+
+  /* ---------- dates ---------- */
+  function pd(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function addD(s, n) { var d = pd(s); d.setDate(d.getDate() + n); return iso(d); }
+  function span(a, b) { return Math.round((pd(b) - pd(a)) / 864e5); }
+  function today() { return iso(new Date()); }
+  function dm(s) { var d = pd(s); return d.getDate() + ' ' + MES[d.getMonth()]; }
+  function tdays(t) { var o = [], n = Math.min(span(t.a, t.b), 60); for (var i = 0; i <= n; i++) o.push(addD(t.a, i)); return o; }
+  function validIso(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(pd(s).getTime()); }
+
+  /* ---------- lookups ---------- */
+  function trips() { return data.trips.slice(); }
+  function tripById(id) { return data.trips.filter(function (t) { return t.id === id; })[0]; }
+  function pieceById(id) { return data.pieces.filter(function (p) { return p.id === id; })[0]; }
+  function dayIds(tid, date) { return (data.days[tid + '|' + date] || []).filter(function (id) { return !!pieceById(id); }); }
+  function pname(p) { return p.n || CN[p.k] || 'Peça'; }
+  function imgTag(id, cls, alt) { return urls[id] ? '<img' + (cls ? ' class="' + cls + '"' : '') + ' src="' + urls[id] + '" alt="' + esc(alt || '') + '" draggable="false">' : ''; }
+
+  /* ---------- photos: IndexedDB ---------- */
+  var dbp = null;
+  function db() {
+    if (dbp) return dbp;
+    dbp = new Promise(function (res, rej) {
+      try {
+        var r = indexedDB.open('daily-outfits', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('p'); r.result.createObjectStore('o'); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { rej(r.error); };
+      } catch (e) { rej(e); }
+    });
+    return dbp;
+  }
+  function idb(store, mode, fn) {
+    return db().then(function (d) {
+      return new Promise(function (res, rej) {
+        var tx = d.transaction(store, mode), req = fn(tx.objectStore(store));
+        tx.oncomplete = function () { res(req && req.result); };
+        tx.onerror = tx.onabort = function () { rej(tx.error); };
+      });
+    });
+  }
+  function putBlob(store, id, blob) { return idb(store, 'readwrite', function (s) { return s.put(blob, id); }); }
+  function getBlob(store, id) { return idb(store, 'readonly', function (s) { return s.get(id); }); }
+  function delBlob(id) { return Promise.all([idb('p', 'readwrite', function (s) { return s.delete(id); }), idb('o', 'readwrite', function (s) { return s.delete(id); })]); }
+  function setUrl(id, blob) { if (urls[id]) { try { URL.revokeObjectURL(urls[id]); } catch (e) {} } urls[id] = URL.createObjectURL(blob); }
+  function loadImgs() {
+    return Promise.all(data.pieces.map(function (p) {
+      return getBlob('p', p.id).then(function (b) { if (b) setUrl(p.id, b); }, function () {});
+    }));
+  }
+
+  /* ---------- image processing ---------- */
+  function fileToCanvas(blob) {   // scaled so that the longest side is at most 640 px, respecting the photo's rotation
+    function fromSrc(src, w, h) {
+      var k = Math.min(1, 640 / Math.max(w, h)), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+      var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(src, 0, 0, c.width, c.height); return c;
+    }
+    if (window.createImageBitmap) {
+      return createImageBitmap(blob, { imageOrientation: 'from-image' }).catch(function () { return createImageBitmap(blob); }).then(function (bm) { var c = fromSrc(bm, bm.width, bm.height); if (bm.close) bm.close(); return c; });
+    }
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(blob), im = new Image();
+      im.onload = function () { var c = fromSrc(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(u); res(c); };
+      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('img')); };
+      im.src = u;
+    });
+  }
+  function toBlob(c, type, q) { return new Promise(function (res) { c.toBlob(function (b) { res(b); }, type, q); }); }
+  function median(a) { a.sort(function (x, y) { return x - y; }); return a[a.length >> 1]; }
+  /* Takes the plain background away: it starts from the edges of the photo and spreads over every pixel whose colour is close to the edge colour.
+     A garment with the same colour as the floor will lose parts of itself: that is what the "Tirar fundo" switch and the slider are for. */
+  function cutout(base, tol) {
+    var w = base.width, h = base.height, c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d'); x.drawImage(base, 0, 0);
+    var im = x.getImageData(0, 0, w, h), d = im.data, N = w * h, rs = [], gs = [], bs = [], i, j;
+    function s(p) { rs.push(d[p * 4]); gs.push(d[p * 4 + 1]); bs.push(d[p * 4 + 2]); }
+    for (i = 0; i < w; i++) { s(i); s((h - 1) * w + i); }
+    for (j = 1; j < h - 1; j++) { s(j * w); s(j * w + w - 1); }
+    var br = median(rs), bg = median(gs), bb = median(bs), t2 = tol * tol, bgm = new Uint8Array(N), st = new Int32Array(N), sp = 0;
+    function near(p) { var k = p * 4, a = d[k] - br, b = d[k + 1] - bg, e = d[k + 2] - bb; return a * a + b * b + e * e <= t2; }
+    function seed(p) { if (!bgm[p] && near(p)) { bgm[p] = 1; st[sp++] = p; } }
+    for (i = 0; i < w; i++) { seed(i); seed((h - 1) * w + i); }
+    for (j = 0; j < h; j++) { seed(j * w); seed(j * w + w - 1); }
+    while (sp) {
+      var p = st[--sp], px = p % w;
+      if (px > 0) seed(p - 1); if (px < w - 1) seed(p + 1); if (p >= w) seed(p - w); if (p < N - w) seed(p + w);
+    }
+    var x0 = w, y0 = h, x1 = -1, y1 = -1, kept = 0;
+    for (p = 0; p < N; p++) {
+      var px2 = p % w, py = (p - px2) / w;
+      if (bgm[p]) { d[p * 4 + 3] = 0; continue; }
+      kept++;
+      var edge = (px2 > 0 && bgm[p - 1]) || (px2 < w - 1 && bgm[p + 1]) || (py > 0 && bgm[p - w]) || (py < h - 1 && bgm[p + w]);
+      if (edge) d[p * 4 + 3] = 150;
+      if (px2 < x0) x0 = px2; if (px2 > x1) x1 = px2; if (py < y0) y0 = py; if (py > y1) y1 = py;
+    }
+    if (kept < N * 0.03 || x1 < 0) return null;   // nearly everything went: this photo cannot be cut with this value
+    x.putImageData(im, 0, 0);
+    var m = 4; x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m); x1 = Math.min(w - 1, x1 + m); y1 = Math.min(h - 1, y1 + m);
+    var o = document.createElement('canvas'); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
+    o.getContext('2d').drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
+    return o;
+  }
+
+  /* ---------- weather (Open-Meteo, free, no key; only the destination's coordinates and the dates are sent) ---------- */
+  function wxLabel(c) {
+    if (c === 0) return 'Céu limpo'; if (c <= 2) return 'Pouco nublado'; if (c === 3) return 'Nublado'; if (c === 45 || c === 48) return 'Nevoeiro';
+    if (c >= 51 && c <= 57) return 'Chuvisco'; if (c >= 61 && c <= 67) return 'Chuva'; if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'Neve';
+    if (c >= 80 && c <= 82) return 'Aguaceiros'; if (c >= 95) return 'Trovoada'; return '';
+  }
+  function wxFetch(t) {
+    if (!t || t.la == null || t.lo == null || !navigator.onLine) return;
+    var td = today(), lim = addD(td, 15), s = t.a > td ? t.a : td, e = t.b < lim ? t.b : lim;
+    if (s > e) return;
+    var c = wx[t.id];
+    if (c && Date.now() - (c.t || 0) < 3 * 36e5 && c.s === s && c.e === e) return;
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(t.la) + '&longitude=' + encodeURIComponent(t.lo) +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&start_date=' + s + '&end_date=' + e;
+    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.daily || !j.daily.time) return;
+      var o = wx[t.id] && wx[t.id].d ? wx[t.id].d : {};
+      j.daily.time.forEach(function (day, i) { o[day] = { c: j.daily.weather_code[i], hi: j.daily.temperature_2m_max[i], lo: j.daily.temperature_2m_min[i], p: j.daily.precipitation_probability_max[i] }; });
+      wx[t.id] = { t: Date.now(), s: s, e: e, d: o }; saveWx();
+      if (S.trip === t.id && S.vtab === 'days' && $('m').hidden) render();
+    }).catch(function () {});
+  }
+  function wxText(t, date) {
+    var w = wx[t.id] && wx[t.id].d && wx[t.id].d[date];
+    if (!w) {
+      if (t.la == null) return '';
+      var first = addD(date, -15);
+      return date > addD(today(), 15) ? 'Previsão a partir de ' + dm(first) : '';
+    }
+    var s = Math.round(w.hi) + '° / ' + Math.round(w.lo) + '°', l = wxLabel(w.c);
+    return s + (l ? ' · ' + l : '') + (w.p >= 30 ? ' · ' + w.p + '% de chuva' : '');
+  }
+
+  /* ---------- screens ---------- */
+  var SVG = {
+    trips: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M9 8V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2M9 12v4M15 12v4"/></svg>',
+    wardrobe: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.5a2.2 2.2 0 1 0-2.2-2.2"/><path d="M12 7.5v2L3.5 16a1.4 1.4 0 0 0 .9 2.5h15.2a1.4 1.4 0 0 0 .9-2.5L12 9.5"/></svg>',
+    days: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+    bag: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8.5h13l1 11.5h-15z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/></svg>'
+  };
+  var CK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var MAN = '<svg viewBox="0 0 200 400" aria-hidden="true"><ellipse cx="100" cy="30" rx="15" ry="19"/><rect x="92" y="46" width="16" height="16" rx="6"/>' +
+    '<path d="M60 68Q100 56 140 68L152 84L146 192Q100 202 54 192L48 84Z"/>' +
+    '<path d="M50 78L33 176Q32 186 42 188L54 186L66 98Z"/><path d="M150 78L167 176Q168 186 158 188L146 186L134 98Z"/>' +
+    '<path d="M54 190L99 192L92 366L66 366Z"/><path d="M101 192L146 190L134 366L108 366Z"/>' +
+    '<ellipse cx="78" cy="374" rx="17" ry="7"/><ellipse cx="122" cy="374" rx="17" ry="7"/></svg>';
+
+  function render() {
+    var t = S.trip ? tripById(S.trip) : null; if (S.trip && !t) { S.trip = ''; }
+    $('home').hidden = !!t; $('up').hidden = !t; $('more').hidden = !t;
+    $('ttl').textContent = t ? t.n : (S.tab === 'wardrobe' ? 'Roupa' : 'Outfits');
+    var nav = t ? [['days', 'Dias'], ['bag', 'Mala']] : [['trips', 'Viagens'], ['wardrobe', 'Roupa']];
+    var cur = t ? S.vtab : S.tab;
+    $('nav').innerHTML = nav.map(function (n) { return '<button data-v="' + n[0] + '" aria-pressed="' + (cur === n[0]) + '">' + SVG[n[0]] + n[1] + '</button>'; }).join('');
+    $('main').innerHTML = t ? (S.vtab === 'bag' ? bagHTML(t) : daysHTML(t)) : (S.tab === 'wardrobe' ? wardrobeHTML() : tripsHTML());
+    if (t && S.vtab === 'days') { var f = $('main').querySelector('.filt.days'), b = f && f.querySelector('[aria-pressed="true"]'); if (f && b) f.scrollLeft = b.offsetLeft - (f.clientWidth - b.offsetWidth) / 2; }
+  }
+
+  function tripsHTML() {
+    var td = today(), all = trips();
+    var up = all.filter(function (t) { return t.b >= td; }).sort(function (a, b) { return a.a < b.a ? -1 : 1; });
+    var old = all.filter(function (t) { return t.b < td; }).sort(function (a, b) { return a.a < b.a ? 1 : -1; });
+    var h = '<button class="btn full" data-act="newtrip" style="margin-bottom:14px">Nova viagem</button>';
+    if (!all.length) return h + '<div class="empty">Ainda não tens viagens.<br>Cria uma e escolhe as peças de cada dia.</div>';
+    function card(t, past) {
+      var ds = tdays(t), done = ds.filter(function (d) { return dayIds(t.id, d).length; }).length;
+      return '<button class="tcard' + (past ? ' past' : '') + '" data-trip="' + t.id + '"><span class="row"><b>' + esc(t.n) + '</b><span class="n">' + ds.length + (ds.length === 1 ? ' dia' : ' dias') + '</span></span>' +
+        '<div class="sub">' + (t.d ? esc(t.d) + ' · ' : '') + dm(t.a) + (t.a === t.b ? '' : ' – ' + dm(t.b)) + '</div>' +
+        '<span class="bar"><i style="width:' + (ds.length ? done / ds.length * 100 : 0) + '%"></i></span></button>';
+    }
+    h += up.map(function (t) { return card(t, false); }).join('');
+    if (old.length) h += '<div class="h">Passadas</div>' + old.map(function (t) { return card(t, true); }).join('');
+    return h;
+  }
+
+  function wardrobeHTML() {
+    var h = '<button class="btn full" data-act="newpiece" style="margin-bottom:12px">Nova peça</button>';
+    if (!data.pieces.length) return h + '<div class="empty">Sem peças.<br>Tira uma foto a cada peça que queres levar.</div>';
+    var cnt = {}; data.pieces.forEach(function (p) { cnt[p.k] = (cnt[p.k] || 0) + 1; });
+    var f = S.pf; if (f !== 'all' && !cnt[f]) f = S.pf = 'all';
+    h += '<div class="filt">' + [['all', 'Todas', data.pieces.length]].concat(CATS.filter(function (c) { return cnt[c[0]]; }).map(function (c) { return [c[0], c[1], cnt[c[0]]]; })).map(function (x) { return '<button data-pf="' + x[0] + '" aria-pressed="' + (f === x[0]) + '">' + x[1] + ' · ' + x[2] + '</button>'; }).join('') + '</div>';
+    return h + '<div class="grid">' + gridItems(f, null, 'ed') + '</div>';
+  }
+  function gridItems(f, sel, attr) {
+    return data.pieces.filter(function (p) { return f === 'all' || p.k === f; }).sort(function (a, b) { return (b.u || 0) - (a.u || 0); }).map(function (p) {
+      return '<button class="pc" data-' + attr + '="' + p.id + '"' + (sel ? ' aria-pressed="' + (sel.indexOf(p.id) > -1) + '"' : '') + ' aria-label="' + esc(pname(p)) + '">' + imgTag(p.id, '', '') + '<span>' + esc(pname(p)) + '</span></button>';
+    }).join('');
+  }
+
+  function curDay(t) {
+    var ds = tdays(t);
+    if (ds.indexOf(S.day) < 0) S.day = ds.indexOf(today()) > -1 ? today() : ds[0];
+    return S.day;
+  }
+  function daysHTML(t) {
+    var ds = tdays(t), cd = curDay(t), d = pd(cd), ids = dayIds(t.id, cd);
+    var h = '<div class="filt days">' + ds.map(function (x) {
+      var dd = pd(x), has = dayIds(t.id, x).length;
+      return '<button data-day="' + x + '" class="' + (has ? 'has' : '') + '" aria-pressed="' + (x === cd) + '" aria-label="' + DSL[dd.getDay()] + ' ' + dd.getDate() + '"><small>' + DSC[dd.getDay()] + '</small><b>' + dd.getDate() + '</b>' + (has ? '<i></i>' : '') + '</button>';
+    }).join('') + '</div>';
+    var by = {}; ids.forEach(function (id) { var p = pieceById(id); (by[p.k] = by[p.k] || []).push(p); });
+    function worn(k) { return (by[k] || []).map(function (p) { return imgTag(p.id, 'z-' + k, pname(p)); }).join(''); }
+    function side(k, label) { var a = (by[k] || []).map(function (p) { return imgTag(p.id, '', pname(p)); }).join(''); return '<div class="slot ' + k + '">' + a + (a ? '' : '<em>' + label + '</em>') + '</div>'; }
+    var w = wxText(t, cd);
+    h += '<div class="dcard"><div class="dhead"><b>' + DSL[d.getDay()].replace(/^./, function (c) { return c.toUpperCase(); }) + ', ' + d.getDate() + ' ' + MESL[d.getMonth()] + '</b><span class="wx">' + esc(w) + '</span></div>' +
+      '<div class="scene"><div class="man">' + MAN + worn('bottom') + worn('top') + worn('dress') + worn('shoes') + worn('hat') + '</div>' +
+      '<div class="side">' + side('coat', 'Casaco') + side('bag', 'Mala') + side('acc', 'Acessórios') + '</div></div>' +
+      (ids.length ? '<div class="chosen">' + ids.map(function (id) { return '<span>' + esc(pname(pieceById(id))) + '</span>'; }).join('') + '</div>' : '') +
+      '<div class="dact">' + (!ids.length && prevIds(t, cd).length ? '<button class="btn ghost" data-act="copyprev">Copiar o dia anterior</button>' : '') + '<button class="btn" data-act="pick">' + (ids.length ? 'Mudar peças' : 'Escolher peças') + '</button></div></div>';
+    return h;
+  }
+  function prevIds(t, date) { return date > t.a ? dayIds(t.id, addD(date, -1)) : []; }
+
+  function bagHTML(t) {
+    var use = {}, order = [];
+    tdays(t).forEach(function (d) { dayIds(t.id, d).forEach(function (id) { if (!use[id]) { use[id] = 0; order.push(id); } use[id]++; }); });
+    if (!order.length) return '<div class="empty">Ainda não escolheste peças para nenhum dia.</div>';
+    var packed = (data.pk[t.id] || []).filter(function (id) { return use[id]; }), n = order.length;
+    var h = '<div class="tcard" style="cursor:default"><span class="row"><b>' + n + (n === 1 ? ' peça' : ' peças') + '</b><span class="n">' + packed.length + ' na mala</span></span><span class="bar"><i style="width:' + (packed.length / n * 100) + '%"></i></span></div>';
+    CATS.forEach(function (c) {
+      var g = order.filter(function (id) { return pieceById(id).k === c[0]; });
+      if (!g.length) return;
+      h += '<div class="h">' + c[1] + '</div>' + g.map(function (id) {
+        var p = pieceById(id), on = packed.indexOf(id) > -1;
+        return '<button class="pk" data-pack="' + id + '" aria-pressed="' + on + '"><span class="th">' + imgTag(id, '', '') + '</span><span class="tx"><b>' + esc(pname(p)) + '</b><small>' + use[id] + (use[id] === 1 ? ' dia' : ' dias') + '</small></span><span class="ck">' + CK + '</span></button>';
+      }).join('');
+    });
+    return h;
+  }
+
+  /* ---------- sheets ---------- */
+  function openM(html) { $('sh').innerHTML = html; $('m').hidden = false; }
+  function closeM() { $('m').hidden = true; $('sh').innerHTML = ''; SM = null; PS = null; render(); }
+  var SM = null, PS = null, askDel = false;
+
+  function tripSheet(t) {
+    var n = !t;
+    SM = { id: t ? t.id : '', la: t ? t.la : null, lo: t ? t.lo : null, d: t ? t.d || '' : '' };
+    openM('<h2>' + (n ? 'Nova viagem' : 'Viagem') + '</h2>' +
+      '<div><label class="l" for="tn">Nome</label><input type="text" id="tn" value="' + esc(t ? t.n : '') + '" autocomplete="off" placeholder="Londres"></div>' +
+      '<div><label class="l" for="td">Destino (para a meteorologia)</label><div style="display:flex;gap:8px"><input type="text" id="td" value="' + esc(SM.d) + '" autocomplete="off" placeholder="Cidade" enterkeyhint="search"><button class="btn ghost" data-m="geo" style="flex:none">Procurar</button></div>' +
+      '<div class="res" id="res" style="margin-top:6px"></div>' + (SM.la != null ? '<p class="mut" id="geoq" style="margin:6px 4px 0">Localização guardada.</p>' : '<p class="mut" id="geoq" style="margin:6px 4px 0"></p>') + '</div>' +
+      '<div class="dates"><div><label class="l" for="ta">Primeiro dia</label><input type="date" id="ta" value="' + (t ? t.a : '') + '"></div><div><label class="l" for="tb">Último dia</label><input type="date" id="tb" value="' + (t ? t.b : '') + '"></div></div>' +
+      '<p class="err" id="terr" hidden></p>' +
+      '<div class="acts">' + (n ? '<button class="btn ghost" data-m="cancel">Cancelar</button>' : '<button class="btn ghost" data-m="deltrip" id="deltrip">Apagar</button>') + '<button class="btn" data-m="oktrip">Guardar</button></div>');
+  }
+  function geoSearch() {
+    var q = $('td').value.trim(), out = $('res'), g = $('geoq'); if (!q) return;
+    g.textContent = 'A procurar…'; out.innerHTML = '';
+    fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&language=pt&name=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (j) {
+      var r = (j && j.results) || []; if (!SM) return;
+      if (!r.length) { g.textContent = 'Nada encontrado.'; return; }
+      g.textContent = '';
+      out.innerHTML = r.map(function (x, i) { return '<button data-geo="' + i + '">' + esc([x.name, x.admin1, x.country].filter(Boolean).join(', ')) + '</button>'; }).join('');
+      SM.res = r;
+    }).catch(function () { if ($('geoq')) $('geoq').textContent = 'Sem ligação.'; });
+  }
+
+  function pickSheet() {
+    var t = tripById(S.trip); if (!t) return;
+    var d = pd(S.day), top = $('sh').scrollTop;
+    var ids = dayIds(t.id, S.day);
+    var cnt = {}; data.pieces.forEach(function (p) { cnt[p.k] = (cnt[p.k] || 0) + 1; });
+    var f = S.pf; if (f !== 'all' && !cnt[f]) f = S.pf = 'all';
+    var h = '<h2>' + DSC[d.getDay()] + ', ' + d.getDate() + ' ' + MES[d.getMonth()] + '</h2>';
+    if (!data.pieces.length) h += '<div class="empty" style="padding:18px 6px">Ainda não tens peças.</div>';
+    else h += '<div class="filt" style="margin:0">' + [['all', 'Todas']].concat(CATS.filter(function (c) { return cnt[c[0]]; })).map(function (x) { return '<button data-pf="' + x[0] + '" aria-pressed="' + (f === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="grid">' + gridItems(f, ids, 'sel') + '</div>';
+    h += '<div class="acts"><button class="btn ghost" data-m="newp">Nova peça</button><button class="btn" data-m="done">Concluído</button></div>';
+    SM = { pick: true }; openM(h); $('sh').scrollTop = top;
+  }
+  function toggleP(pid) {
+    var t = tripById(S.trip), p = pieceById(pid); if (!t || !p) return;
+    var key = t.id + '|' + S.day, arr = dayIds(t.id, S.day), has = arr.indexOf(pid) > -1;
+    function cat(x) { return pieceById(x).k; }
+    if (has) arr = arr.filter(function (x) { return x !== pid; });
+    else {
+      if (p.k !== 'acc') arr = arr.filter(function (x) { return cat(x) !== p.k; });
+      if (p.k === 'dress') arr = arr.filter(function (x) { return cat(x) !== 'top' && cat(x) !== 'bottom'; });
+      if (p.k === 'top' || p.k === 'bottom') arr = arr.filter(function (x) { return cat(x) !== 'dress'; });
+      arr.push(pid);
+    }
+    if (arr.length) data.days[key] = arr; else delete data.days[key];
+    save(); pickSheet();
+  }
+
+  /* new / edit piece */
+  function pieceSheet(p) {
+    PS = { id: p ? p.id : '', k: p ? p.k : 'top', n: p ? p.n || '' : '', cut: true, tol: 40, base: null, out: null, orig: null, fail: false, busy: null, fromPick: SM && SM.pick };
+    drawPiece();
+    if (p) {   // editing: bring the original back so the cut-out can be redone
+      getBlob('o', p.id).then(function (b) { return b || getBlob('p', p.id); }).then(function (b) {
+        if (!b || !PS || PS.id !== p.id) return; PS.orig = b; return fileToCanvas(b).then(function (c) { if (!PS) return; PS.base = c; PS.cut = !!p.cut; recut(); });
+      }).catch(function () {});
+    }
+  }
+  function drawPiece() {
+    var e = !!(PS.id && pieceById(PS.id)), has = !!PS.base;
+    openM('<h2>' + (e ? 'Peça' : 'Nova peça') + '</h2>' +
+      '<div class="pprev" id="pprev">' + (PS.preview ? '<img src="' + PS.preview + '" alt="">' : '<span>Sem foto</span>') + '</div>' +
+      '<label class="btn ghost full" for="pf" style="cursor:pointer">' + (has ? 'Trocar a foto' : 'Tirar foto ou escolher da galeria') + '</label><input type="file" id="pf" accept="image/*" hidden>' +
+      '<div class="cutrow"><button class="btn ' + (PS.cut ? '' : 'ghost') + '" id="pcut" data-m="cut" aria-pressed="' + PS.cut + '">Tirar fundo</button><input type="range" id="ptol" min="12" max="100" value="' + PS.tol + '" aria-label="Sensibilidade do fundo"' + (PS.cut ? '' : ' disabled') + '></div>' +
+      '<p class="err" id="perr" ' + (PS.fail ? '' : 'hidden') + '>Não consegui separar o fundo desta foto. Experimenta outro valor ou desliga.</p>' +
+      '<div class="seg" id="pk">' + CATS.map(function (c) { return '<button data-k="' + c[0] + '" aria-pressed="' + (PS.k === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+      '<input type="text" id="pn" value="' + esc(PS.n) + '" placeholder="Nome (opcional)" autocomplete="off" aria-label="Nome da peça">' +
+      '<div class="acts">' + (e ? '<button class="btn ghost" data-m="delp" id="delp">Apagar</button>' : '<button class="btn ghost" data-m="cancelp">Cancelar</button>') + '<button class="btn" data-m="okp" id="okp">Guardar</button></div>');
+  }
+  var recutTimer = 0;
+  function recut() {   // recompute the picture shown from the base photo
+    if (!PS || !PS.base) return;
+    var mine = PS, c = null, fail = false;
+    if (PS.cut) { c = cutout(PS.base, PS.tol); if (!c) { fail = true; c = PS.base; } } else c = PS.base;
+    PS.fail = fail;
+    PS.busy = toBlob(c, PS.cut && !fail ? 'image/png' : 'image/jpeg', .88).then(function (b) {
+      if (PS !== mine) return; mine.out = b; mine.outCut = mine.cut && !fail;
+      if (mine.preview) URL.revokeObjectURL(mine.preview); mine.preview = URL.createObjectURL(b);
+      var box = $('pprev'); if (box) box.innerHTML = '<img src="' + mine.preview + '" alt="">';
+      var er = $('perr'); if (er) er.hidden = !mine.fail;
+      var lbl = document.querySelector('label[for=pf]'); if (lbl) lbl.textContent = 'Trocar a foto';
+    });
+  }
+  function savePiece() {
+    var ps = PS; if (!ps) return;
+    var n = ($('pn').value || '').trim(), isNew = !(ps.id && pieceById(ps.id)), p = isNew ? null : pieceById(ps.id);
+    if (isNew && !ps.base) { var b0 = $('pprev'); if (b0) b0.style.outline = '2px solid var(--bad)'; return; }
+    var btn = $('okp'); if (btn) btn.disabled = true;
+    Promise.resolve(ps.busy).then(function () {
+      var id = isNew ? uid() : p.id, jobs = [];
+      if (ps.out) {
+        jobs.push(putBlob('p', id, ps.out).then(function () { setUrl(id, ps.out); }));
+        if (ps.base) jobs.push(toBlob(ps.base, 'image/jpeg', .85).then(function (o) { return putBlob('o', id, o); }));
+      }
+      return Promise.all(jobs).then(function () {
+        if (isNew) { p = { id: id, k: ps.k, u: Date.now() }; data.pieces.push(p); }
+        p.k = ps.k; if (n) p.n = n; else delete p.n; p.cut = !!ps.outCut || (!ps.out && !!p.cut); p.u = Date.now();
+        save();
+        var again = ps.fromPick; PS = null; $('m').hidden = true; $('sh').innerHTML = ''; SM = null; render();
+        if (again) { if (S.trip) { toggleLater(id); } }
+      });
+    }).catch(function () { if (btn) btn.disabled = false; var er = $('perr'); if (er) { er.textContent = 'Não consegui guardar a foto neste telemóvel.'; er.hidden = false; } });
+  }
+  function toggleLater(id) { S.pf = 'all'; pickSheet(); toggleP(id); }   // a piece created from the day picker goes straight into that day
+  function deletePiece(id) {
+    data.pieces = data.pieces.filter(function (p) { return p.id !== id; });
+    Object.keys(data.days).forEach(function (k) { data.days[k] = data.days[k].filter(function (x) { return x !== id; }); if (!data.days[k].length) delete data.days[k]; });
+    Object.keys(data.pk).forEach(function (k) { data.pk[k] = data.pk[k].filter(function (x) { return x !== id; }); });
+    if (urls[id]) { try { URL.revokeObjectURL(urls[id]); } catch (e) {} delete urls[id]; }
+    save(); delBlob(id).catch(function () {});
+  }
+  function deleteTrip(id) {
+    data.trips = data.trips.filter(function (t) { return t.id !== id; });
+    Object.keys(data.days).forEach(function (k) { if (k.indexOf(id + '|') === 0) delete data.days[k]; });
+    delete data.pk[id]; delete wx[id]; save(); saveWx();
+  }
+
+  /* ---------- events ---------- */
+  $('nav').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-v]'); if (!b) return;
+    if (S.trip) S.vtab = b.dataset.v; else S.tab = b.dataset.v;
+    render(); window.scrollTo(0, 0);
+  });
+  $('main').addEventListener('click', function (e) {
+    var x;
+    if ((x = e.target.closest('[data-trip]'))) { S.trip = x.dataset.trip; S.vtab = 'days'; S.day = ''; var t = tripById(S.trip); render(); window.scrollTo(0, 0); wxFetch(t); return; }
+    if ((x = e.target.closest('[data-day]'))) { S.day = x.dataset.day; render(); return; }
+    if ((x = e.target.closest('[data-pf]'))) { S.pf = x.dataset.pf; render(); return; }
+    if ((x = e.target.closest('[data-ed]'))) { var p = pieceById(x.dataset.ed); if (p) pieceSheet(p); return; }
+    if ((x = e.target.closest('[data-pack]'))) {
+      var id = x.dataset.pack, a = data.pk[S.trip] || [], i = a.indexOf(id);
+      if (i > -1) a.splice(i, 1); else a.push(id); data.pk[S.trip] = a; save(); render(); return;
+    }
+    if ((x = e.target.closest('[data-act]'))) {
+      var act = x.dataset.act;
+      if (act === 'newtrip') tripSheet(null);
+      else if (act === 'newpiece') pieceSheet(null);
+      else if (act === 'pick') pickSheet();
+      else if (act === 'copyprev') { var tt = tripById(S.trip), ids = prevIds(tt, S.day); if (ids.length) { data.days[tt.id + '|' + S.day] = ids.slice(); save(); render(); } }
+    }
+  });
+  $('up').addEventListener('click', function () { S.trip = ''; render(); window.scrollTo(0, 0); });
+  $('more').addEventListener('click', function () { var t = tripById(S.trip); if (t) tripSheet(t); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('m').hidden) { if (PS) { PS = null; } closeM(); } });
+  $('m').addEventListener('click', function (e) {
+    if (e.target === $('m')) { closeM(); return; }
+    var x;
+    if ((x = e.target.closest('[data-pf]'))) { S.pf = x.dataset.pf; pickSheet(); return; }
+    if ((x = e.target.closest('[data-sel]'))) { toggleP(x.dataset.sel); return; }
+    if ((x = e.target.closest('[data-geo]'))) {
+      var r = SM && SM.res && SM.res[Number(x.dataset.geo)]; if (!r) return;
+      SM.la = r.latitude; SM.lo = r.longitude; SM.d = [r.name, r.country].filter(Boolean).join(', ');
+      $('td').value = SM.d; if (!$('tn').value.trim()) $('tn').value = r.name; $('res').innerHTML = ''; $('geoq').textContent = 'Localização guardada.'; return;
+    }
+    if ((x = e.target.closest('#pk [data-k]'))) { PS.k = x.dataset.k; [].forEach.call($('pk').children, function (b) { b.setAttribute('aria-pressed', String(b === x)); }); return; }
+    var b = e.target.closest('[data-m]'); if (!b) return;
+    var m = b.dataset.m;
+    if (m === 'cancel' || m === 'done') { closeM(); }
+    else if (m === 'cancelp') { var back = PS && PS.fromPick; PS = null; $('m').hidden = true; $('sh').innerHTML = ''; SM = null; render(); if (back) pickSheet(); }
+    else if (m === 'geo') geoSearch();
+    else if (m === 'newp') { pieceSheet(null); }
+    else if (m === 'cut') {
+      if (!PS) return; PS.cut = !PS.cut; b.classList.toggle('ghost', !PS.cut); b.setAttribute('aria-pressed', String(PS.cut)); $('ptol').disabled = !PS.cut; recut();
+    }
+    else if (m === 'okp') savePiece();
+    else if (m === 'delp') {
+      if (!askDel) { askDel = true; b.textContent = 'Apagar?'; b.classList.remove('ghost'); b.classList.add('bad'); setTimeout(function () { askDel = false; }, 4000); return; }
+      askDel = false; if (PS && PS.id) deletePiece(PS.id); PS = null; closeM();
+    }
+    else if (m === 'oktrip') {
+      var n = $('tn').value.trim(), dest = $('td').value.trim(), a = $('ta').value, bb = $('tb').value, er = $('terr');
+      function bad(msg) { er.textContent = msg; er.hidden = false; }
+      if (!n && dest) n = dest.split(',')[0].trim();
+      if (!n) { bad('Dá um nome à viagem.'); return; }
+      if (!validIso(a) || !validIso(bb)) { bad('Escolhe o primeiro e o último dia.'); return; }
+      if (bb < a) { bad('O último dia vem antes do primeiro.'); return; }
+      if (span(a, bb) > 59) { bad('Máximo 60 dias.'); return; }
+      var t = SM.id ? tripById(SM.id) : null;
+      if (!t) { t = { id: uid() }; data.trips.push(t); S.trip = t.id; S.vtab = 'days'; S.day = ''; }
+      if (dest !== (t.d || '')) { if (dest !== SM.d) { SM.la = null; SM.lo = null; } }
+      t.n = n; t.d = dest; t.la = SM.la; t.lo = SM.lo; t.a = a; t.b = bb; t.u = Date.now();
+      delete wx[t.id]; save(); saveWx();
+      // days outside the new dates keep their outfits hidden; they come back if the dates are widened again
+      closeM(); wxFetch(t);
+    }
+    else if (m === 'deltrip') {
+      if (!askDel) { askDel = true; b.textContent = 'Apagar a viagem?'; b.classList.remove('ghost'); b.classList.add('bad'); setTimeout(function () { askDel = false; }, 4000); return; }
+      askDel = false; if (SM && SM.id) deleteTrip(SM.id); S.trip = ''; closeM();
+    }
+  });
+  $('m').addEventListener('input', function (e) {
+    if (e.target.id === 'ptol' && PS) { PS.tol = Number(e.target.value); clearTimeout(recutTimer); recutTimer = setTimeout(recut, 90); }
+  });
+  $('m').addEventListener('change', function (e) {
+    if (e.target.id !== 'pf' || !PS) return;
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var mine = PS, box = $('pprev'); if (box) box.innerHTML = '<span>A preparar…</span>';
+    fileToCanvas(f).then(function (c) { if (PS !== mine) return; mine.base = c; mine.tol = 40; var s = $('ptol'); if (s) s.value = 40; recut(); })
+      .catch(function () { if ($('pprev')) $('pprev').innerHTML = '<span>Não consegui abrir esta foto.</span>'; });
+    e.target.value = '';
+  });
+  $('m').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'td') { e.preventDefault(); geoSearch(); } });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && $('m').hidden) { var y = window.scrollY; data = load(); render(); window.scrollTo(0, y); } });
+  /* the browser Back button (see index.html): close the sheet, or go from a trip back to the trips */
+  window.__dlBack = function () {
+    if (!$('m').hidden) { if (PS && PS.fromPick) { var t0 = PS; PS = null; $('m').hidden = true; $('sh').innerHTML = ''; SM = null; render(); pickSheet(); return true; } closeM(); return true; }
+    if (S.trip) { S.trip = ''; render(); window.scrollTo(0, 0); return true; }
+    return false;
+  };
+
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  render();
+  loadImgs().then(function () { if ($('m').hidden) render(); });
+})();
+</script>
+</body>
+</html>
