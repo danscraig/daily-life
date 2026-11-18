@@ -517,32 +517,6 @@ html.onhome body::before { display: none; }
 #home.ios.tight3 .ic .sq { width: 48px; height: 48px; }
 #home.ios.tight3 .ic .lb { font-size: 11px; }
 #home.ios.tight3 .igrid { gap: 8px 6px; }
-/* home fills the whole screen: header, widgets stretch to share the free height, app icons at the bottom */
-#home.ios .hello { padding: 8px 6px 18px; }
-#home.ios .ihw { flex: 1 1 auto; min-height: auto; grid-template-rows: auto 1fr 1fr; gap: 12px; margin: 0 0 20px; }
-#home.ios .ihw .wg { min-height: 0; padding: 16px 16px 15px; justify-content: flex-start; gap: 12px; overflow: visible; border-radius: 28px; }
-#home.ios .ihw .wg.bdw { padding: 14px 18px; justify-content: flex-start; }
-#home.ios .ihw .wg > :not(.t) { margin-top: 0; }
-#home.ios .ihw .t { font-size: 12px; }
-#home.ios .ihw .mr, #home.ios .ihw .night { font-size: 16px; margin-top: 0; }
-#home.ios .ihw .mr small, #home.ios .ihw .night small { font-size: 11px; margin-bottom: 2px; }
-#home.ios .ihw .ln { font-size: 14.5px; margin-top: 0; }
-#home.ios .ihw .bdl { font-size: 14.5px; }
-#home.ios .ihw .hb { margin-top: 0; padding: 9px 12px; }
-#home.ios .ihw .hb .nm { font-size: 15px; }
-#home.ios .ihw .chips { margin-top: auto; padding-top: 0; }
-#home.ios .ihw .hb { flex: 1 1 0; max-height: 62px; }
-#home.ios .ihw .wg:not(.bdw) > .t + * { margin-top: auto; }
-#home.ios .ihw .wg:not(.bdw) > :last-child:not(.chips) { margin-bottom: auto; }
-#home.ios .ihw .wg > #ih_ev { display: flex; flex-direction: column; gap: 8px; }
-#home.ios .ihw .chip { height: 34px; border-radius: 17px; font-size: 12.5px; }
-#home.ios .igrid { margin-top: 0; gap: 18px 6px; padding: 0 2px; }
-#home.ios .ic .sq { width: 64px; height: 64px; }
-#home.ios.tight .ihw { gap: 8px; margin-bottom: 12px; }
-#home.ios.tight .ihw .wg { padding: 10px 13px; border-radius: 22px; }
-#home.ios.tight .igrid { gap: 10px 6px; }
-#home.ios.tight .ic .sq { width: 54px; height: 54px; }
-#home.ios.tight3 .ic .sq { width: 48px; height: 48px; }
 /* an open app: a window that grows out of its icon */
 .iwin { position: fixed; inset: 0; z-index: 100; background: var(--bg); overflow: hidden; display: flex; flex-direction: column; will-change: transform, opacity; padding: env(safe-area-inset-top, 0px) 0 0; }
 .iwin.off { visibility: hidden; pointer-events: none; }
