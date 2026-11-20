@@ -78,6 +78,12 @@ input::placeholder { color: var(--mute); }
 .task .tx { flex: 1; min-width: 0; text-align: left; padding: 12px 14px 12px 0; overflow-wrap: anywhere; }
 .task[data-s="2"] .tx { color: var(--mute); text-decoration: line-through; }
 
+.task { cursor: grab; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.task .tx { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.task.drag { position: relative; z-index: 12; cursor: grabbing; box-shadow: 0 16px 30px -10px var(--shadow); scale: 1.02; }
+.task.drag * { pointer-events: none; }
+body.dragging, body.dragging * { cursor: grabbing !important; }
+
 /* sheets */
 .modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; background: color-mix(in srgb, var(--ink) 45%, transparent); padding: calc(16px + env(safe-area-inset-top, 0px)) 12px 16px; }
 .modal:not([hidden]) { animation: fadein 160ms var(--ease-out); }
@@ -133,6 +139,7 @@ input::placeholder { color: var(--mute); }
     try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {}
     try { var mt = JSON.parse(localStorage.getItem('daily-life-sync-meta') || '{}') || {}; mt.dirty = true; localStorage.setItem('daily-life-sync-meta', JSON.stringify(mt)); } catch (e) {}
   }
+  function ord(t) { return t.o != null ? t.o : (t.c || t.u || 0); }   // o = the place she dragged it to; otherwise creation order
   function lists() { return data.lists.filter(function (l) { return !l.del; }); }
   function prog(l) { return !l || l.p !== false; }   // p:false = a plain checklist (no Por começar / Ongoing / Done)
   function listById(id) { return data.lists.filter(function (l) { return l.id === id && !l.del; })[0]; }
@@ -147,7 +154,7 @@ input::placeholder { color: var(--mute); }
     $('main').innerHTML = cur ? topicHTML(l) : topicsHTML();
   }
   function previewHTML(l, ts) {   // the first open tasks of the topic (ongoing first); done ones only when nothing else is left
-    var open = ts.filter(function (t) { return t.s !== 2; }).sort(function (a, b) { return ((b.s || 0) === 1) - ((a.s || 0) === 1) || (a.c || a.u || 0) - (b.c || b.u || 0); });
+    var open = ts.filter(function (t) { return t.s !== 2; }).sort(function (a, b) { return ((b.s || 0) === 1) - ((a.s || 0) === 1) || ord(a) - ord(b); });
     var list = open.length ? open : ts.slice().sort(function (a, b) { return (b.u || 0) - (a.u || 0); }), N = 3, h = '';
     if (!list.length) return '';
     list.slice(0, N).forEach(function (t) { h += '<span class="pv" data-s="' + (t.s === 2 ? 2 : (prog(l) ? (t.s || 0) : 0)) + '"><i></i><span>' + esc(t.t) + '</span></span>'; });
@@ -177,18 +184,18 @@ input::placeholder { color: var(--mute); }
     var order = [1, 0, 2], any = false;
     order.forEach(function (s) {
       if (flt !== -1 && flt !== s) return;
-      var g = ts.filter(function (t) { return (t.s || 0) === s; }).sort(function (a, b) { return (a.c || a.u || 0) - (b.c || b.u || 0); });
+      var g = ts.filter(function (t) { return (t.s || 0) === s; }).sort(function (a, b) { return ord(a) - ord(b); });
       if (!g.length) return; any = true;
       if (flt === -1) h += '<div class="h" style="--c:' + ST[s].c + '">' + ST[s].n + ' · ' + g.length + '</div>';
-      h += g.map(function (t) { return '<div class="task" data-s="' + (t.s || 0) + '" data-id="' + t.id + '"><button class="st" data-act="cyc" aria-label="Mudar estado: ' + ST[t.s || 0].n + '"><span>' + CK + '</span></button><button class="tx" data-act="edit">' + esc(t.t) + '</button></div>'; }).join('');
+      h += g.map(function (t) { return '<div class="task" data-g="' + (t.s || 0) + '" data-s="' + (t.s || 0) + '" data-id="' + t.id + '"><button class="st" data-act="cyc" aria-label="Mudar estado: ' + ST[t.s || 0].n + '"><span>' + CK + '</span></button><button class="tx" data-act="edit">' + esc(t.t) + '</button></div>'; }).join('');
     });
     return h + (any ? '' : '<div class="empty">Nenhuma tarefa com este estado.</div>');
   }
 
   function simpleHTML(ts) {   // plain checklist: open tasks first, then the ones that are done
     if (!ts.length) return '<div class="empty">Sem itens nesta lista.</div>';
-    var by = function (a, b) { return (a.c || a.u || 0) - (b.c || b.u || 0); }, open = ts.filter(function (t) { return t.s !== 2; }).sort(by), done = ts.filter(function (t) { return t.s === 2; }).sort(by);
-    var row = function (t) { return '<div class="task" data-s="' + (t.s === 2 ? 2 : 0) + '" data-id="' + t.id + '"><button class="st" data-act="cyc" aria-label="Marcar como feito"><span>' + CK + '</span></button><button class="tx" data-act="edit">' + esc(t.t) + '</button></div>'; };
+    var by = function (a, b) { return ord(a) - ord(b); }, open = ts.filter(function (t) { return t.s !== 2; }).sort(by), done = ts.filter(function (t) { return t.s === 2; }).sort(by);
+    var row = function (t) { return '<div class="task" data-g="' + (t.s === 2 ? 2 : 0) + '" data-s="' + (t.s === 2 ? 2 : 0) + '" data-id="' + t.id + '"><button class="st" data-act="cyc" aria-label="Marcar como feito"><span>' + CK + '</span></button><button class="tx" data-act="edit">' + esc(t.t) + '</button></div>'; };
     return open.map(row).join('') + (done.length ? '<div class="h" style="--c:' + ST[2].c + '">Feitas · ' + done.length + '</div>' + done.map(row).join('') : '');
   }
   function openM(html) { $('sh').innerHTML = html; $('m').hidden = false; }
@@ -225,9 +232,61 @@ input::placeholder { color: var(--mute); }
     var f = e.target.closest('[data-f]'); if (f) { flt = Number(f.dataset.f); render(); return; }
     var row = e.target.closest('.task'), b = e.target.closest('[data-act]'); if (!row || !b) return;
     var t = taskById(row.dataset.id); if (!t) return;
-    if (b.dataset.act === 'cyc') { t.s = !prog(listById(t.l)) ? (t.s === 2 ? 0 : 2) : ((t.s || 0) + 1) % 3; t.u = Date.now(); touchList(t.l); save(); render(); }
+    if (b.dataset.act === 'cyc') { t.s = !prog(listById(t.l)) ? (t.s === 2 ? 0 : 2) : ((t.s || 0) + 1) % 3; delete t.o; t.u = Date.now(); touchList(t.l); save(); render(); }
     else editTask(t);
   });
+  /* reorder by dragging: mouse = drag straight away; finger = press and hold, then drag. Only inside the same group (same status). */
+  var dg = null, dragOn = false, noClick = false;
+  function endDrag(commit) {
+    if (!dg) return; var d = dg; dg = null; clearTimeout(d.timer); cancelAnimationFrame(d.raf);
+    document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp); document.removeEventListener('pointercancel', onCancel);
+    if (!d.on) return;
+    dragOn = false; document.body.classList.remove('dragging'); d.el.classList.remove('drag'); d.el.style.transform = '';
+    noClick = true; setTimeout(function () { noClick = false; }, 350);
+    if (commit) {
+      var now = Date.now(), rows = [].slice.call(d.el.parentNode.querySelectorAll('.task[data-g="' + d.g + '"]'));
+      rows.forEach(function (r, i) { var t = taskById(r.dataset.id); if (t && t.o !== i) { t.o = i; t.u = now; } });
+      touchList(cur); save();
+    }
+    render();
+  }
+  function place(d) {
+    var el = d.el; el.style.transform = 'none';
+    var sib = [].slice.call(el.parentNode.querySelectorAll('.task[data-g="' + d.g + '"]')).filter(function (r) { return r !== el; }), nxt = null;
+    for (var i = 0; i < sib.length; i++) { var b = sib[i].getBoundingClientRect(); if (d.y < b.top + b.height / 2) { nxt = sib[i]; break; } }
+    if (nxt) { if (el.nextElementSibling !== nxt) el.parentNode.insertBefore(el, nxt); }
+    else if (sib.length) { var last = sib[sib.length - 1]; if (last.nextElementSibling !== el) el.parentNode.insertBefore(el, last.nextElementSibling); }
+    el.style.transform = 'translateY(' + (d.y - d.grab - el.getBoundingClientRect().top) + 'px)';
+  }
+  function scrollLoop() {
+    if (!dg || !dg.on) return;
+    var v = dg.y < 90 ? -10 : (dg.y > innerHeight - 90 ? 10 : 0);
+    if (v) { var y0 = window.scrollY; window.scrollBy(0, v); if (window.scrollY !== y0) place(dg); }
+    dg.raf = requestAnimationFrame(scrollLoop);
+  }
+  function startDrag() {
+    if (!dg || dg.on) return; dg.on = true; dragOn = true; dg.grab = dg.y - dg.el.getBoundingClientRect().top;
+    document.body.classList.add('dragging'); dg.el.classList.add('drag'); if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+    place(dg); dg.raf = requestAnimationFrame(scrollLoop);
+  }
+  function onMove(e) {
+    if (!dg || e.pointerId !== dg.id) return; dg.y = e.clientY;
+    if (!dg.on) { if (Math.abs(e.clientX - dg.x0) + Math.abs(e.clientY - dg.y0) > (dg.touch ? 10 : 5)) { if (dg.touch) endDrag(false); else startDrag(); } return; }
+    place(dg);
+  }
+  function onUp(e) { if (dg && e.pointerId === dg.id) endDrag(true); }
+  function onCancel(e) { if (dg && e.pointerId === dg.id) endDrag(false); }
+  $('main').addEventListener('pointerdown', function (e) {
+    if (dg || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    var el = e.target.closest('.task'); if (!el) return;
+    var touch = e.pointerType !== 'mouse';
+    dg = { el: el, g: el.dataset.g, id: e.pointerId, touch: touch, x0: e.clientX, y0: e.clientY, y: e.clientY, on: false, grab: 0, timer: 0, raf: 0 };
+    if (touch) dg.timer = setTimeout(startDrag, 380);
+    document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onUp); document.addEventListener('pointercancel', onCancel);
+  });
+  document.addEventListener('touchmove', function (e) { if (dragOn && e.cancelable) e.preventDefault(); }, { passive: false });
+  document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.task')) e.preventDefault(); });
+  document.addEventListener('click', function (e) { if (noClick) { e.stopPropagation(); e.preventDefault(); } }, true);
   $('up').addEventListener('click', function () { cur = ''; render(); window.scrollTo(0, 0); });
   $('more').addEventListener('click', function () { var l = listById(cur); if (l) listMenu(l); });
   var askDel = false;
@@ -242,7 +301,7 @@ input::placeholder { color: var(--mute); }
     if (b.dataset.m === 'ok') {
       var t = taskById(id), v = $('et').value.trim(); if (!t) { closeM(); return; }
       if (!v) { $('et').focus(); return; }
-      t.t = v; t.s = Number($('sh').dataset.s) || 0; t.l = $('el').value; t.u = now; touchList(t.l); save(); closeM(); render();
+      var ns = Number($('sh').dataset.s) || 0, nl = $('el').value; if (ns !== (t.s || 0) || nl !== t.l) delete t.o; t.t = v; t.s = ns; t.l = nl; t.u = now; touchList(t.l); save(); closeM(); render();
     } else if (b.dataset.m === 'del') {
       if (!askDel) { askDel = true; b.textContent = 'Apagar?'; b.classList.remove('ghost'); b.classList.add('bad'); setTimeout(function () { askDel = false; }, 4000); return; }
       askDel = false; var t2 = taskById(id); if (t2) { t2.del = true; t2.u = now; save(); } closeM(); render();
