@@ -401,7 +401,8 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
   }
 
   function wardrobeHTML() {
-    var h = '<button class="btn full" data-act="newpiece" style="margin-bottom:12px">Nova peça</button>';
+    var h = '<div class="dact" style="margin:0 0 12px"><button class="btn" data-act="newpiece">Nova peça</button><label class="btn ghost" for="imp" style="cursor:pointer">Importar peças</label><input type="file" id="imp" accept=".json,application/json" hidden></div>' +
+      (S.imp ? '<p class="' + (S.imp.bad ? 'err' : 'mut') + '" style="margin:0 4px 12px">' + esc(S.imp.msg) + '</p>' : '');
     if (!data.pieces.length) return h + '<div class="empty">Sem peças.<br>Tira uma foto a cada peça que queres levar.</div>';
     var cnt = {}; data.pieces.forEach(function (p) { cnt[p.k] = (cnt[p.k] || 0) + 1; });
     var f = S.pf; if (f !== 'all' && !cnt[f]) f = S.pf = 'all';
@@ -672,7 +673,7 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
   /* ---------- events ---------- */
   $('nav').addEventListener('click', function (e) {
     var b = e.target.closest('[data-v]'); if (!b) return;
-    if (S.trip) S.vtab = b.dataset.v; else S.tab = b.dataset.v;
+    S.imp = null; if (S.trip) S.vtab = b.dataset.v; else S.tab = b.dataset.v;
     render(); window.scrollTo(0, 0);
   });
   $('main').addEventListener('click', function (e) {
@@ -763,6 +764,43 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
       return putBlob('r', key, b).then(function () { if (rurls[key]) URL.revokeObjectURL(rurls[key]); rurls[key] = URL.createObjectURL(b); S.rv = 'real'; render(); });
     }).catch(function () { S.err = 'Não consegui guardar esta imagem.'; render(); });
     e.target.value = '';
+  });
+  /* Importar peças: a JSON file { "outfits-pieces": 1, "pieces": [ { k, n?, l?, cut?, img: "data:image/..." } ] } */
+  function dataToBlob(s) {
+    var m = /^data:([^;,]+)(;base64)?,(.*)$/.exec(s || ''); if (!m || m[1].indexOf('image/') !== 0) return null;
+    var bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]), a = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+    return new Blob([a], { type: m[1] });
+  }
+  function importPieces(file) {
+    function done(msg, bad) { S.imp = { msg: msg, bad: !!bad }; if (S.tab === 'wardrobe' && !S.trip && $('m').hidden) render(); }
+    return file.text().then(function (txt) {
+      var j = JSON.parse(txt), arr = j && j['outfits-pieces'] && Array.isArray(j.pieces) ? j.pieces : null;
+      if (!arr) { done('Este ficheiro não é de peças.', true); return; }
+      var ok = 0, skip = 0, seq = Promise.resolve();
+      arr.forEach(function (x, i) {
+        seq = seq.then(function () {
+          var b = x && CN[x.k] ? dataToBlob(x.img) : null;
+          if (!b) { skip++; return; }
+          var id = uid();
+          return putBlob('p', id, b).then(function () { return putBlob('o', id, b); }).then(function () {
+            setUrl(id, b);
+            var p = { id: id, k: x.k, u: Date.now() + i, cut: !!x.cut };
+            if (x.n) p.n = String(x.n).slice(0, 80);
+            if (x.l && LEN[x.k] && ['s', 'm', 'l'].indexOf(x.l) > -1) p.l = x.l;
+            data.pieces.push(p); ok++;
+          }).catch(function () { skip++; });
+        });
+      });
+      return seq.then(function () {
+        if (ok) save();
+        done(ok ? ok + (ok === 1 ? ' peça importada' : ' peças importadas') + (skip ? ' · ' + skip + ' ignorada(s).' : '.') : 'Não consegui importar nenhuma peça.', !ok);
+      });
+    }).catch(function () { done('Não consegui ler este ficheiro.', true); });
+  }
+  $('main').addEventListener('change', function (e) {
+    if (e.target.id !== 'imp') return;
+    var f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) importPieces(f);
   });
   $('m').addEventListener('change', function (e) {
     if (e.target.id !== 'pf' || !PS) return;
