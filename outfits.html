@@ -595,7 +595,7 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
 
   /* new / edit piece */
   function pieceSheet(p) {
-    PS = { id: p ? p.id : '', k: p ? p.k : 'top', l: p ? p.l : '', n: p ? p.n || '' : '', cut: true, tol: 40, base: null, out: null, orig: null, fail: false, busy: null, fromPick: SM && SM.pick };
+    PS = { id: p ? p.id : '', k: p ? p.k : 'top', l: p ? p.l : '', n: p ? p.n || '' : '', cut: true, tol: 40, ai: !p, aiC: null, aiErr: false, base: null, out: null, orig: null, fail: false, busy: null, fromPick: SM && SM.pick };
     drawPiece();
     if (p) {   // editing: bring the original back so the cut-out can be redone
       getBlob('o', p.id).then(function (b) { return b || getBlob('p', p.id); }).then(function (b) {
@@ -613,18 +613,52 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
     openM('<h2>' + (e ? 'Peça' : 'Nova peça') + '</h2>' +
       '<div class="pprev" id="pprev">' + (PS.preview ? '<img src="' + PS.preview + '" alt="">' : '<span>Sem foto</span>') + '</div>' +
       '<label class="btn ghost full" for="pf" style="cursor:pointer">' + (has ? 'Trocar a foto' : 'Tirar foto ou escolher da galeria') + '</label><input type="file" id="pf" accept="image/*" hidden>' +
-      '<div class="cutrow"><button class="btn ' + (PS.cut ? '' : 'ghost') + '" id="pcut" data-m="cut" aria-pressed="' + PS.cut + '">Tirar fundo</button><input type="range" id="ptol" min="12" max="100" value="' + PS.tol + '" aria-label="Sensibilidade do fundo"' + (PS.cut ? '' : ' disabled') + '></div>' +
+      '<div class="cutrow"><button class="btn ' + (PS.cut ? '' : 'ghost') + '" id="pcut" data-m="cut" aria-pressed="' + PS.cut + '">Tirar fundo</button><input type="range" id="ptol" min="12" max="100" value="' + PS.tol + '" aria-label="Sensibilidade do fundo"' + (PS.cut && !PS.ai ? '' : ' disabled') + '></div>' +
+      '<button class="btn ghost" id="pai" data-m="ai" type="button">' + aiLabel() + '</button>' +
+      '<p class="err" id="paierr" ' + (PS.aiErr ? '' : 'hidden') + '>Não consegui usar a IA (precisa de internet na primeira vez). Usei o recorte simples.</p>' +
       '<p class="err" id="perr" ' + (PS.fail ? '' : 'hidden') + '>Não consegui separar o fundo desta foto. Experimenta outro valor ou desliga.</p>' +
       '<div class="seg" id="pk">' + CATS.map(function (c) { return '<button data-k="' + c[0] + '" aria-pressed="' + (PS.k === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
       '<div id="plw">' + lenHTML() + '</div>' +
       '<input type="text" id="pn" value="' + esc(PS.n) + '" placeholder="Nome (opcional)" autocomplete="off" aria-label="Nome da peça">' +
       '<div class="acts">' + (e ? '<button class="btn ghost" data-m="delp" id="delp">Apagar</button>' : '<button class="btn ghost" data-m="cancelp">Cancelar</button>') + '<button class="btn" data-m="okp" id="okp">Guardar</button></div>');
   }
-  var recutTimer = 0;
+  var recutTimer = 0, bgLib = null;
+  /* AI cut-out, runs on the phone (library @imgly/background-removal, loaded on demand; the model is downloaded the first time and cached by the browser) */
+  function loadBg() {
+    if (!bgLib) bgLib = import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm').then(function (m) { return m.removeBackground; }).catch(function (e) { bgLib = null; throw e; });
+    return bgLib;
+  }
+  function trimAlpha(blob) {   // PNG with transparency -> canvas cropped to the visible part
+    return createImageBitmap(blob).then(function (bm) {
+      var w = bm.width, h = bm.height, c = document.createElement('canvas'); c.width = w; c.height = h;
+      var x = c.getContext('2d'); x.drawImage(bm, 0, 0); if (bm.close) bm.close();
+      var d = x.getImageData(0, 0, w, h).data, x0 = w, y0 = h, x1 = -1, y1 = -1, kept = 0, i, j;
+      for (j = 0; j < h; j++) for (i = 0; i < w; i++) if (d[(j * w + i) * 4 + 3] > 20) { kept++; if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j; }
+      if (x1 < 0 || kept < w * h * 0.02) throw new Error('empty');
+      var m = 4; x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m); x1 = Math.min(w - 1, x1 + m); y1 = Math.min(h - 1, y1 + m);
+      var o = document.createElement('canvas'); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
+      o.getContext('2d').drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height); return o;
+    });
+  }
+  function aiLabel() { return PS.ai ? 'Recorte: IA · tocar para usar o simples' : 'Recorte: simples · tocar para usar a IA'; }
+  function runAi(mine) {
+    var box = $('pprev'); if (box) box.innerHTML = '<span>A recortar com IA…<br>(a primeira vez demora, descarrega o modelo)</span>';
+    mine.busy = loadBg().then(function (rb) {
+      return toBlob(mine.base, 'image/png').then(function (b) { return rb(b, { output: { format: 'image/png' } }); });
+    }).then(trimAlpha).then(function (c) {
+      if (PS !== mine) return; mine.aiC = c; recut(); return mine.busy;
+    }).catch(function () {
+      if (PS !== mine) return; mine.ai = false; mine.aiErr = true;
+      var b = $('pai'); if (b) b.textContent = aiLabel(); var s = $('ptol'); if (s) s.disabled = !mine.cut;
+      var e = $('paierr'); if (e) e.hidden = false;
+      recut(); return mine.busy;
+    });
+  }
   function recut() {   // recompute the picture shown from the base photo
     if (!PS || !PS.base) return;
     var mine = PS, c = null, fail = false;
-    if (PS.cut) { c = cutout(PS.base, PS.tol); if (!c) { fail = true; c = PS.base; } } else c = PS.base;
+    if (PS.cut && PS.ai && !PS.aiC) { runAi(mine); return; }
+    if (PS.cut) { if (PS.ai && PS.aiC) c = PS.aiC; else { c = cutout(PS.base, PS.tol); if (!c) { fail = true; c = PS.base; } } } else c = PS.base;
     PS.fail = fail;
     PS.busy = toBlob(c, PS.cut && !fail ? 'image/png' : 'image/jpeg', .88).then(function (b) {
       if (PS !== mine) return; mine.out = b; mine.outCut = mine.cut && !fail;
@@ -725,7 +759,10 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
     else if (m === 'shimg') shareImg();
     else if (m === 'newp') { pieceSheet(null); }
     else if (m === 'cut') {
-      if (!PS) return; PS.cut = !PS.cut; b.classList.toggle('ghost', !PS.cut); b.setAttribute('aria-pressed', String(PS.cut)); $('ptol').disabled = !PS.cut; recut();
+      if (!PS) return; PS.cut = !PS.cut; b.classList.toggle('ghost', !PS.cut); b.setAttribute('aria-pressed', String(PS.cut)); $('ptol').disabled = !PS.cut || PS.ai; recut();
+    }
+    else if (m === 'ai') {
+      if (!PS) return; PS.ai = !PS.ai; PS.aiErr = false; b.textContent = aiLabel(); $('paierr').hidden = true; $('ptol').disabled = !PS.cut || PS.ai; recut();
     }
     else if (m === 'okp') savePiece();
     else if (m === 'delp') {
@@ -806,7 +843,7 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
     if (e.target.id !== 'pf' || !PS) return;
     var f = e.target.files && e.target.files[0]; if (!f) return;
     var mine = PS, box = $('pprev'); if (box) box.innerHTML = '<span>A preparar…</span>';
-    fileToCanvas(f).then(function (c) { if (PS !== mine) return; mine.base = c; mine.tol = 40; var s = $('ptol'); if (s) s.value = 40; recut(); })
+    fileToCanvas(f).then(function (c) { if (PS !== mine) return; mine.base = c; mine.aiC = null; mine.tol = 40; var s = $('ptol'); if (s) s.value = 40; recut(); })
       .catch(function () { if ($('pprev')) $('pprev').innerHTML = '<span>Não consegui abrir esta foto.</span>'; });
     e.target.value = '';
   });
