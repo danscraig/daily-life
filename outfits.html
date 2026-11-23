@@ -71,11 +71,11 @@ input::placeholder { color: var(--mute); }
 .scene { display: flex; gap: 10px; align-items: stretch; }
 .man { position: relative; flex: 0 0 58%; aspect-ratio: 1 / 2; border-radius: 18px; background: linear-gradient(180deg, rgba(0,0,0,.025), rgba(0,0,0,.055)); overflow: hidden; }
 .man svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.gm { position: absolute; background: var(--u) center / 100% 100% no-repeat; filter: drop-shadow(0 2px 3px rgba(40, 40, 38, .35)); }
-.gm.c { background-size: contain; }
-.gm::after { content: ""; position: absolute; inset: 0; -webkit-mask: var(--u) center / 100% 100% no-repeat; mask: var(--u) center / 100% 100% no-repeat; pointer-events: none;
+.gm { position: absolute; background: var(--u) center top / contain no-repeat; filter: drop-shadow(0 2px 3px rgba(40, 40, 38, .35)); }
+.gm.c { background-position: center; }
+.gm::after { content: ""; position: absolute; inset: 0; -webkit-mask: var(--u) center top / contain no-repeat; mask: var(--u) center top / contain no-repeat; pointer-events: none;
   background: linear-gradient(90deg, rgba(24, 20, 18, .34) 0%, rgba(24, 20, 18, 0) 22%, rgba(255, 255, 255, .13) 38%, rgba(24, 20, 18, 0) 58%, rgba(24, 20, 18, .30) 100%), linear-gradient(180deg, rgba(255, 255, 255, .06) 0%, rgba(24, 20, 18, 0) 30%, rgba(24, 20, 18, .16) 100%); }
-.gm.c::after { -webkit-mask-size: contain; mask-size: contain; }
+.gm.c::after { -webkit-mask-position: center; mask-position: center; }
 .real { border-radius: 18px; background: rgba(0, 0, 0, .035); display: grid; place-items: center; overflow: hidden; }
 .real img { display: block; width: 100%; height: auto; max-height: 72vh; object-fit: contain; }
 .vsw { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 10px; }
@@ -516,9 +516,9 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
     var L = LEN[p.k], len = L ? L[['s', 'm', 'l'].indexOf(p.l || LDEF[p.k])] : '';
     return '- ' + CN[p.k] + (p.n ? ': ' + p.n : '') + (len ? ' (comprimento: ' + len.toLowerCase() + ')' : '');
   }
-  function gptText(ps) {
+  function gptText(ps, open) {
     return 'Cria uma fotografia realista, de corpo inteiro, de um manequim de loja (sem rosto definido) a vestir exatamente as peças da imagem anexa, bem ajustadas ao corpo e com o caimento real do tecido:\n' +
-      ps.map(pieceLine).join('\n') + '\nMantém as cores, os padrões e as formas das peças. Não acrescentes nem substituas peças. Fundo neutro claro, luz de estúdio, vista de frente.';
+      ps.map(pieceLine).join('\n') + (open ? '\nO casaco deve estar aberto, sem fechar, a deixar ver o resto da roupa por baixo.' : '') + '\nMantém as cores, os padrões e as formas das peças. Não acrescentes nem substituas peças. Fundo neutro claro, luz de estúdio, vista de frente.';
   }
   function collage(ps) {
     var CW = 420, CH = 440, n = ps.length, cols = n <= 2 ? n : (n <= 4 ? 2 : 3), rows = Math.ceil(n / cols);
@@ -540,10 +540,12 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
   function gptSheet() {
     var t = tripById(S.trip); if (!t) return;
     var ps = gptPieces(dayIds(t.id, S.day)); if (!ps.length) return;
-    var mine = G = { text: gptText(ps), blob: null };
+    var mine = G = { text: gptText(ps, false), ps: ps, open: false, blob: null };
+    var hasCoat = ps.some(function (p) { return p.k === 'coat'; });
     SM = { gpt: true };
     openM('<h2>Preparar para o ChatGPT</h2>' +
       '<div class="pprev" id="gprev"><span>A preparar…</span></div>' +
+      (hasCoat ? '<button class="btn ghost" data-m="gopen" id="gopen" type="button">Casaco: fechado · tocar para abrir</button>' : '') +
       '<label class="l" for="gtx">Texto para colar</label><textarea class="gt" id="gtx" readonly>' + esc(mine.text) + '</textarea>' +
       '<div class="acts"><button class="btn ghost" data-m="cptext">Copiar texto</button><button class="btn" data-m="shimg" id="shimg" disabled>Partilhar imagem</button></div>' +
       '<p class="mut" style="margin:0 4px">No ChatGPT: anexa a imagem, cola o texto e envia. Depois guarda a imagem que ele gerar e escolhe-a aqui em "Guardar imagem realista".</p>' +
@@ -757,6 +759,10 @@ textarea.gt { width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px 
     else if (m === 'geo') geoSearch();
     else if (m === 'cptext') { if (G) copyText(G.text, b); }
     else if (m === 'shimg') shareImg();
+    else if (m === 'gopen') {
+      if (!G) return; G.open = !G.open; G.text = gptText(G.ps, G.open); $('gtx').value = G.text;
+      b.textContent = G.open ? 'Casaco: aberto · tocar para fechar' : 'Casaco: fechado · tocar para abrir';
+    }
     else if (m === 'newp') { pieceSheet(null); }
     else if (m === 'cut') {
       if (!PS) return; PS.cut = !PS.cut; b.classList.toggle('ghost', !PS.cut); b.setAttribute('aria-pressed', String(PS.cut)); $('ptol').disabled = !PS.cut || PS.ai; recut();
